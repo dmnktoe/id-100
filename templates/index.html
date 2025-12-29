@@ -1,0 +1,89 @@
+{{define "index.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <style>
+        :root { 
+            --pad: calc(1rem * 0.75); 
+            --border: 1.5px solid #000;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Helvetica', Arial, sans-serif; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+
+        header { 
+            display: flex; 
+            height: 5rem; 
+            border-bottom: var(--border); 
+            flex-shrink: 0;
+        }
+
+        .brand { 
+            flex: 0 0 50%; 
+            padding: var(--pad); 
+            display: flex; 
+            align-items: center; 
+            font-size: 2.5rem;
+        }
+
+        nav { 
+            flex: 0 0 50%; 
+            border-left: var(--border); 
+            padding: var(--pad); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+        }
+
+        nav a { 
+            text-decoration: none; 
+            color: #000; 
+            font-size: 0.7rem; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em;
+        }
+
+        main { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: var(--pad); 
+            background: #fff; 
+        }
+
+        .manifesto {
+            max-width: 600px;
+            margin-top: 2rem;
+        }
+
+        h2 { font-size: 1.5rem; margin-bottom: 1rem; text-transform: uppercase; }
+        p { line-height: 1.4; margin-bottom: 1rem; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand"><h1>🏠🆔💯</h1></div>
+        <nav>
+            <a href="/">All Uploads</a>
+            <a href="/all">Assignments 1-100</a>
+        </nav>
+    </header>
+    <main>
+        <div class="manifesto">
+            <h2>An urban exploration engine.</h2>
+            <p>100 assignments to unlearn the city. No barriers, no tracking, just the drift.</p>
+            <p>Digital brutalism as a collective archive of the overlooked.</p>
+        </div>
+    </main>
+</body>
+</html>
+{{end}}
