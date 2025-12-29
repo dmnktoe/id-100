@@ -1,0 +1,29 @@
+# Mac OS Dateien
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Go Binaries und Build-Files
+bin/
+main
+derive100
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go Testing
+*.test
+*.out
+
+# Air (Live Reload) Temp Dateien
+/tmp
+
+# Environment Files (Sensible Daten wie S3 Keys)
+.env
+.env.local
+
+# Docker
+.docker/
