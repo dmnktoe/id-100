@@ -4,22 +4,27 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"image"
-	_ "image/gif"  // Wichtig: Registriert GIF-Decoder
-	_ "image/jpeg" // Wichtig: Registriert JPEG-Decoder
-	_ "image/png"  // Wichtig: Registriert PNG-Decoder
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/kolesa-team/go-webp/encoder"
 	"github.com/kolesa-team/go-webp/webp"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	storage_go "github.com/supabase-community/storage-go"
 )
 
 // Template Renderer für Echo
@@ -41,7 +46,7 @@ type Derive struct {
 }
 
 func main() {
-	// 1. DB Verbindung initialisieren (Funktion kommt aus deiner database.go)
+	// 1. DB Verbindung initialisieren
 	initDatabase()
 	defer db.Close()
 
@@ -51,7 +56,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	// 2. Templates laden (Inklusive Komponenten)
+	// 2. Templates laden
 	files, err := filepath.Glob("web/templates/*.html")
 	if err != nil {
 		log.Fatal(err)
@@ -64,19 +69,17 @@ func main() {
 	}
 	e.Renderer = t
 
-	// Statische Dateien (CSS, JS)
+	// Statische Dateien
 	e.Static("/static", "web/static")
 
 	// --- ROUTES ---
 
-	// LANDING PAGE
 	e.GET("/", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "index.html", map[string]interface{}{
 			"Title": "🏠🆔💯 DÉRIVE 100",
 		})
 	})
 
-	// LISTE ALLER DERIVEN (Paginierung)
 	e.GET("/deriven", func(c echo.Context) error {
 		page, _ := strconv.Atoi(c.QueryParam("page"))
 		if page < 1 { page = 1 }
@@ -104,14 +107,13 @@ func main() {
 			"Title":       "Index - DÉRIVE 100",
 			"Deriven":     deriven,
 			"CurrentPage": page,
-			"HasNext":     page < 5,
+			"HasNext":     len(deriven) == limit,
 			"HasPrev":     page > 1,
 			"NextPage":    page + 1,
 			"PrevPage":    page - 1,
 		})
 	})
 
-	// UPLOAD FORMULAR ANZEIGEN
 	e.GET("/upload", func(c echo.Context) error {
 		rows, _ := db.Query(context.Background(), "SELECT number, title FROM deriven ORDER BY number ASC")
 		var list []Derive
@@ -126,7 +128,6 @@ func main() {
 		})
 	})
 
-	// UPLOAD VERARBEITEN (WebP + Storage)
 	e.POST("/upload", func(c echo.Context) error {
 		deriveNumber := c.FormValue("derive_number")
 		file, err := c.FormFile("image")
@@ -134,7 +135,7 @@ func main() {
 			return c.String(http.StatusBadRequest, "Kein Bild gefunden")
 		}
 
-		// A. Bild dekodieren
+		// A. Bild dekodieren & WebP Konvertierung
 		src, _ := file.Open()
 		defer src.Close()
 		img, _, err := image.Decode(src)
@@ -142,28 +143,50 @@ func main() {
 			return c.String(http.StatusBadRequest, "Ungültiges Bildformat")
 		}
 
-		// B. WebP Konvertierung
 		var buf bytes.Buffer
 		options, _ := encoder.NewLossyEncoderOptions(encoder.PresetDefault, 75)
 		if err := webp.Encode(&buf, img, options); err != nil {
 			return c.String(http.StatusInternalServerError, "Optimierung fehlgeschlagen")
 		}
 
-		// C. Supabase Storage Upload
-		storageClient := storage_go.NewClient(
-			os.Getenv("SUPABASE_URL"), 
-			os.Getenv("SUPABASE_SERVICE_ROLE_KEY"), 
-			nil,
+		// B. S3 Client Setup aus ENV
+		cfg, err := config.LoadDefaultConfig(context.TODO(),
+			config.WithRegion(os.Getenv("S3_REGION")),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+				os.Getenv("S3_ACCESS_KEY"), 
+				os.Getenv("S3_SECRET_KEY"), 
+				""),
+			),
 		)
-
-		fileName := fmt.Sprintf("derive_%s.webp", deriveNumber)
-		_, err = storageClient.UploadFile("solutions", fileName, bytes.NewReader(buf.Bytes()))
 		if err != nil {
-			return c.String(http.StatusInternalServerError, "Storage Upload Error")
+			return c.String(http.StatusInternalServerError, "AWS Config Fehler")
+		}
+
+		s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+			o.BaseEndpoint = aws.String(os.Getenv("S3_ENDPOINT"))
+			// WICHTIG: Supabase benötigt PathStyle für S3
+			o.UsePathStyle = true
+		})
+
+		fileName := fmt.Sprintf("derive_%s_%d.webp", deriveNumber, time.Now().Unix())
+		
+		// C. S3 Upload
+		_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+			Bucket:      aws.String(os.Getenv("S3_BUCKET")),
+			Key:         aws.String(fileName),
+			Body:        bytes.NewReader(buf.Bytes()),
+			ContentType: aws.String("image/webp"),
+		})
+
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "S3 Upload Error: "+err.Error())
 		}
 
 		// D. Link in DB speichern
-		publicURL := fmt.Sprintf("%s/storage/v1/object/public/solutions/%s", os.Getenv("SUPABASE_URL"), fileName)
+		// Nutzt deine SUPABASE_URL (z.B. https://xyz.supabase.co) für den öffentlichen Link
+		publicURL := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", 
+			os.Getenv("SUPABASE_URL"), os.Getenv("S3_BUCKET"), fileName)
+			
 		_, err = db.Exec(context.Background(), 
 			"UPDATE deriven SET image_path = $1 WHERE number = $2", 
 			publicURL, deriveNumber)
@@ -175,7 +198,6 @@ func main() {
 		return c.Redirect(http.StatusSeeOther, "/deriven")
 	})
 
-	// SPIELREGELN
 	e.GET("/spielregeln", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "spielregeln.html", map[string]interface{}{
 			"Title": "Regeln - DÉRIVE 100",

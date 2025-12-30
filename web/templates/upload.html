@@ -1,0 +1,129 @@
+{{define "upload.html"}}
+{{template "header" .}}
+
+<style>
+    .upload-container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+        font-family: 'Courier New', Courier, monospace;
+    }
+    .form-group { margin-bottom: 25px; }
+    label { display: block; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; }
+    
+    input[type="text"], input[type="file"], .autocomplete-input {
+        width: 100%;
+        padding: 15px;
+        border: 4px solid #000;
+        font-size: 1.2rem;
+        box-sizing: border-box;
+    }
+
+    #drop-zone {
+        border: 4px dashed #000;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        background: #f0f0f0;
+        transition: background 0.2s;
+    }
+    #drop-zone:hover { background: #e0e0e0; }
+    #drop-zone.active { background: #ffff00; }
+
+    #preview {
+        display: none;
+        margin-top: 20px;
+        max-width: 100%;
+        border: 4px solid #000;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 20px;
+        background: #000;
+        color: #fff;
+        border: none;
+        font-weight: 900;
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+    .submit-btn:hover { background: #ffff00; color: #000; }
+    .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+</style>
+
+<div class="upload-container">
+    <h1 style="border-bottom: 8px solid #000; padding-bottom: 10px; text-transform: uppercase;">Contribution</h1>
+
+    <form action="/upload" method="POST" enctype="multipart/form-data" id="uploadForm">
+        
+        <div class="form-group">
+            <label for="deriveInput">Task Number / Title</label>
+            <input list="derivenList" name="derive_number" id="deriveInput" class="autocomplete-input" placeholder="Search..." required>
+            <datalist id="derivenList">
+                {{range .Deriven}}
+                <option value="{{.Number}}">{{.Title}}</option>
+                {{end}}
+            </datalist>
+        </div>
+
+        <div class="form-group">
+            <label>The Evidence</label>
+            <div id="drop-zone">
+                <span id="drop-text">DROP IMAGE OR CLICK TO BROWSE</span>
+                <input type="file" name="image" id="fileInput" hidden accept="image/*" required>
+                <img id="preview" src="#" alt="Preview">
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Send to Database</button>
+    </form>
+</div>
+
+<script>
+    const dz = document.getElementById('drop-zone');
+    const fi = document.getElementById('fileInput');
+    const pr = document.getElementById('preview');
+    const dt = document.getElementById('drop-text');
+
+    dz.addEventListener('click', () => fi.click());
+
+    dz.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dz.classList.add('active');
+    });
+
+    dz.addEventListener('dragleave', () => dz.classList.remove('active'));
+
+    dz.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dz.classList.remove('active');
+        if (e.dataTransfer.files.length) {
+            fi.files = e.dataTransfer.files;
+            updatePreview(e.dataTransfer.files[0]);
+        }
+    });
+
+    fi.addEventListener('change', (e) => {
+        if (e.target.files.length) updatePreview(e.target.files[0]);
+    });
+
+    function updatePreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            pr.src = e.target.result;
+            pr.style.display = 'block';
+            dt.style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+    }
+
+    document.getElementById('uploadForm').onsubmit = function() {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "OPTIMIZING WEB P...";
+    };
+</script>
+
+{{template "footer" .}}
+{{end}}
