@@ -33,7 +33,18 @@ type Template struct {
 }
 
 func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	// Wir rendern immer das Layout, Echo wählt durch den Kontext den richtigen 'content' Block
+	// Wenn ein Content-Template angegeben ist, rendern wir es zuerst und injizieren
+	// das Ergebnis als unescaped HTML in `ContentHTML`, bevor wir das Layout ausgeben.
+	if m, ok := data.(map[string]interface{}); ok {
+		if ct, ok := m["ContentTemplate"].(string); ok && ct != "" {
+			var buf bytes.Buffer
+			if err := t.templates.ExecuteTemplate(&buf, ct, m); err != nil {
+				return err
+			}
+			m["ContentHTML"] = template.HTML(buf.String())
+		}
+	}
+
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
@@ -66,9 +77,16 @@ func main() {
 	comps, _ := filepath.Glob("web/templates/components/*.html")
 	files = append(files, comps...)
 
-	t := &Template{
-		templates: template.Must(template.ParseFiles(files...)),
+	// Parse templates with a small FuncMap (eq) used for active nav highlighting
+	funcs := template.FuncMap{
+		"eq": func(a, b string) bool { return a == b },
 	}
+	tmpl := template.New("").Funcs(funcs)
+	tmpls, err := tmpl.ParseFiles(files...)
+	if err != nil {
+		log.Fatalf("failed to parse templates %v: %v", files, err)
+	}
+	t := &Template{templates: tmpls}
 	e.Renderer = t
 
 	// Statische Dateien
@@ -78,15 +96,25 @@ func main() {
 
 	// HOME
 	e.GET("/", func(c echo.Context) error {
+		assignments := make([]int, 100)
+		for i := range assignments {
+			assignments[i] = i + 1
+		}
+
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
-			"Title": "🏠🆔💯 DÉRIVE 100",
+			"Title":           "🏠🆔💯 DÉRIVE 100",
+			"Assignments":     assignments,
+			"ContentTemplate": "index.content",
+			"CurrentPath":      c.Request().URL.Path,
 		})
 	})
 
 	// LISTE ALLER DERIVEN
 	e.GET("/deriven", func(c echo.Context) error {
 		page, _ := strconv.Atoi(c.QueryParam("page"))
-		if page < 1 { page = 1 }
+		if page < 1 {
+			page = 1
+		}
 		limit := 20
 		offset := (page - 1) * limit
 
@@ -123,13 +151,15 @@ func main() {
 		}
 
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
-			"Title":       "Index - DÉRIVE 100",
-			"Deriven":     deriven,
-			"CurrentPage": page,
-			"HasNext":     len(deriven) == limit,
-			"HasPrev":     page > 1,
-			"NextPage":    page + 1,
-			"PrevPage":    page - 1,
+			"Title":           "Index - DÉRIVE 100",
+			"Deriven":         deriven,
+			"CurrentPage":     page,
+			"HasNext":         len(deriven) == limit,
+			"HasPrev":         page > 1,
+			"NextPage":        page + 1,
+			"PrevPage":        page - 1,
+			"ContentTemplate": "deriven.content",
+			"CurrentPath":      c.Request().URL.Path,
 		})
 	})
 
@@ -167,9 +197,11 @@ func main() {
 		}
 
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
-			"Title":         fmt.Sprintf("#%d %s", d.Number, d.Title),
-			"Derive":        d,
-			"Contributions": contribs,
+			"Title":           fmt.Sprintf("#%d %s", d.Number, d.Title),
+			"Derive":          d,
+			"Contributions":   contribs,
+			"ContentTemplate": "derive_detail.content",
+			"CurrentPath":      c.Request().URL.Path,
 		})
 	})
 
@@ -191,8 +223,10 @@ func main() {
 			list = append(list, d)
 		}
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
-			"Title":   "Submit Evidence - DÉRIVE 100",
-			"Deriven": list,
+			"Title":           "Submit Evidence - DÉRIVE 100",
+			"Deriven":         list,
+			"ContentTemplate": "upload.content",
+			"CurrentPath":      c.Request().URL.Path,
 		})
 	})
 
@@ -263,7 +297,18 @@ func main() {
 
 	e.GET("/spielregeln", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
-			"Title": "Regeln - DÉRIVE 100",
+			"Title":           "Regeln - DÉRIVE 100",
+			"ContentTemplate": "spielregeln.content",
+			"CurrentPath":      c.Request().URL.Path,
+		})
+	})
+
+	// ABOUT
+	e.GET("/about", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "layout", map[string]interface{}{
+			"Title":           "Über - DÉRIVE 100",
+			"ContentTemplate": "about.content",
+			"CurrentPath":      c.Request().URL.Path,
 		})
 	})
 

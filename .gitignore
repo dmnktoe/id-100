@@ -21,10 +21,15 @@ derive100
 # Air (Live Reload) Temp Dateien
 /tmp
 
+# Temporary logs
+tmp.log
+
+# Temporary build artifacts
+tmp/
+
 # Environment Files (Sensible Daten wie S3 Keys)
 .env
 .env.local
 
 # Docker
 .docker/
-id-100
