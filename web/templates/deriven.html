@@ -1,0 +1,43 @@
+{{define "deriven.html"}}
+    {{template "header" .}}
+    <main class="content p-4">
+        <h2 class="text-3xl font-black uppercase mb-6 border-b-4 border-black inline-block">Index: 100 Deriven</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {{range .Deriven}}
+            <a href="/derive/{{.Number}}" class="border-2 border-black p-4 hover:bg-yellow-400 transition-colors flex flex-col justify-between aspect-square group">
+                <div>
+                    <span class="font-mono text-xs block opacity-50">#{{printf "%03d" .Number}}</span>
+                    <h3 class="font-black uppercase text-xl group-hover:underline">{{.Title}}</h3>
+                </div>
+                <p class="text-[10px] leading-tight font-mono line-clamp-3">
+                    {{.Description}}
+                </p>
+            </a>
+            {{end}}
+        </div>
+
+        <nav class="flex justify-between items-center border-t-2 border-black pt-4 font-mono font-bold">
+            <div>
+                {{if .HasPrev}}
+                    <a href="/deriven?page={{.PrevPage}}" class="bg-black text-white px-4 py-2 hover:bg-yellow-400 hover:text-black">← ZURÜCK</a>
+                {{else}}
+                    <span class="opacity-30">← ZURÜCK</span>
+                {{end}}
+            </div>
+
+            <div class="text-sm">
+                SEITE {{.CurrentPage}} / 5
+            </div>
+
+            <div>
+                {{if .HasNext}}
+                    <a href="/deriven?page={{.NextPage}}" class="bg-black text-white px-4 py-2 hover:bg-yellow-400 hover:text-black">WEITER →</a>
+                {{else}}
+                    <span class="opacity-30">WEITER →</span>
+                {{end}}
+            </div>
+        </nav>
+    </main>
+    {{template "footer" .}}
+{{end}}

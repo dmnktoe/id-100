@@ -1,29 +1,38 @@
 root = "."
-testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-args_bin = []
-cmd = "go build -o tmp/main ./cmd/id-100"
-entrypoint = "tmp/main"
+# Best Practice: Wir bauen das gesamte Package-Verzeichnis.
+# Das sorgt dafür, dass alle Dateien im Ordner (main.go, database.go) berücksichtigt werden.
+cmd = "go build -o ./tmp/main ./cmd/id-100"
+
+# Der Pfad zur fertigen Binary
+bin = "./tmp/main"
+
+# WICHTIG: Verzögerung etwas erhöhen, damit Air nicht bei jedem "Save" 
+# sofort losrennt, während man noch tippt (1000ms ist gut).
 delay = 1000
-exclude_dir = ["bin", ".git", "tmp", "vendor", "testdata"]
-exclude_file = []
-exclude_regex = ["_test.go"]
-exclude_unchanged = false
-follow_symlink = false
-full_bin = ""
-include_dir = ["cmd", "web"]
-include_ext = ["go", "tpl", "tmpl", "html", "css", "js"]
-include_file = []
-kill_delay = "0s"
-log = "build-errors.log"
-poll = false
-poll_interval = 0
-rerun = false
-rerun_delay = 500
+
+# Überwache alle relevanten Ordner
+include_dir = ["cmd", "web", "internal", "pkg"]
+
+# Erweitert um .env (damit DB-Änderungen den Server neu starten)
+include_ext = ["go", "tpl", "tmpl", "html", "css", "js", "env"]
+
+# Verzeichnisse ausschließen, um CPU zu sparen
+exclude_dir = ["bin", ".git", "tmp", "vendor", "testdata", "node_modules"]
+
+# Kill delay hilft dabei, dass der Port :8080 wirklich frei ist, 
+# bevor der neue Prozess startet (verhindert "address already in use")
+kill_delay = "500ms"
+
+# Sendet ein SIGINT statt SIGKILL, damit Go's defer-Statements 
+# (wie db.Close()) noch sauber ausgeführt werden können.
 send_interrupt = true
-stop_on_root = false
+
+[screen]
+# Macht das Terminal bei jedem Rebuild leer -> bessere Übersicht
+clear_on_rebuild = true
 
 [color]
 app = ""
@@ -37,8 +46,5 @@ main_only = false
 time = true
 
 [misc]
+# Löscht die Binary im tmp Ordner beim Beenden von Air
 clean_on_exit = true
-
-[screen]
-clear_on_rebuild = true
-keep_scroll = false
