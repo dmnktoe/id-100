@@ -1,43 +1,51 @@
-{{define "deriven.html"}}
-    {{template "header" .}}
-    <main class="content p-4">
-        <h2 class="text-3xl font-black uppercase mb-6 border-b-4 border-black inline-block">Index: 100 Deriven</h2>
+{{define "content"}}
+    <div class="index-container">
+        <h2 class="index-title">Index: 100 Deriven</h2>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="derive-grid">
             {{range .Deriven}}
-            <a href="/derive/{{.Number}}" class="border-2 border-black p-4 hover:bg-yellow-400 transition-colors flex flex-col justify-between aspect-square group">
-                <div>
-                    <span class="font-mono text-xs block opacity-50">#{{printf "%03d" .Number}}</span>
-                    <h3 class="font-black uppercase text-xl group-hover:underline">{{.Title}}</h3>
+            <a href="/derive/{{.Number}}" class="derive-card">
+                <div class="card-image-box">
+                    {{if .ImageUrl}}
+                        <img src="{{.ImageUrl}}" alt="{{.Title}}" class="card-img">
+                    {{else}}
+                        <div class="no-image">NO EVIDENCE</div>
+                    {{end}}
+                    
+                    <div class="contrib-badge">
+                        {{.ContribCount}} SOLVED
+                    </div>
                 </div>
-                <p class="text-[10px] leading-tight font-mono line-clamp-3">
-                    {{.Description}}
-                </p>
+
+                <div class="card-content">
+                    <span class="card-number">#{{printf "%03d" .Number}}</span>
+                    <h3 class="card-title">{{.Title}}</h3>
+                    <p class="card-desc">{{.Description}}</p>
+                </div>
             </a>
             {{end}}
         </div>
 
-        <nav class="flex justify-between items-center border-t-2 border-black pt-4 font-mono font-bold">
-            <div>
+        <nav class="pagination">
+            <div class="nav-btn">
                 {{if .HasPrev}}
-                    <a href="/deriven?page={{.PrevPage}}" class="bg-black text-white px-4 py-2 hover:bg-yellow-400 hover:text-black">← ZURÜCK</a>
+                    <a href="/deriven?page={{.PrevPage}}" class="btn-black">← ZURÜCK</a>
                 {{else}}
-                    <span class="opacity-30">← ZURÜCK</span>
+                    <span class="btn-disabled">← ZURÜCK</span>
                 {{end}}
             </div>
 
-            <div class="text-sm">
+            <div class="page-info">
                 SEITE {{.CurrentPage}} / 5
             </div>
 
-            <div>
+            <div class="nav-btn">
                 {{if .HasNext}}
-                    <a href="/deriven?page={{.NextPage}}" class="bg-black text-white px-4 py-2 hover:bg-yellow-400 hover:text-black">WEITER →</a>
+                    <a href="/deriven?page={{.NextPage}}" class="btn-black">WEITER →</a>
                 {{else}}
-                    <span class="opacity-30">WEITER →</span>
+                    <span class="btn-disabled">WEITER →</span>
                 {{end}}
             </div>
         </nav>
-    </main>
-    {{template "footer" .}}
+    </div>
 {{end}}

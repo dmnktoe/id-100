@@ -1,6 +1,5 @@
-{{define "index.html"}}
-    {{template "header" .}}
-    <main class="content">
+{{define "content"}}
+    <div class="content">
         <div class="grid">
             {{range .Assignments}}
             <div class="card">
@@ -10,6 +9,5 @@
             </div>
             {{end}}
         </div>
-    </main>
-    {{template "footer" .}}
+    </div>
 {{end}}

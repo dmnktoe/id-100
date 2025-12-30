@@ -3,19 +3,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}}</title>
-    <style>
-        :root { --pad: calc(1rem * 0.75); }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Helvetica', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        main { flex: 1; overflow-y: auto; padding: var(--pad); }
-    </style>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    {{template "header" .}} <main>
-        <!-- page content is rendered directly in page templates --> </main>
+    <div class="page-wrapper">
+        {{template "header" .}}
+        
+        <main>
+            {{template "content" .}} </main>
 
-    {{template "footer" .}}
+        {{template "footer" .}}
+    </div>
 </body>
 </html>
 {{end}}

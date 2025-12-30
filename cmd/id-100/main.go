@@ -33,20 +33,22 @@ type Template struct {
 }
 
 func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	// Wir rendern immer das Layout, Echo wählt durch den Kontext den richtigen 'content' Block
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-// Datenstruktur angepasst an JOIN-Abfrage
+// Datenstruktur
 type Derive struct {
-	ID          int    `json:"id"`
-	Number      int    `json:"number"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	ImageUrl    string `json:"image_url"` // Jetzt aus der contributions Tabelle
+	ID           int    `json:"id"`
+	Number       int    `json:"number"`
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	ImageUrl     string `json:"image_url"`
+	ContribCount int    `json:"contrib_count"`
 }
 
 func main() {
-	// 1. DB Verbindung initialisieren
+	// 1. DB Verbindung initialisieren (Funktion muss in deiner database.go stehen)
 	initDatabase()
 	defer db.Close()
 
@@ -63,7 +65,7 @@ func main() {
 	}
 	comps, _ := filepath.Glob("web/templates/components/*.html")
 	files = append(files, comps...)
-	
+
 	t := &Template{
 		templates: template.Must(template.ParseFiles(files...)),
 	}
@@ -74,30 +76,33 @@ func main() {
 
 	// --- ROUTES ---
 
+	// HOME
 	e.GET("/", func(c echo.Context) error {
-		return c.Render(http.StatusOK, "index.html", map[string]interface{}{
+		return c.Render(http.StatusOK, "layout", map[string]interface{}{
 			"Title": "🏠🆔💯 DÉRIVE 100",
 		})
 	})
 
-	// LISTE ALLER DERIVEN (Mit JOIN auf Contributions)
+	// LISTE ALLER DERIVEN
 	e.GET("/deriven", func(c echo.Context) error {
 		page, _ := strconv.Atoi(c.QueryParam("page"))
 		if page < 1 { page = 1 }
 		limit := 20
 		offset := (page - 1) * limit
 
-		// Query nutzt einen Lateral Join, um pro Aufgabe das aktuellste Bild zu finden
 		query := `
-			SELECT d.id, d.number, d.title, d.description, COALESCE(c.image_url, '') 
-			FROM deriven d
-			LEFT JOIN LATERAL (
-				SELECT image_url FROM contributions 
-				WHERE derive_id = d.id 
-				ORDER BY created_at DESC LIMIT 1
-			) c ON true
-			ORDER BY d.number ASC 
-			LIMIT $1 OFFSET $2`
+            SELECT 
+                d.id, d.number, d.title, d.description, 
+                COALESCE(c.image_url, ''),
+                (SELECT COUNT(*) FROM contributions WHERE derive_id = d.id) as contrib_count
+            FROM deriven d
+            LEFT JOIN LATERAL (
+                SELECT image_url FROM contributions 
+                WHERE derive_id = d.id 
+                ORDER BY created_at DESC LIMIT 1
+            ) c ON true
+            ORDER BY d.number ASC 
+            LIMIT $1 OFFSET $2`
 
 		rows, err := db.Query(context.Background(), query, limit, offset)
 		if err != nil {
@@ -109,13 +114,15 @@ func main() {
 		var deriven []Derive
 		for rows.Next() {
 			var d Derive
-			if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl); err != nil {
+			// Scan von 6 Feldern passend zum SELECT
+			if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.ContribCount); err != nil {
+				log.Printf("Scan Error: %v", err)
 				return err
 			}
 			deriven = append(deriven, d)
 		}
 
-		return c.Render(http.StatusOK, "deriven.html", map[string]interface{}{
+		return c.Render(http.StatusOK, "layout", map[string]interface{}{
 			"Title":       "Index - DÉRIVE 100",
 			"Deriven":     deriven,
 			"CurrentPage": page,
@@ -126,20 +133,70 @@ func main() {
 		})
 	})
 
+	// DETAILSEITE
+	e.GET("/derive/:number", func(c echo.Context) error {
+		num := c.Param("number")
+		var d Derive
+		query := `
+            SELECT d.id, d.number, d.title, d.description, COALESCE(c.image_url, '')
+            FROM deriven d
+            LEFT JOIN LATERAL (
+                SELECT image_url FROM contributions WHERE derive_id = d.id ORDER BY created_at DESC LIMIT 1
+            ) c ON true
+            WHERE d.number = $1`
+
+		err := db.QueryRow(context.Background(), query, num).Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl)
+		if err != nil {
+			return c.Redirect(http.StatusSeeOther, "/deriven")
+		}
+
+		rows, _ := db.Query(context.Background(),
+			"SELECT image_url, user_name, created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
+		defer rows.Close()
+
+		type Contribution struct {
+			ImageUrl  string
+			UserName  string
+			CreatedAt time.Time
+		}
+		var contribs []Contribution
+		for rows.Next() {
+			var ct Contribution
+			rows.Scan(&ct.ImageUrl, &ct.UserName, &ct.CreatedAt)
+			contribs = append(contribs, ct)
+		}
+
+		return c.Render(http.StatusOK, "layout", map[string]interface{}{
+			"Title":         fmt.Sprintf("#%d %s", d.Number, d.Title),
+			"Derive":        d,
+			"Contributions": contribs,
+		})
+	})
+
+	// UPLOAD FORMULAR
 	e.GET("/upload", func(c echo.Context) error {
-		rows, _ := db.Query(context.Background(), "SELECT number, title FROM deriven ORDER BY number ASC")
+		rows, err := db.Query(context.Background(), "SELECT number, title FROM deriven ORDER BY number ASC")
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "Datenbankfehler")
+		}
+		defer rows.Close()
+
 		var list []Derive
 		for rows.Next() {
 			var d Derive
-			rows.Scan(&d.Number, &d.Title)
+			// Hier nur 2 Felder scannen, da SELECT nur number, title holt
+			if err := rows.Scan(&d.Number, &d.Title); err != nil {
+				return err
+			}
 			list = append(list, d)
 		}
-		return c.Render(http.StatusOK, "upload.html", map[string]interface{}{
+		return c.Render(http.StatusOK, "layout", map[string]interface{}{
 			"Title":   "Submit Evidence - DÉRIVE 100",
 			"Deriven": list,
 		})
 	})
 
+	// POST UPLOAD LOGIK
 	e.POST("/upload", func(c echo.Context) error {
 		deriveNumberStr := c.FormValue("derive_number")
 		file, err := c.FormFile("image")
@@ -147,7 +204,6 @@ func main() {
 			return c.String(http.StatusBadRequest, "Kein Bild gefunden")
 		}
 
-		// A. Bild dekodieren & WebP Konvertierung
 		src, _ := file.Open()
 		defer src.Close()
 		img, _, err := image.Decode(src)
@@ -156,16 +212,13 @@ func main() {
 		}
 		var buf bytes.Buffer
 		options, _ := encoder.NewLossyEncoderOptions(encoder.PresetDefault, 75)
-		if err := webp.Encode(&buf, img, options); err != nil {
-			return c.String(http.StatusInternalServerError, "WebP Fehler")
-		}
+		webp.Encode(&buf, img, options)
 
-		// B. S3 Client Setup aus ENV
 		cfg, _ := config.LoadDefaultConfig(context.TODO(),
 			config.WithRegion(os.Getenv("S3_REGION")),
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-				os.Getenv("S3_ACCESS_KEY"), 
-				os.Getenv("S3_SECRET_KEY"), 
+				os.Getenv("S3_ACCESS_KEY"),
+				os.Getenv("S3_SECRET_KEY"),
 				""),
 			),
 		)
@@ -175,8 +228,7 @@ func main() {
 		})
 
 		fileName := fmt.Sprintf("derive_%s_%d.webp", deriveNumberStr, time.Now().Unix())
-		
-		// C. S3 Upload
+
 		_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 			Bucket:      aws.String(os.Getenv("S3_BUCKET")),
 			Key:         aws.String(fileName),
@@ -187,33 +239,30 @@ func main() {
 			return c.String(http.StatusInternalServerError, "S3 Fehler: "+err.Error())
 		}
 
-		// D. DATENBANK LOGIK
-		publicURL := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", 
+		publicURL := fmt.Sprintf("%s/storage/v1/object/public/%s/%s",
 			os.Getenv("SUPABASE_URL"), os.Getenv("S3_BUCKET"), fileName)
 
-		// 1. Die interne ID der Derive-Aufgabe anhand der Nummer holen
 		var internalID int
-		err = db.QueryRow(context.Background(), 
+		err = db.QueryRow(context.Background(),
 			"SELECT id FROM deriven WHERE number = $1", deriveNumberStr).Scan(&internalID)
 		if err != nil {
 			return c.String(http.StatusNotFound, "Aufgabe nicht gefunden")
 		}
 
-		// 2. Neue Zeile in CONTRIBUTIONS einfügen
-		_, err = db.Exec(context.Background(), 
-			"INSERT INTO contributions (derive_id, image_url, user_name) VALUES ($1, $2, $3)", 
+		_, err = db.Exec(context.Background(),
+			"INSERT INTO contributions (derive_id, image_url, user_name) VALUES ($1, $2, $3)",
 			internalID, publicURL, "Anonym")
 
 		if err != nil {
 			log.Printf("DB Error: %v", err)
-			return c.String(http.StatusInternalServerError, "Datenbankfehler beim Speichern der Contribution")
+			return c.String(http.StatusInternalServerError, "DB Error")
 		}
 
 		return c.Redirect(http.StatusSeeOther, "/deriven")
 	})
 
 	e.GET("/spielregeln", func(c echo.Context) error {
-		return c.Render(http.StatusOK, "spielregeln.html", map[string]interface{}{
+		return c.Render(http.StatusOK, "layout", map[string]interface{}{
 			"Title": "Regeln - DÉRIVE 100",
 		})
 	})
