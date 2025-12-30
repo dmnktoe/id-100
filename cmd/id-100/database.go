@@ -8,10 +8,10 @@ import (
 	"os"
 )
 
-var db *pgxpool.Pool // Global erreichbar für main.go
+var db *pgxpool.Pool
 
 func initDatabase() {
-	godotenv.Load() // Lädt .env aus dem Root
+	godotenv.Load()
 	connStr := os.Getenv("DATABASE_URL")
 
 	var err error

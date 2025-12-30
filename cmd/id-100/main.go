@@ -27,14 +27,11 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// Template Renderer für Echo
 type Template struct {
 	templates *template.Template
 }
 
 func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	// Wenn ein Content-Template angegeben ist, rendern wir es zuerst und injizieren
-	// das Ergebnis als unescaped HTML in `ContentHTML`, bevor wir das Layout ausgeben.
 	if m, ok := data.(map[string]interface{}); ok {
 		if ct, ok := m["ContentTemplate"].(string); ok && ct != "" {
 			var buf bytes.Buffer
@@ -48,7 +45,6 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-// Datenstruktur
 type Derive struct {
 	ID           int    `json:"id"`
 	Number       int    `json:"number"`
@@ -59,17 +55,14 @@ type Derive struct {
 }
 
 func main() {
-	// 1. DB Verbindung initialisieren (Funktion muss in deiner database.go stehen)
 	initDatabase()
 	defer db.Close()
 
 	e := echo.New()
 
-	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	// 2. Templates laden
 	files, err := filepath.Glob("web/templates/*.html")
 	if err != nil {
 		log.Fatal(err)
@@ -77,7 +70,6 @@ func main() {
 	comps, _ := filepath.Glob("web/templates/components/*.html")
 	files = append(files, comps...)
 
-	// Parse templates with a small FuncMap (eq) used for active nav highlighting
 	funcs := template.FuncMap{
 		"eq": func(a, b string) bool { return a == b },
 	}
@@ -89,12 +81,10 @@ func main() {
 	t := &Template{templates: tmpls}
 	e.Renderer = t
 
-	// Statische Dateien
 	e.Static("/static", "web/static")
 
 	// --- ROUTES ---
 
-	// HOME
 	e.GET("/", func(c echo.Context) error {
 		assignments := make([]int, 100)
 		for i := range assignments {
@@ -109,7 +99,6 @@ func main() {
 		})
 	})
 
-	// LISTE ALLER DERIVEN
 	e.GET("/deriven", func(c echo.Context) error {
 		page, _ := strconv.Atoi(c.QueryParam("page"))
 		if page < 1 {
@@ -142,7 +131,6 @@ func main() {
 		var deriven []Derive
 		for rows.Next() {
 			var d Derive
-			// Scan von 6 Feldern passend zum SELECT
 			if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.ContribCount); err != nil {
 				log.Printf("Scan Error: %v", err)
 				return err
@@ -163,7 +151,6 @@ func main() {
 		})
 	})
 
-	// DETAILSEITE
 	e.GET("/derive/:number", func(c echo.Context) error {
 		num := c.Param("number")
 		var d Derive
@@ -205,7 +192,6 @@ func main() {
 		})
 	})
 
-	// UPLOAD FORMULAR
 	e.GET("/upload", func(c echo.Context) error {
 		rows, err := db.Query(context.Background(), "SELECT number, title FROM deriven ORDER BY number ASC")
 		if err != nil {
@@ -216,7 +202,6 @@ func main() {
 		var list []Derive
 		for rows.Next() {
 			var d Derive
-			// Hier nur 2 Felder scannen, da SELECT nur number, title holt
 			if err := rows.Scan(&d.Number, &d.Title); err != nil {
 				return err
 			}
@@ -230,7 +215,6 @@ func main() {
 		})
 	})
 
-	// POST UPLOAD LOGIK
 	e.POST("/upload", func(c echo.Context) error {
 		deriveNumberStr := c.FormValue("derive_number")
 		file, err := c.FormFile("image")
@@ -303,7 +287,6 @@ func main() {
 		})
 	})
 
-	// ABOUT
 	e.GET("/about", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
 			"Title":           "Über - DÉRIVE 100",
