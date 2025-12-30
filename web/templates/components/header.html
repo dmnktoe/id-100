@@ -1,11 +1,13 @@
 {{define "header"}}
-<header style="display: flex; height: 5rem; border-bottom: 1.5px solid #000;">
-    <div class="brand" style="flex: 0 0 50%; padding: var(--pad); display: flex; align-items: center;">
-        <h1 style="font-size: 2.5rem;">🏠🆔💯</h1>
+<link rel="stylesheet" href="/static/styles.css">
+<header class="site-header">
+    <div class="brand">
+        <h1>🏠🆔💯</h1>
     </div>
-    <nav style="flex: 0 0 50%; border-left: 1.5px solid #000; padding: var(--pad); display: flex; flex-direction: column; justify-content: center;">
-        <a href="/" style="text-decoration: none; color: #000; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">All Uploads</a>
-        <a href="/assignments" style="text-decoration: none; color: #000; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">1-100</a>
+    <nav class="main-nav">
+        <a href="/">All Uploads</a>
+        <a href="/assignments">1-100</a>
+        <a href="/spielregeln">Spielregeln</a>
     </nav>
 </header>
 {{end}}

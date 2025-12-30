@@ -62,8 +62,17 @@ func main() {
 		}
 
 		return c.Render(http.StatusOK, "index.html", map[string]interface{}{
-			"Title":       "🏠🆔💯 DÉRIVE 100",
-			"Assignments": assignments,
+			"Title":           "🏠🆔💯 DÉRIVE 100",
+			"Assignments":     assignments,
+			"ContentTemplate": "index.content",
+		})
+	})
+
+	e.GET("/spielregeln", func(c echo.Context) error {
+		log.Println("/spielregeln handler called")
+		return c.Render(http.StatusOK, "spielregeln.html", map[string]interface{}{
+			"Title":           "Spielregeln - 🏠🆔💯 DÉRIVE 100",
+			"ContentTemplate": "spielregeln.content",
 		})
 	})
 
