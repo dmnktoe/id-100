@@ -25,6 +25,15 @@
 <script>
 (function(){
   // Drawer logic (global)
+  // Track last visited 'index' or 'deriven' in sessionStorage so initial-load behavior can decide
+  // whether to convert a full detail page into a split (index + drawer).
+  const currentPath = location.pathname;
+  if (currentPath === '/' || currentPath === '') {
+    try { sessionStorage.setItem('lastVisited','index'); } catch(e){}
+  } else if (currentPath.startsWith('/deriven')) {
+    try { sessionStorage.setItem('lastVisited','deriven'); } catch(e){}
+  }
+
   const panel = document.getElementById('drawer-panel');
   const backdrop = document.getElementById('drawer-backdrop');
 
@@ -54,6 +63,9 @@
     })
 
     if(pushState) history.pushState({drawer: true, number: number}, '', '/derive/' + number);
+
+    // ensure lazy images inside the drawer are initialized
+    initLazyImages(panel);
   }
 
   backdrop.addEventListener('click', ()=> closeDrawer(true));
@@ -62,14 +74,23 @@
   document.addEventListener('click', (e)=>{
     const card = e.target.closest('.derive-card');
     if (!card) return;
-    e.preventDefault();
+
     const href = card.getAttribute('href') || card.querySelector('a')?.getAttribute('href');
     if(!href) return;
+
+    // If we're on the index page, prefer full page navigation (no drawer)
+    if (document.querySelector('.index-grid')) return; // allow default navigation
 
     // extract number from href /derive/:number
     const m = href.match(/\/derive\/(\d+)/);
     if(!m) return;
     const num = m[1];
+
+    // On mobile, prefer full page navigation
+    if (window.matchMedia('(max-width: 720px)').matches) return; // allow default navigation
+
+    // For deriven grid (desktop), always open SPA drawer on card click
+    e.preventDefault();
 
     fetch('/derive/' + num + '?partial=1')
       .then(r => {
@@ -102,6 +123,75 @@
       }
     }
   });
+
+  // On initial load: if URL is /derive/:number, prefer SPA drawer view:
+  // 1) If we're on the index page (derive-grid present), fetch partial and open drawer.
+  // 2) If the server rendered the full derive page (detail-container present), fetch the index
+  //    and replace the main content with it, then open the drawer using the existing detail HTML.
+  (function(){
+    const m = location.pathname.match(/\/derive\/(\d+)/);
+    if (!m) return;
+    const num = m[1];
+
+    // Case A: We're on index already (user refreshed while on index/derived path)
+    if (document.querySelector('.derive-grid')){
+      console.log('drawer:init - on index, fetching partial for', num);
+      fetch('/derive/' + num + '?partial=1')
+        .then(r => { if(!r.ok) throw new Error('fetch failed'); return r.text(); })
+        .then(html => openDrawer(num, html, false))
+        .catch(e => console.warn('drawer init load failed', e));
+      return;
+    }
+
+    // Case B: Server rendered the full derive page (e.g. user hit refresh while drawer was open)
+    // We want to convert the full page into index + drawer so the layout matches SPA behavior.
+    const detailEl = document.querySelector('.detail-container');
+    if (detailEl) {
+      // Only convert to split view when we last visited the deriven list or referrer was /deriven
+      const last = (function(){ try { return sessionStorage.getItem('lastVisited'); } catch(e){ return null; }})();
+      const refWasDeriven = (document.referrer || '').indexOf('/deriven') !== -1;
+      if (!refWasDeriven && last !== 'deriven'){
+        console.log('drawer:init - not converting full detail because lastVisited != deriven and ref not deriven');
+        return;
+      }
+
+      console.log('drawer:init - detected full derive page, converting to split view for', num);
+      const detailHtml = detailEl.outerHTML;
+      // fetch deriven page and replace site-content
+      fetch('/deriven').then(r => {
+        if(!r.ok) throw new Error('fetch deriven failed');
+        return r.text();
+      }).then(pageHtml => {
+        // parse the response and extract the main.site-content
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(pageHtml, 'text/html');
+        const main = doc.querySelector('.site-content');
+        if (main) {
+          console.log('drawer:init - replacing main content with deriven list');
+          document.querySelector('.site-content').innerHTML = main.innerHTML;
+          // open drawer with the detail HTML we already have
+          openDrawer(num, detailHtml, false);
+        } else {
+          console.warn('drawer:init - failed to find .site-content in fetched deriven');
+          // fallback to index
+          fetch('/').then(r=>r.text()).then(pg=>{
+            const d = new DOMParser().parseFromString(pg, 'text/html');
+            const m = d.querySelector('.site-content');
+            if(m) document.querySelector('.site-content').innerHTML = m.innerHTML;
+            openDrawer(num, detailHtml, false);
+          }).catch(()=>openDrawer(num, detailHtml, false));
+        }
+      }).catch(e => {
+        console.warn('drawer init (full->split) failed', e);
+        // fallback: just open drawer on current page
+        openDrawer(num, detailHtml, false);
+      });
+    }
+  })();
+
+  // initialize lazy images on first paint
+  initLazyImages();
+
 })();
 </script>
 </body>

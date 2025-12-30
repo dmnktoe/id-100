@@ -19,7 +19,7 @@
                 {{range .Contributions}}
                 <div class="evidence-card">
                     <div class="evidence-img-wrapper">
-                        <img src="{{.ImageUrl}}" alt="Beweisfoto" loading="lazy">
+                        <img class="lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="Beweisfoto">
                     </div>
                     <div class="evidence-meta">
                         <span class="user-tag">BY: {{.UserName}}</span>

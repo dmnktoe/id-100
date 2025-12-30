@@ -7,7 +7,7 @@
             <a href="/derive/{{.Number}}" class="derive-card">
                 <div class="card-image-box">
                     {{if .ImageUrl}}
-                        <img src="{{.ImageUrl}}" alt="{{.Title}}" class="card-img">
+                        <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="{{.Title}}">
                     {{else}}
                         <div class="no-image">NO EVIDENCE</div>
                     {{end}}
