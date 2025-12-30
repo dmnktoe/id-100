@@ -1,23 +1,25 @@
 {{define "derive_detail.content"}}
     <main class="detail-container">
+        <button class="drawer-close" aria-label="close">✕</button>
+
         <header class="detail-header">
             <div class="meta-info">
                 <span class="badge-id">ID #{{printf "%03d" .Derive.Number}}</span>
             </div>
             <h1 class="detail-title">{{.Derive.Title}}</h1>
             <p class="detail-description">{{.Derive.Description}}</p>
-            
+
             <a href="/upload" class="btn-action">EVIDENCE HOCHLADEN</a>
         </header>
 
         <section class="contributions-section">
             <h2 class="section-label">Eingereichte Beweise ({{len .Contributions}})</h2>
-            
+
             <div class="evidence-grid">
                 {{range .Contributions}}
                 <div class="evidence-card">
                     <div class="evidence-img-wrapper">
-                        <img src="https://abjrgsgtwtaqfunrdpig.supabase.co{{.ImageUrl}}" alt="Beweisfoto" loading="lazy">
+                        <img src="{{.ImageUrl}}" alt="Beweisfoto" loading="lazy">
                     </div>
                     <div class="evidence-meta">
                         <span class="user-tag">BY: {{.UserName}}</span>

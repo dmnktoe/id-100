@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -54,6 +55,22 @@ type Derive struct {
 	ContribCount int    `json:"contrib_count"`
 }
 
+// ensureFullImageURL makes sure stored image URLs are usable in templates.
+// Handles absolute URLs, leading-path ("/storage/...") and bare paths.
+func ensureFullImageURL(raw string) string {
+	if raw == "" {
+		return ""
+	}
+	if strings.HasPrefix(raw, "http://") || strings.HasPrefix(raw, "https://") {
+		return raw
+	}
+	base := strings.TrimRight(os.Getenv("SUPABASE_URL"), "/")
+	if strings.HasPrefix(raw, "/") {
+		return base + raw
+	}
+	return base + "/" + raw
+}
+
 func main() {
 	initDatabase()
 	defer db.Close()
@@ -86,16 +103,49 @@ func main() {
 	// --- ROUTES ---
 
 	e.GET("/", func(c echo.Context) error {
-		assignments := make([]int, 100)
-		for i := range assignments {
-			assignments[i] = i + 1
+		// fetch latest contributions with derive meta
+		rows, err := db.Query(context.Background(), `
+			SELECT c.image_url, c.user_name, c.created_at, d.number, d.title
+			FROM contributions c
+			JOIN deriven d ON d.id = c.derive_id
+			ORDER BY c.created_at DESC
+			LIMIT $1`, 5)
+		if err != nil {
+			log.Printf("Query Error (recent contributions): %v", err)
+			// fallback render with empty list
+			return c.Render(http.StatusOK, "layout", map[string]interface{}{
+				"Title":           "🏠🆔💯 DÉRIVE 100",
+				"RecentContribs":  []interface{}{},
+				"ContentTemplate": "index.content",
+				"CurrentPath":     c.Request().URL.Path,
+			})
+		}
+		defer rows.Close()
+
+		type RecentContribution struct {
+			ImageUrl  string
+			UserName  string
+			CreatedAt time.Time
+			Number    int
+			Title     string
+		}
+		var recent []RecentContribution
+		for rows.Next() {
+			var r RecentContribution
+			if err := rows.Scan(&r.ImageUrl, &r.UserName, &r.CreatedAt, &r.Number, &r.Title); err != nil {
+				log.Printf("Scan Error: %v", err)
+				continue
+			}
+			// Normalize image URL so templates can use it as-is
+			r.ImageUrl = ensureFullImageURL(r.ImageUrl)
+			recent = append(recent, r)
 		}
 
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
 			"Title":           "🏠🆔💯 DÉRIVE 100",
-			"Assignments":     assignments,
+			"RecentContribs":  recent,
 			"ContentTemplate": "index.content",
-			"CurrentPath":      c.Request().URL.Path,
+			"CurrentPath":     c.Request().URL.Path,
 		})
 	})
 
@@ -135,6 +185,8 @@ func main() {
 				log.Printf("Scan Error: %v", err)
 				return err
 			}
+			// Normalize image URL
+			d.ImageUrl = ensureFullImageURL(d.ImageUrl)
 			deriven = append(deriven, d)
 		}
 
@@ -147,7 +199,7 @@ func main() {
 			"NextPage":        page + 1,
 			"PrevPage":        page - 1,
 			"ContentTemplate": "deriven.content",
-			"CurrentPath":      c.Request().URL.Path,
+			"CurrentPath":     c.Request().URL.Path,
 		})
 	})
 
@@ -180,7 +232,17 @@ func main() {
 		for rows.Next() {
 			var ct Contribution
 			rows.Scan(&ct.ImageUrl, &ct.UserName, &ct.CreatedAt)
+			// Normalize contribution image URL
+			ct.ImageUrl = ensureFullImageURL(ct.ImageUrl)
 			contribs = append(contribs, ct)
+		}
+
+		// If requested as a partial (AJAX), return only the detail fragment
+		if c.QueryParam("partial") == "1" {
+			return c.Render(http.StatusOK, "derive_detail.content", map[string]interface{}{
+				"Derive":        d,
+				"Contributions": contribs,
+			})
 		}
 
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
@@ -188,7 +250,7 @@ func main() {
 			"Derive":          d,
 			"Contributions":   contribs,
 			"ContentTemplate": "derive_detail.content",
-			"CurrentPath":      c.Request().URL.Path,
+			"CurrentPath":     c.Request().URL.Path,
 		})
 	})
 
@@ -211,7 +273,7 @@ func main() {
 			"Title":           "Submit Evidence - DÉRIVE 100",
 			"Deriven":         list,
 			"ContentTemplate": "upload.content",
-			"CurrentPath":      c.Request().URL.Path,
+			"CurrentPath":     c.Request().URL.Path,
 		})
 	})
 
@@ -283,7 +345,7 @@ func main() {
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
 			"Title":           "Regeln - DÉRIVE 100",
 			"ContentTemplate": "spielregeln.content",
-			"CurrentPath":      c.Request().URL.Path,
+			"CurrentPath":     c.Request().URL.Path,
 		})
 	})
 
@@ -291,7 +353,7 @@ func main() {
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
 			"Title":           "Über - DÉRIVE 100",
 			"ContentTemplate": "about.content",
-			"CurrentPath":      c.Request().URL.Path,
+			"CurrentPath":     c.Request().URL.Path,
 		})
 	})
 

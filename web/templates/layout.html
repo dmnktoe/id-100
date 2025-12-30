@@ -11,11 +11,99 @@
     <div class="page-wrapper">
         {{template "header" .}}
         
-        <main>
-            {{.ContentHTML}} </main>
+        <main class="site-content">
+            {{.ContentHTML}}
+        </main>
 
         {{template "footer" .}}
+
+        <!-- Drawer elements (global) -->
+        <div class="drawer-backdrop" id="drawer-backdrop" aria-hidden="true"></div>
+        <aside class="drawer-panel" id="drawer-panel" aria-hidden="true"></aside>
     </div>
+
+<script>
+(function(){
+  // Drawer logic (global)
+  const panel = document.getElementById('drawer-panel');
+  const backdrop = document.getElementById('drawer-backdrop');
+
+  function closeDrawer(pushBack){
+    document.body.classList.remove('drawer-open');
+    panel.innerHTML = '';
+    panel.setAttribute('aria-hidden','true');
+    backdrop.setAttribute('aria-hidden','true');
+    if(pushBack) history.back();
+  }
+
+  function openDrawer(number, html, pushState){
+    panel.innerHTML = html;
+    panel.setAttribute('aria-hidden','false');
+    backdrop.setAttribute('aria-hidden','false');
+    document.body.classList.add('drawer-open');
+
+    // Wire close button if present
+    const closeBtn = panel.querySelector('.drawer-close');
+    if (closeBtn) closeBtn.addEventListener('click', () => closeDrawer(true));
+
+    // intercept back/links inside panel
+    panel.querySelectorAll('a').forEach(a=>{
+      a.addEventListener('click', (e)=>{
+        // let normal navigation happen if link to full page
+      })
+    })
+
+    if(pushState) history.pushState({drawer: true, number: number}, '', '/derive/' + number);
+  }
+
+  backdrop.addEventListener('click', ()=> closeDrawer(true));
+
+  // Click delegation for derive cards
+  document.addEventListener('click', (e)=>{
+    const card = e.target.closest('.derive-card');
+    if (!card) return;
+    e.preventDefault();
+    const href = card.getAttribute('href') || card.querySelector('a')?.getAttribute('href');
+    if(!href) return;
+
+    // extract number from href /derive/:number
+    const m = href.match(/\/derive\/(\d+)/);
+    if(!m) return;
+    const num = m[1];
+
+    fetch('/derive/' + num + '?partial=1')
+      .then(r => {
+        if(!r.ok) throw new Error('fetch failed');
+        return r.text();
+      })
+      .then(html => openDrawer(num, html, true))
+      .catch(err => { console.error(err); window.location.href = href; });
+  });
+
+  // popstate: close drawer when state removed
+  window.addEventListener('popstate', (ev)=>{
+    if (document.body.classList.contains('drawer-open')){
+      // if new location is a derive path keep it open, otherwise close
+      const path = location.pathname;
+      const m = path.match(/\/derive\/(\d+)/);
+      if (m) {
+        const num = m[1];
+        // fetch and open if different
+        fetch('/derive/' + num + '?partial=1').then(r=>r.text()).then(html=>openDrawer(num, html, false));
+      } else {
+        closeDrawer(false);
+      }
+    } else {
+      // if not open but user navigated directly to derive path (e.g. via back), and page has .derive-grid, open it
+      const m = location.pathname.match(/\/derive\/(\d+)/);
+      if (m && document.querySelector('.derive-grid')){
+        const num = m[1];
+        fetch('/derive/' + num + '?partial=1').then(r=>r.text()).then(html=>openDrawer(num, html, false));
+      }
+    }
+  });
+})();
+</script>
 </body>
 </html>
 {{end}}

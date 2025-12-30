@@ -39,6 +39,12 @@ main {
 
 .site-header .brand h1 {
   font-size: 2.5rem;
+  font-weight: 300;
+}
+
+.site-header .brand .brand-emoji {
+  font-size: 1.7rem;
+  vertical-align: middle;
 }
 
 .site-header .main-nav {
@@ -57,8 +63,7 @@ main {
   text-decoration: none;
   color: #000;
   font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 0.25rem;
+  font-weight: 300;
 }
 
 .site-header .main-nav a:hover {
@@ -84,6 +89,161 @@ main {
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 2rem;
   padding: 2rem 0;
+}
+
+/* Derive grid — clean & minimalistic (listing pages use grid) */
+.derive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.25rem;
+  padding: 0.5rem 0;
+}
+
+/* Index: show 4-5 hero images with vh-scaling */
+.index-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.index-grid .card-image-box {
+  height: 60vh;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+/* apply shape (circle) only to image wrapper for variety */
+.index-grid a:nth-child(5n+2) .card-image-box,
+.index-grid a:nth-child(5n+4) .card-image-box {
+  border-radius: 50%;
+}
+
+@media (max-width: 720px) {
+  .index-grid {
+    grid-template-columns: 1fr;
+  }
+  .index-grid .card-image-box { height: 40vh; }
+
+  .derive-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+  .derive-card { border-radius: 8px; }
+}
+
+.index-title {
+  font-size: 1.25rem;
+  font-weight: 300;
+  padding: 0.6rem 0;
+}
+
+.empty-state {
+  padding: 1.4rem;
+  text-align: center;
+  color: var(--light-gray);
+  font-weight: 300;
+}
+.derive-card {
+  display: block;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  overflow: visible; /* image wrapper handles clipping */
+  text-decoration: none;
+  color: inherit;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.derive-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.card-image-box {
+  position: relative;
+  height: 140px;
+  overflow: hidden;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.no-image {
+  color: var(--light-gray);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+}
+
+/* badge used on index to show timestamp (light weight)
+   on list pages it will be small*/
+.contrib-badge {
+  position: absolute;
+  left: 0.6rem;
+  bottom: 0.45rem;
+  background: rgba(255,255,255,0.85);
+  color: var(--black);
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 300;
+}
+
+.card-content {
+  padding: 0.9rem 0.9rem 1rem 0.9rem;
+}
+
+.card-number {
+  display: block;
+  color: var(--light-gray);
+  font-weight: 300;
+  font-size: 0.85rem;
+}
+
+.card-title {
+  margin-top: 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 300;
+}
+
+.card-desc {
+  color: #444;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+  line-height: 1.2;
+  max-height: 3.6rem; /* clamp to ~3 lines */
+  overflow: hidden;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.btn-black {
+  background: #000;
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+}
+
+.btn-disabled {
+  color: var(--light-gray);
+  font-weight: 800;
+  padding: 0.5rem 0.9rem;
 }
 
 .card {
@@ -152,5 +312,268 @@ main {
 
 /* Utility: active nav link */
 .nav-active {
-  text-decoration: underline;
+  text-decoration: none;
+  font-weight: 900;
+  color: var(--black);
+  padding-bottom: 0.15rem;
+  border-bottom: 3px solid var(--black);
+  border-radius: 2px;
 }
+
+/* Upload form — clean & minimal */
+.upload-container {
+  max-width: 680px;
+  margin: 1.25rem auto;
+  padding: 0 1rem;
+}
+
+.upload-title {
+  border-bottom: 6px solid #000;
+  padding-bottom: 10px;
+  text-transform: uppercase;
+  font-weight: 900;
+  margin-bottom: 0.9rem;
+}
+
+.form-group { margin-bottom: 1rem; }
+label { display: block; font-weight: 700; margin-bottom: 0.4rem; text-transform: uppercase; font-size: 0.85rem; }
+
+.autocomplete-input, input[type="text"], input[type="file"] {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid rgba(0,0,0,0.85);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+#drop-zone {
+  border: 2px dashed rgba(0,0,0,0.08);
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 8px;
+  background: #fafafa;
+  transition: background 0.15s;
+}
+
+#drop-zone.active { background: #fff6c2; }
+#preview { display: none; margin-top: 1rem; max-width: 100%; border-radius: 6px; }
+
+.submit-btn { width: 100%; padding: 0.9rem; font-weight: 900; border-radius: 8px; }
+
+/* Derive detail — clean & minimal */
+.detail-container {
+  max-width: 980px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+}
+
+/* Spielregeln (rules) — clean card + readable lists */
+.content.rules {
+  max-width: 780px;
+  margin: 1.5rem auto;
+  line-height: 1.6;
+  color: #222;
+}
+
+.content.rules h2 {
+  font-size: 1.45rem;
+  font-weight: 900;
+  margin-bottom: 0.5rem;
+}
+
+.rules-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 1rem 1.15rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+}
+
+.content.rules ol {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.content.rules li {
+  margin: 0.8rem 0;
+  font-size: 1rem;
+}
+
+.content.rules strong {
+  font-weight: 900;
+  margin-right: 0.35rem;
+}
+
+.content.rules p {
+  margin-bottom: 0.9rem;
+  color: #333;
+}
+
+.detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.meta-info {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.badge-id {
+  background: #000;
+  color: #fff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.detail-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  margin-top: 0.25rem;
+}
+
+.detail-description {
+  color: #333;
+  margin-top: 0.25rem;
+}
+
+.btn-action {
+  display: inline-block;
+  margin-top: 0.75rem;
+  background: #000;
+  color: #fff;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.contributions-section {
+  margin-top: 1.6rem;
+}
+
+.section-label {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: 0.6rem;
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.9rem;
+}
+
+.evidence-card {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.evidence-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.evidence-img-wrapper {
+  height: 140px;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.evidence-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.evidence-meta {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--light-gray);
+}
+
+.empty-state {
+  padding: 1.4rem;
+  text-align: center;
+  color: var(--light-gray);
+  font-weight: 900;
+}
+
+.detail-footer {
+  margin-top: 1.25rem;
+}
+
+.back-link {
+  text-decoration: none;
+  color: #000;
+  font-weight: 800;
+}
+
+/* Drawer for derive detail */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.32);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 220ms ease;
+  z-index: 90;
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 50vw;
+  max-width: 720px;
+  background: #fff;
+  transform: translateX(100%);
+  transition: transform 220ms cubic-bezier(.2,.9,.3,1);
+  z-index: 100;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: -20px 0 40px rgba(0,0,0,0.06);
+}
+
+body.drawer-open .drawer-backdrop {
+  opacity: 1;
+  visibility: visible;
+}
+
+body.drawer-open .drawer-panel {
+  transform: translateX(0);
+}
+
+.drawer-close {
+  position: absolute;
+  left: 0.6rem;
+  top: 0.6rem;
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  padding: 0.45rem;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .drawer-panel { width: 100vw; }
+}
+

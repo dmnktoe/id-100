@@ -1,14 +1,14 @@
 {{define "header"}}
 <header class="site-header">
     <div class="brand">
-        <h1>🏠 🆔 💯</h1>
+       <h1>Innenstadt(<span class="brand-emoji">🏠</span>) ID(<span class="brand-emoji">🆔</span>)-100(<span class="brand-emoji">💯</span>)</h1>
     </div>
     <nav class="main-nav">
-        <a href="/" {{if eq .CurrentPath "/"}}class="nav-active"{{end}}>Start</a>
-        <a href="/deriven" {{if eq .CurrentPath "/deriven"}}class="nav-active"{{end}}>1-100</a>
-        <a href="/spielregeln" {{if eq .CurrentPath "/spielregeln"}}class="nav-active"{{end}}>Spielregeln</a>
-        <a href="/about" {{if eq .CurrentPath "/about"}}class="nav-active"{{end}}>Über</a>
-        <a href="/upload" {{if eq .CurrentPath "/upload"}}class="nav-active"{{end}}>Upload</a>
+        <a href="/" {{if eq .CurrentPath "/"}}class="nav-active"{{end}}>start</a>
+        <a href="/deriven" {{if eq .CurrentPath "/deriven"}}class="nav-active"{{end}}>dériven</a>
+        <a href="/spielregeln" {{if eq .CurrentPath "/spielregeln"}}class="nav-active"{{end}}>spielregeln</a>
+        <a href="/about" {{if eq .CurrentPath "/about"}}class="nav-active"{{end}}>über</a>
+        <a href="/upload" {{if eq .CurrentPath "/upload"}}class="nav-active"{{end}}>📤 upload!</a>
     </nav>
 </header>
 {{end}}
