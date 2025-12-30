@@ -36,13 +36,13 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-// Datenstruktur für eine Aufgabe (Derive)
+// Datenstruktur angepasst an JOIN-Abfrage
 type Derive struct {
 	ID          int    `json:"id"`
 	Number      int    `json:"number"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	ImagePath   string `json:"image_path"`
+	ImageUrl    string `json:"image_url"` // Jetzt aus der contributions Tabelle
 }
 
 func main() {
@@ -80,16 +80,28 @@ func main() {
 		})
 	})
 
+	// LISTE ALLER DERIVEN (Mit JOIN auf Contributions)
 	e.GET("/deriven", func(c echo.Context) error {
 		page, _ := strconv.Atoi(c.QueryParam("page"))
 		if page < 1 { page = 1 }
 		limit := 20
 		offset := (page - 1) * limit
 
-		rows, err := db.Query(context.Background(), 
-			"SELECT id, number, title, description, COALESCE(image_path, '') FROM deriven ORDER BY number ASC LIMIT $1 OFFSET $2", 
-			limit, offset)
+		// Query nutzt einen Lateral Join, um pro Aufgabe das aktuellste Bild zu finden
+		query := `
+			SELECT d.id, d.number, d.title, d.description, COALESCE(c.image_url, '') 
+			FROM deriven d
+			LEFT JOIN LATERAL (
+				SELECT image_url FROM contributions 
+				WHERE derive_id = d.id 
+				ORDER BY created_at DESC LIMIT 1
+			) c ON true
+			ORDER BY d.number ASC 
+			LIMIT $1 OFFSET $2`
+
+		rows, err := db.Query(context.Background(), query, limit, offset)
 		if err != nil {
+			log.Printf("Query Error: %v", err)
 			return c.String(http.StatusInternalServerError, "Datenbankfehler")
 		}
 		defer rows.Close()
@@ -97,7 +109,7 @@ func main() {
 		var deriven []Derive
 		for rows.Next() {
 			var d Derive
-			if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImagePath); err != nil {
+			if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl); err != nil {
 				return err
 			}
 			deriven = append(deriven, d)
@@ -129,7 +141,7 @@ func main() {
 	})
 
 	e.POST("/upload", func(c echo.Context) error {
-		deriveNumber := c.FormValue("derive_number")
+		deriveNumberStr := c.FormValue("derive_number")
 		file, err := c.FormFile("image")
 		if err != nil {
 			return c.String(http.StatusBadRequest, "Kein Bild gefunden")
@@ -142,15 +154,14 @@ func main() {
 		if err != nil {
 			return c.String(http.StatusBadRequest, "Ungültiges Bildformat")
 		}
-
 		var buf bytes.Buffer
 		options, _ := encoder.NewLossyEncoderOptions(encoder.PresetDefault, 75)
 		if err := webp.Encode(&buf, img, options); err != nil {
-			return c.String(http.StatusInternalServerError, "Optimierung fehlgeschlagen")
+			return c.String(http.StatusInternalServerError, "WebP Fehler")
 		}
 
 		// B. S3 Client Setup aus ENV
-		cfg, err := config.LoadDefaultConfig(context.TODO(),
+		cfg, _ := config.LoadDefaultConfig(context.TODO(),
 			config.WithRegion(os.Getenv("S3_REGION")),
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 				os.Getenv("S3_ACCESS_KEY"), 
@@ -158,17 +169,12 @@ func main() {
 				""),
 			),
 		)
-		if err != nil {
-			return c.String(http.StatusInternalServerError, "AWS Config Fehler")
-		}
-
 		s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 			o.BaseEndpoint = aws.String(os.Getenv("S3_ENDPOINT"))
-			// WICHTIG: Supabase benötigt PathStyle für S3
 			o.UsePathStyle = true
 		})
 
-		fileName := fmt.Sprintf("derive_%s_%d.webp", deriveNumber, time.Now().Unix())
+		fileName := fmt.Sprintf("derive_%s_%d.webp", deriveNumberStr, time.Now().Unix())
 		
 		// C. S3 Upload
 		_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
@@ -177,22 +183,30 @@ func main() {
 			Body:        bytes.NewReader(buf.Bytes()),
 			ContentType: aws.String("image/webp"),
 		})
-
 		if err != nil {
-			return c.String(http.StatusInternalServerError, "S3 Upload Error: "+err.Error())
+			return c.String(http.StatusInternalServerError, "S3 Fehler: "+err.Error())
 		}
 
-		// D. Link in DB speichern
-		// Nutzt deine SUPABASE_URL (z.B. https://xyz.supabase.co) für den öffentlichen Link
+		// D. DATENBANK LOGIK
 		publicURL := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", 
 			os.Getenv("SUPABASE_URL"), os.Getenv("S3_BUCKET"), fileName)
-			
+
+		// 1. Die interne ID der Derive-Aufgabe anhand der Nummer holen
+		var internalID int
+		err = db.QueryRow(context.Background(), 
+			"SELECT id FROM deriven WHERE number = $1", deriveNumberStr).Scan(&internalID)
+		if err != nil {
+			return c.String(http.StatusNotFound, "Aufgabe nicht gefunden")
+		}
+
+		// 2. Neue Zeile in CONTRIBUTIONS einfügen
 		_, err = db.Exec(context.Background(), 
-			"UPDATE deriven SET image_path = $1 WHERE number = $2", 
-			publicURL, deriveNumber)
+			"INSERT INTO contributions (derive_id, image_url, user_name) VALUES ($1, $2, $3)", 
+			internalID, publicURL, "Anonym")
 
 		if err != nil {
-			return c.String(http.StatusInternalServerError, "Datenbank Update fehlgeschlagen")
+			log.Printf("DB Error: %v", err)
+			return c.String(http.StatusInternalServerError, "Datenbankfehler beim Speichern der Contribution")
 		}
 
 		return c.Redirect(http.StatusSeeOther, "/deriven")
