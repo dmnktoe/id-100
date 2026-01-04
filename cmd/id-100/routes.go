@@ -94,11 +94,11 @@ func derivenHandler(c echo.Context) error {
 	query := `
             SELECT 
                 d.id, d.number, d.title, d.description, 
-                COALESCE(c.image_url, ''),
+                COALESCE(c.image_url, ''), COALESCE(c.image_lqip, ''),
                 (SELECT COUNT(*) FROM contributions WHERE derive_id = d.id) as contrib_count
             FROM deriven d
             LEFT JOIN LATERAL (
-                SELECT image_url FROM contributions 
+                SELECT image_url, image_lqip FROM contributions 
                 WHERE derive_id = d.id 
                 ORDER BY created_at DESC LIMIT 1
             ) c ON true
@@ -115,13 +115,18 @@ func derivenHandler(c echo.Context) error {
 	var deriven []Derive
 	for rows.Next() {
 		var d Derive
-		if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.ContribCount); err != nil {
+		if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.ImageLqip, &d.ContribCount); err != nil {
 			log.Printf("Scan Error: %v", err)
 			return err
 		}
 		// Normalize image URL
 		d.ImageUrl = ensureFullImageURL(d.ImageUrl)
 		deriven = append(deriven, d)
+	}
+
+	// debug: log types/values to debug template field issue
+	for i, d := range deriven {
+		log.Printf("derive[%d] type=%T ImageLqip=%q", i, d, d.ImageLqip)
 	}
 
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{

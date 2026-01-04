@@ -33,6 +33,7 @@ type Derive struct {
 	Title        string `json:"title"`
 	Description  string `json:"description"`
 	ImageUrl     string `json:"image_url"`
+	ImageLqip    string `json:"image_lqip"`
 	ContribCount int    `json:"contrib_count"`
 }
 
