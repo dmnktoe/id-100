@@ -35,6 +35,8 @@ func registerRoutes(e *echo.Echo) {
 }
 
 func homeHandler(c echo.Context) error {
+	stats := getFooterStats()
+	
 	// fetch latest contributions with derive meta
 	rows, err := db.Query(context.Background(), `
 		SELECT c.image_url, COALESCE(c.image_lqip,''), c.user_name, c.created_at, d.number, d.title
@@ -51,6 +53,7 @@ func homeHandler(c echo.Context) error {
 			"ContentTemplate": "index.content",
 			"CurrentPath":     c.Request().URL.Path,
 			"CurrentYear":     time.Now().Year(),
+			"FooterStats":     stats,
 		})
 	}
 	defer rows.Close()
@@ -81,16 +84,28 @@ func homeHandler(c echo.Context) error {
 		"ContentTemplate": "index.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
 	})
 }
 
 func derivenHandler(c echo.Context) error {
+	stats := getFooterStats()
+	
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	if page < 1 {
 		page = 1
 	}
 	limit := 20
 	offset := (page - 1) * limit
+
+	// Get total count for pagination
+	var totalCount int
+	err := db.QueryRow(context.Background(), "SELECT COUNT(*) FROM deriven").Scan(&totalCount)
+	if err != nil {
+		log.Printf("Count Error: %v", err)
+		totalCount = 100 // fallback
+	}
+	totalPages := (totalCount + limit - 1) / limit // ceiling division
 
 	query := `
             SELECT 
@@ -130,22 +145,69 @@ func derivenHandler(c echo.Context) error {
 		log.Printf("derive[%d] type=%T ImageLqip=%q", i, d, d.ImageLqip)
 	}
 
+	// Build pagination pages for template
+	type PageNumber struct {
+		Number    int
+		IsCurrent bool
+		IsDots    bool
+	}
+	var pages []PageNumber
+
+	// Always show first page
+	pages = append(pages, PageNumber{Number: 1, IsCurrent: page == 1})
+
+	// Show dots if current page > 3
+	if page > 3 {
+		pages = append(pages, PageNumber{IsDots: true})
+	}
+
+	// Show page before current (if exists and not page 1 or 2)
+	if page > 2 {
+		pages = append(pages, PageNumber{Number: page - 1, IsCurrent: false})
+	}
+
+	// Show current page (if not first or last)
+	if page > 1 && page < totalPages {
+		pages = append(pages, PageNumber{Number: page, IsCurrent: true})
+	}
+
+	// Show page after current (if exists and not last page or second to last)
+	if page < totalPages-1 {
+		pages = append(pages, PageNumber{Number: page + 1, IsCurrent: false})
+	}
+
+	// Show dots if there's a gap to last page
+	if page < totalPages-2 {
+		pages = append(pages, PageNumber{IsDots: true})
+	}
+
+	// Always show last page (if more than 1 page)
+	if totalPages > 1 {
+		pages = append(pages, PageNumber{Number: totalPages, IsCurrent: page == totalPages})
+	}
+
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Index - DÉRIVE 100",
 		"Deriven":         deriven,
 		"CurrentPage":     page,
-		"HasNext":         len(deriven) == limit,
+		"TotalPages":      totalPages,
+		"Pages":           pages,
+		"HasNext":         page < totalPages,
 		"HasPrev":         page > 1,
 		"NextPage":        page + 1,
 		"PrevPage":        page - 1,
 		"ContentTemplate": "deriven.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
 	})
 }
 
 func deriveHandler(c echo.Context) error {
+	stats := getFooterStats()
 	num := c.Param("number")
+	pageParam := c.QueryParam("page") // Capture page parameter for back navigation
+	
 	var d Derive
 	query := `
             SELECT d.id, d.number, d.title, d.description, COALESCE(c.image_url, '')
@@ -159,6 +221,9 @@ func deriveHandler(c echo.Context) error {
 	if err != nil {
 		return c.Redirect(http.StatusSeeOther, "/deriven")
 	}
+
+	// Normalize derive image URL
+	d.ImageUrl = ensureFullImageURL(d.ImageUrl)
 
 	rows, _ := db.Query(context.Background(),
 		"SELECT image_url, COALESCE(image_lqip,''), user_name, created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
@@ -184,6 +249,8 @@ func deriveHandler(c echo.Context) error {
 		return c.Render(http.StatusOK, "derive_detail.content", map[string]interface{}{
 			"Derive":        d,
 			"Contributions": contribs,
+			"PageParam":     pageParam,
+			"IsPartial":     true,
 		})
 	}
 
@@ -191,13 +258,17 @@ func deriveHandler(c echo.Context) error {
 		"Title":           fmt.Sprintf("#%d %s", d.Number, d.Title),
 		"Derive":          d,
 		"Contributions":   contribs,
+		"PageParam":       pageParam,
+		"IsPartial":       false,
 		"ContentTemplate": "derive_detail.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
 	})
 }
 
 func uploadGetHandler(c echo.Context) error {
+	stats := getFooterStats()
 	rows, err := db.Query(context.Background(), "SELECT number, title FROM deriven ORDER BY number ASC")
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Datenbankfehler")
@@ -218,6 +289,7 @@ func uploadGetHandler(c echo.Context) error {
 		"ContentTemplate": "upload.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
 	})
 }
 
@@ -264,8 +336,8 @@ func uploadPostHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "S3 Fehler: "+err.Error())
 	}
 
-	publicURL := fmt.Sprintf("%s/storage/v1/object/public/%s/%s",
-		os.Getenv("SUPABASE_URL"), os.Getenv("S3_BUCKET"), fileName)
+	// Store relative path in DB, ensureFullImageURL will add the base URL when reading
+	relativePath := fmt.Sprintf("/storage/v1/object/public/%s/%s", os.Getenv("S3_BUCKET"), fileName)
 
 	// generate tiny LQIP (data-uri) and store it
 	lqip, lqipErr := generateLQIP(img, 24)
@@ -283,7 +355,7 @@ func uploadPostHandler(c echo.Context) error {
 
 	_, err = db.Exec(context.Background(),
 		"INSERT INTO contributions (derive_id, image_url, image_lqip, user_name) VALUES ($1, $2, $3, $4)",
-		internalID, publicURL, lqip, "Anonym")
+		internalID, relativePath, lqip, "Anonym")
 
 	if err != nil {
 		log.Printf("DB Error: %v", err)
@@ -294,19 +366,23 @@ func uploadPostHandler(c echo.Context) error {
 }
 
 func rulesHandler(c echo.Context) error {
+	stats := getFooterStats()
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Regeln - DÉRIVE 100",
+		"Title":           "Spielregeln - DÉRIVE 100",
 		"ContentTemplate": "spielregeln.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
 	})
 }
 
 func aboutHandler(c echo.Context) error {
+	stats := getFooterStats()
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Über - DÉRIVE 100",
+		"Title":           "About - DÉRIVE 100",
 		"ContentTemplate": "about.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
 	})
 }

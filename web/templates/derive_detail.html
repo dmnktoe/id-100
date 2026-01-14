@@ -1,6 +1,6 @@
 {{define "derive_detail.content"}}
     <main class="detail-container">
-        <button class="drawer-close" aria-label="close">✕</button>
+        {{if .IsPartial}}<button class="drawer-close" aria-label="close">✕</button>{{end}}
 
         <header class="detail-header">
             <div class="meta-info">
@@ -35,7 +35,7 @@
         </section>
 
         <footer class="detail-footer">
-            <a href="/deriven" class="back-link">← zurück zum index</a>
+            <a href="/deriven{{if .PageParam}}?page={{.PageParam}}{{end}}" class="back-link drawer-back-link">← zurück zum index</a>
         </footer>
     </main>
 {{end}}
