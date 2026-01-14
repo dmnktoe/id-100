@@ -1,8 +1,8 @@
-# 🏠 🆔 💯 Innenstadt ID 100
+# 🏠🆔💯 Innenstadt ID 100
 
 Eine moderne Go-Webanwendung für kreative Beiträge mit Echo-Framework, Supabase PostgreSQL und Supabase Storage.
 
-[![Go Version](https://img.shields.io/badge/Go-1.25.5-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Go Version](https://img.shields.io/badge/Go-1.24-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![Echo](https://img.shields.io/badge/Echo-v4.14.0-00ADD8?style=flat)](https://echo.labstack.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=flat&logo=postgresql)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
@@ -19,7 +19,7 @@ Eine moderne Go-Webanwendung für kreative Beiträge mit Echo-Framework, Supabas
 
 ## 📋 Voraussetzungen
 
-- **Go**: Version 1.25.5 oder höher
+- **Go**: Version 1.24 oder höher
 - **Supabase Account**: Für PostgreSQL-Datenbank und Storage
 - **Docker** (optional): Für lokale Entwicklungsdatenbank
 
@@ -133,7 +133,7 @@ id-100/
 │   ├── static/           # CSS, JS, Assets
 │   └── templates/        # HTML-Templates
 ├── tools/                # Build-Tools
-├── air.toml             # Hot-Reload Konfiguration
+├── .air.toml            # Hot-Reload Konfiguration
 ├── go.mod               # Go Dependencies
 └── Makefile             # Build-Automatisierung
 ```
@@ -142,7 +142,7 @@ id-100/
 
 | Kategorie | Technologie |
 |-----------|------------|
-| **Backend** | Go 1.25.5, Echo Framework v4 |
+| **Backend** | Go 1.24, Echo Framework v4 |
 | **Datenbank** | Supabase PostgreSQL, pgx/v5 |
 | **Storage** | Supabase Storage (S3-kompatibel) |
 | **Image Processing** | go-webp, LQIP |
@@ -153,10 +153,10 @@ id-100/
 
 ### Air (Hot-Reload)
 
-Die Konfiguration befindet sich in [`air.toml`](air.toml). Wichtige Einstellungen:
+Die Konfiguration befindet sich in [`.air.toml`](.air.toml). Wichtige Einstellungen:
 
 - **Port**: 8080
-- **Watch-Verzeichnisse**: cmd, web, internal, pkg
+- **Watch-Verzeichnisse**: cmd, web
 - **Delay**: 1000ms (verhindert mehrfache Neustarts)
 
 ### Templates
