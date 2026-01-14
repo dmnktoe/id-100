@@ -18,8 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/kolesa-team/go-webp/encoder"
-	"github.com/kolesa-team/go-webp/webp"
+	"github.com/chai2010/webp"
 	"github.com/labstack/echo/v4"
 )
 
@@ -236,8 +235,9 @@ func uploadPostHandler(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Ungültiges Bildformat")
 	}
 	var buf bytes.Buffer
-	options, _ := encoder.NewLossyEncoderOptions(encoder.PresetDefault, 75)
-	webp.Encode(&buf, img, options)
+	if err := webp.Encode(&buf, img, &webp.Options{Lossless: false, Quality: 75}); err != nil {
+		return c.String(http.StatusInternalServerError, "WebP-Kodierung fehlgeschlagen")
+	}
 
 	cfg, _ := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(os.Getenv("S3_REGION")),

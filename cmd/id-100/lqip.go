@@ -8,8 +8,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 
-	"github.com/kolesa-team/go-webp/encoder"
-	"github.com/kolesa-team/go-webp/webp"
+	"github.com/chai2010/webp"
 	xdraw "golang.org/x/image/draw"
 )
 
@@ -38,8 +37,7 @@ func generateLQIP(src image.Image, maxWidth int) (string, error) {
 
 func encodeWebPDataURI(img image.Image, quality int) (string, error) {
 	var buf bytes.Buffer
-	options, _ := encoder.NewLossyEncoderOptions(encoder.PresetDefault, float32(quality))
-	if err := webp.Encode(&buf, img, options); err != nil {
+	if err := webp.Encode(&buf, img, &webp.Options{Lossless: false, Quality: float32(quality)}); err != nil {
 		// fallback to jpeg
 		buf.Reset()
 		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 30}); err != nil {
