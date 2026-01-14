@@ -1,6 +1,22 @@
 {{define "footer"}}
 <footer class="site-footer">
     <div class="left">
+        {{if .FooterStats}}
+        <div class="footer-stats">
+            <div class="stat-item">
+                <span class="stat-value">{{.FooterStats.TotalDeriven}}</span>
+                <span class="stat-label">dériven</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{.FooterStats.TotalContributions}}</span>
+                <span class="stat-label">beiträge</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{.FooterStats.ActiveUsers}}</span>
+                <span class="stat-label">teilnehmer</span>
+            </div>
+        </div>
+        {{end}}
     </div>
 
     <div class="right">

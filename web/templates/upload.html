@@ -1,9 +1,8 @@
 {{define "upload.content"}}
-<main class="content">
-  <div class="upload-container">
-    <h2 class="upload-title">beitrag hochladen</h2>
+<div class="container upload">
+  <h2 class="page-title">beitrag hochladen</h2>
 
-    <form action="/upload" method="POST" enctype="multipart/form-data" id="uploadForm">
+  <form action="/upload" method="POST" enctype="multipart/form-data" id="uploadForm">
       <div class="form-group">
         <label for="deriveInput">aufgabe</label>
         <input list="derivenList" name="derive_number" id="deriveInput" class="autocomplete-input" placeholder="suche..." required>
@@ -71,5 +70,5 @@
       btn.innerText = "optimiere...";
     };
   </script>
-</main>
+</div>
 {{end}}

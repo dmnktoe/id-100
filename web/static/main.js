@@ -32,7 +32,7 @@
     if (pushBack) history.back();
   }
 
-  function openDrawer(number, html, pushState) {
+  function openDrawer(number, html, pushState, pageParam) {
     panel.innerHTML = html;
     panel.setAttribute("aria-hidden", "false");
     backdrop.setAttribute("aria-hidden", "false");
@@ -44,6 +44,21 @@
       closeBtn.addEventListener("click", () => closeDrawer(true), {
         once: true,
       });
+
+    // Wire back link to close drawer instead of normal navigation
+    const backLink = panel.querySelector(".drawer-back-link");
+    if (backLink) {
+      backLink.addEventListener(
+        "click",
+        (e) => {
+          e.preventDefault();
+          closeDrawer(true);
+        },
+        {
+          once: true,
+        }
+      );
+    }
 
     // intercept back/links inside panel
     panel.querySelectorAll("a").forEach((a) => {
@@ -63,12 +78,16 @@
       console.warn("initLazyImages failed", e);
     }
 
-    if (pushState)
+    if (pushState) {
+      const url = pageParam
+        ? `/derive/${number}?page=${pageParam}`
+        : `/derive/${number}`;
       history.pushState(
-        { drawer: true, number: number },
+        { drawer: true, number: number, page: pageParam },
         "",
-        "/derive/" + number
+        url
       );
+    }
   }
 
   backdrop.addEventListener("click", () => closeDrawer(true));
@@ -83,17 +102,25 @@
       card.querySelector("a")?.getAttribute("href");
     if (!href) return;
 
-    // extract number from href /derive/:number
+    // extract number and page parameter from href /derive/:number?page=X
     const m = href.match(/\/derive\/(\d+)/);
     if (!m) return;
     const num = m[1];
 
-    fetch("/derive/" + num + "?partial=1")
+    // Extract page parameter if present
+    const url = new URL(href, window.location.origin);
+    const pageParam = url.searchParams.get("page");
+
+    const fetchUrl = pageParam
+      ? `/derive/${num}?partial=1&page=${pageParam}`
+      : `/derive/${num}?partial=1`;
+
+    fetch(fetchUrl)
       .then((r) => {
         if (!r.ok) throw new Error("fetch failed");
         return r.text();
       })
-      .then((html) => openDrawer(num, html, true))
+      .then((html) => openDrawer(num, html, true, pageParam))
       .catch((err) => {
         console.error(err);
         window.location.href = href;
@@ -108,10 +135,14 @@
       const m = path.match(/\/derive\/(\d+)/);
       if (m) {
         const num = m[1];
+        const pageParam = new URLSearchParams(location.search).get("page");
+        const fetchUrl = pageParam
+          ? `/derive/${num}?partial=1&page=${pageParam}`
+          : `/derive/${num}?partial=1`;
         // fetch and open if different
-        fetch("/derive/" + num + "?partial=1")
+        fetch(fetchUrl)
           .then((r) => r.text())
-          .then((html) => openDrawer(num, html, false));
+          .then((html) => openDrawer(num, html, false, pageParam));
       } else {
         closeDrawer(false);
       }
@@ -120,9 +151,13 @@
       const m = location.pathname.match(/\/derive\/(\d+)/);
       if (m && document.querySelector(".derive-grid")) {
         const num = m[1];
-        fetch("/derive/" + num + "?partial=1")
+        const pageParam = new URLSearchParams(location.search).get("page");
+        const fetchUrl = pageParam
+          ? `/derive/${num}?partial=1&page=${pageParam}`
+          : `/derive/${num}?partial=1`;
+        fetch(fetchUrl)
           .then((r) => r.text())
-          .then((html) => openDrawer(num, html, false));
+          .then((html) => openDrawer(num, html, false, pageParam));
       }
     }
   });
