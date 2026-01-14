@@ -1,6 +1,6 @@
 {{define "deriven.content"}}
     <div class="index-container">
-        <h2 class="index-title">Index: 100 Deriven</h2>
+        <h2 class="index-title">index: 100 dériven</h2>
         
         <div class="derive-grid">
             {{range .Deriven}}
@@ -9,11 +9,11 @@
                     {{if .ImageUrl}}
                         <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="{{.Title}}">
                     {{else}}
-                        <div class="no-image">NO EVIDENCE</div>
+                        <div class="no-image">kein bild</div>
                     {{end}}
                     
                     <div class="contrib-badge">
-                        {{.ContribCount}} SOLVED
+                        {{.ContribCount}} gelöst
                     </div>
                 </div>
 
@@ -27,25 +27,23 @@
         </div>
 
         <nav class="pagination">
-            <div class="nav-btn">
-                {{if .HasPrev}}
-                    <a href="/deriven?page={{.PrevPage}}" class="btn-black">← ZURÜCK</a>
-                {{else}}
-                    <span class="btn-disabled">← ZURÜCK</span>
-                {{end}}
-            </div>
+            {{if .HasPrev}}
+                <a href="/deriven?page={{.PrevPage}}" class="pagination-btn">← zurück</a>
+            {{else}}
+                <span class="pagination-btn disabled">← zurück</span>
+            {{end}}
 
             <div class="page-info">
-                SEITE {{.CurrentPage}} / 5
+                <span class="page-current">{{.CurrentPage}}</span>
+                <span class="page-separator">/</span>
+                <span class="page-total">5</span>
             </div>
 
-            <div class="nav-btn">
-                {{if .HasNext}}
-                    <a href="/deriven?page={{.NextPage}}" class="btn-black">WEITER →</a>
-                {{else}}
-                    <span class="btn-disabled">WEITER →</span>
-                {{end}}
-            </div>
+            {{if .HasNext}}
+                <a href="/deriven?page={{.NextPage}}" class="pagination-btn">weiter →</a>
+            {{else}}
+                <span class="pagination-btn disabled">weiter →</span>
+            {{end}}
         </nav>
     </div>
 {{end}}

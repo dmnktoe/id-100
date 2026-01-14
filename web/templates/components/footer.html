@@ -1,12 +1,14 @@
 {{define "footer"}}
 <footer class="site-footer">
     <div class="left">
-        © 2024 DÉRIVE 100 — SYSTEM ACTIVE
     </div>
 
     <div class="right">
-        <span>GPS: 52.5200° N, 13.4050° E</span>
-        <a href="/about">Legal/Privacy</a>
+        <span class="footer-description">ID-100 ist eine Plattform für urbane Erkundung und fotografische Dokumentation. Das Projekt verbindet digitale Technologie mit analoger Stadterfahrung – 100 Aufgaben laden dazu ein, die Stadt mit neuen Augen zu sehen. Jede Aufgabe ist eine Einladung, bekannte Orte neu zu entdecken, ungewöhnliche Details wahrzunehmen und die eigene Perspektive zu teilen. Die gesammelten Fotografien bilden ein kollektives Archiv urbaner Momente und Interpretationen.</span>
+        <div class="footer-meta">
+            <span>© {{.CurrentYear}} ID-100</span>
+            <a href="/about">Impressum & Datenschutz</a>
+        </div>
     </div>
 </footer>
 {{end}}

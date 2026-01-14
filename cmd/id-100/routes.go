@@ -51,6 +51,7 @@ func homeHandler(c echo.Context) error {
 			"RecentContribs":  []interface{}{},
 			"ContentTemplate": "index.content",
 			"CurrentPath":     c.Request().URL.Path,
+			"CurrentYear":     time.Now().Year(),
 		})
 	}
 	defer rows.Close()
@@ -80,6 +81,7 @@ func homeHandler(c echo.Context) error {
 		"RecentContribs":  recent,
 		"ContentTemplate": "index.content",
 		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
 	})
 }
 
@@ -139,6 +141,7 @@ func derivenHandler(c echo.Context) error {
 		"PrevPage":        page - 1,
 		"ContentTemplate": "deriven.content",
 		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
 	})
 }
 
@@ -191,6 +194,7 @@ func deriveHandler(c echo.Context) error {
 		"Contributions":   contribs,
 		"ContentTemplate": "derive_detail.content",
 		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
 	})
 }
 
@@ -214,6 +218,7 @@ func uploadGetHandler(c echo.Context) error {
 		"Deriven":         list,
 		"ContentTemplate": "upload.content",
 		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
 	})
 }
 
@@ -293,6 +298,7 @@ func rulesHandler(c echo.Context) error {
 		"Title":           "Regeln - DÉRIVE 100",
 		"ContentTemplate": "spielregeln.content",
 		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
 	})
 }
 
@@ -301,5 +307,6 @@ func aboutHandler(c echo.Context) error {
 		"Title":           "Über - DÉRIVE 100",
 		"ContentTemplate": "about.content",
 		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
 	})
 }
