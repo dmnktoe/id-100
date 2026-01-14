@@ -7,9 +7,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.6
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.95.0
+	github.com/chai2010/webp v1.1.1
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/joho/godotenv v1.5.1
-	github.com/kolesa-team/go-webp v1.0.5
 	github.com/labstack/echo/v4 v4.14.0
 	golang.org/x/image v0.34.0
 )
