@@ -309,7 +309,21 @@ func uploadGetHandler(c echo.Context) error {
 }
 
 func uploadPostHandler(c echo.Context) error {
+	// Get token info from middleware context
+	tokenID, ok := c.Get("token_id").(int)
+	if !ok {
+		return c.String(http.StatusForbidden, "Token nicht gefunden")
+	}
+	
+	currentPlayer, _ := c.Get("current_player").(string)
+	sessionNumber, _ := c.Get("session_number").(int)
+	
 	deriveNumberStr := c.FormValue("derive_number")
+	deriveNumber, err := strconv.Atoi(deriveNumberStr)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "Ungültige Aufgabennummer")
+	}
+	
 	file, err := c.FormFile("image")
 	if err != nil {
 		return c.String(http.StatusBadRequest, "Kein Bild gefunden")
@@ -335,7 +349,9 @@ func uploadPostHandler(c echo.Context) error {
 		),
 	)
 	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		o.BaseEndpoint = aws.String(os.Getenv("S3_ENDPOINT"))
+		if endpoint := os.Getenv("S3_ENDPOINT"); endpoint != "" {
+			o.BaseEndpoint = aws.String(endpoint)
+		}
 		o.UsePathStyle = true
 	})
 
@@ -368,13 +384,36 @@ func uploadPostHandler(c echo.Context) error {
 		return c.String(http.StatusNotFound, "Aufgabe nicht gefunden")
 	}
 
-	_, err = db.Exec(context.Background(),
-		"INSERT INTO contributions (derive_id, image_url, image_lqip, user_name) VALUES ($1, $2, $3, $4)",
-		internalID, relativePath, lqip, "Anonym")
+	// Insert contribution and get ID
+	var contributionID int
+	err = db.QueryRow(context.Background(),
+		"INSERT INTO contributions (derive_id, image_url, image_lqip, user_name) VALUES ($1, $2, $3, $4) RETURNING id",
+		internalID, relativePath, lqip, currentPlayer).Scan(&contributionID)
 
 	if err != nil {
-		log.Printf("DB Error: %v", err)
+		log.Printf("DB Error inserting contribution: %v", err)
 		return c.String(http.StatusInternalServerError, "DB Error")
+	}
+
+	// Log upload in upload_logs table
+	_, err = db.Exec(context.Background(),
+		`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id)
+		 VALUES ($1, $2, $3, $4, $5)`,
+		tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID)
+	
+	if err != nil {
+		log.Printf("Failed to log upload: %v", err)
+		// Don't fail the request, contribution is already saved
+	}
+	
+	// Increment total_uploads counter for token
+	_, err = db.Exec(context.Background(),
+		"UPDATE upload_tokens SET total_uploads = total_uploads + 1 WHERE id = $1",
+		tokenID)
+	
+	if err != nil {
+		log.Printf("Failed to increment upload counter: %v", err)
+		// Don't fail the request, contribution is already saved
 	}
 
 	return c.Redirect(http.StatusSeeOther, "/deriven")
