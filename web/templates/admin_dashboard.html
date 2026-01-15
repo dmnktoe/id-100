@@ -1,0 +1,216 @@
+{{define "admin_dashboard.content"}}
+<style>
+  .admin-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+  .admin-header { margin-bottom: 2rem; }
+  .admin-section { margin-bottom: 3rem; }
+  .token-card { background: #f5f5f5; padding: 1.5rem; margin-bottom: 1rem; border-radius: 8px; }
+  .token-card.inactive { opacity: 0.6; }
+  .token-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .token-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+  .token-meta-item { font-size: 0.9rem; }
+  .token-meta-item strong { display: block; color: #666; }
+  .token-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .btn-admin { padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+  .btn-reset { background: #4CAF50; color: white; }
+  .btn-deactivate { background: #f44336; color: white; }
+  .btn-activate { background: #2196F3; color: white; }
+  .btn-admin:disabled { opacity: 0.5; cursor: not-allowed; }
+  .contrib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
+  .contrib-card { aspect-ratio: 1; border-radius: 8px; overflow: hidden; position: relative; }
+  .contrib-card img { width: 100%; height: 100%; object-fit: cover; }
+  .contrib-meta { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 0.5rem; font-size: 0.8rem; }
+</style>
+
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>🔧 Admin Dashboard</h1>
+    <p>Token-Verwaltung und Upload-Übersicht</p>
+  </div>
+
+  <div class="admin-section">
+    <h2>➕ Neue Tasche erstellen</h2>
+    <div style="background: #f5f5f5; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+      <form id="createTokenForm" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Taschenname</label>
+          <input type="text" id="bagName" placeholder="z.B. Tasche #6" required 
+                 style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Max. Uploads</label>
+          <input type="number" id="maxUploads" value="100" min="1" required
+                 style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        <button type="submit" class="btn-admin" style="background: #2196F3; color: white; padding: 0.6rem 1.5rem;">
+          ✨ Erstellen
+        </button>
+      </form>
+      <div id="createResult" style="margin-top: 1rem; display: none;"></div>
+    </div>
+
+    <h2>📱 Taschen & Tokens</h2>
+    {{range .Tokens}}
+    <div class="token-card{{if not .IsActive}} inactive{{end}}">
+      <div class="token-header">
+        <h3>{{.BagName}}{{if .CurrentPlayer}} - {{.CurrentPlayer}}{{end}}</h3>
+        <span style="font-size: 0.9rem; color: {{if .IsActive}}#4CAF50{{else}}#f44336{{end}};">
+          {{if .IsActive}}● aktiv{{else}}○ inaktiv{{end}}
+        </span>
+      </div>
+      
+      <div class="token-meta">
+        <div class="token-meta-item">
+          <strong>Uploads</strong>
+          <input type="number" id="quota-{{.ID}}" value="{{.MaxUploads}}" min="1" 
+                 style="width: 80px; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px; margin-top: 0.3rem;">
+          <span style="font-size: 0.9rem; color: #666;">/ {{.TotalUploads}} genutzt</span>
+        </div>
+        <div class="token-meta-item">
+          <strong>Verbleibend</strong>
+          {{.Remaining}}
+        </div>
+        <div class="token-meta-item">
+          <strong>Sessions</strong>
+          #{{.TotalSessions}}
+        </div>
+        <div class="token-meta-item">
+          <strong>Gestartet</strong>
+          {{.SessionStartedAt.Format "02.01. 15:04"}}
+        </div>
+      </div>
+
+      <div class="token-actions">
+        <button class="btn-admin btn-reset" onclick="resetToken({{.ID}}, '{{.BagName}}')">
+          🔄 Zurücksetzen
+        </button>
+        <button class="btn-admin" style="background: #FF9800; color: white;" onclick="updateQuota({{.ID}})">
+          💾 Kontingent speichern
+        </button>
+        <button class="btn-admin" style="background: #9C27B0; color: white;" onclick="downloadQR({{.ID}}, '{{.BagName}}', 'svg')">
+          📥 QR (SVG)
+        </button>
+        <button class="btn-admin" style="background: #673AB7; color: white;" onclick="downloadQR({{.ID}}, '{{.BagName}}', 'png')">
+          📥 QR (PNG)
+        </button>
+        {{if .IsActive}}
+        <button class="btn-admin btn-deactivate" onclick="deactivateToken({{.ID}}, '{{.BagName}}')">
+          🚫 Deaktivieren
+        </button>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+
+  <div class="admin-section">
+    <h2>📸 Neueste Contributions</h2>
+    <div class="contrib-grid">
+      {{range .RecentContribs}}
+      <div class="contrib-card">
+        <img src="{{.ImageUrl}}" alt="Contribution" loading="lazy">
+        <div class="contrib-meta">
+          <div>{{.PlayerName}}</div>
+          <div>Derive #{{.DeriveNumber}}</div>
+        </div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</div>
+
+<script>
+// Create new token/bag
+document.getElementById('createTokenForm').onsubmit = async function(e) {
+  e.preventDefault();
+  
+  const bagName = document.getElementById('bagName').value;
+  const maxUploads = parseInt(document.getElementById('maxUploads').value);
+  
+  try {
+    const response = await fetch('/admin/tokens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bag_name: bagName, max_uploads: maxUploads })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      const resultDiv = document.getElementById('createResult');
+      resultDiv.style.display = 'block';
+      resultDiv.style.background = '#e8f5e9';
+      resultDiv.style.padding = '1rem';
+      resultDiv.style.borderRadius = '4px';
+      resultDiv.innerHTML = `
+        <strong>✅ Token erstellt!</strong><br>
+        <small>Token-ID: ${data.token_id}</small><br>
+        <a href="${data.qr_url}?format=svg" target="_blank" style="color: #2196F3;">📥 QR-Code (SVG) herunterladen</a> | 
+        <a href="${data.qr_url}?format=png" target="_blank" style="color: #2196F3;">📥 QR-Code (PNG) herunterladen</a><br>
+        <small style="word-break: break-all;">URL: ${data.upload_url}</small>
+      `;
+      
+      // Reload nach 3 Sekunden
+      setTimeout(() => location.reload(), 3000);
+    } else {
+      alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+    }
+  } catch (err) {
+    alert('Fehler: ' + err.message);
+  }
+};
+
+async function resetToken(id, name) {
+  if (!confirm(`${name} wirklich zurücksetzen? Der Upload-Counter wird auf 0 gesetzt.`)) return;
+  
+  try {
+    const response = await fetch(`/admin/tokens/${id}/reset`, { method: 'POST' });
+    const data = await response.json();
+    alert(data.message || 'Token wurde zurückgesetzt');
+    location.reload();
+  } catch (err) {
+    alert('Fehler: ' + err.message);
+  }
+}
+
+async function deactivateToken(id, name) {
+  if (!confirm(`${name} wirklich deaktivieren?`)) return;
+  
+  try {
+    const response = await fetch(`/admin/tokens/${id}/deactivate`, { method: 'POST' });
+    const data = await response.json();
+    alert(data.status || 'Token wurde deaktiviert');
+    location.reload();
+  } catch (err) {
+    alert('Fehler: ' + err.message);
+  }
+}
+
+async function updateQuota(id) {
+  const newQuota = parseInt(document.getElementById(`quota-${id}`).value);
+  
+  if (newQuota <= 0) {
+    alert('Kontingent muss größer als 0 sein');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/admin/tokens/${id}/quota`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ max_uploads: newQuota })
+    });
+    
+    const data = await response.json();
+    alert(`✅ Kontingent auf ${data.max_uploads} aktualisiert`);
+    location.reload();
+  } catch (err) {
+    alert('Fehler: ' + err.message);
+  }
+}
+
+function downloadQR(id, name, format) {
+  const url = `/admin/tokens/${id}/qr?format=${format}`;
+  window.open(url, '_blank');
+}
+</script>
+{{end}}

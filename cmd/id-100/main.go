@@ -5,9 +5,12 @@ import (
 	"html/template"
 	"io"
 
+	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
+
+var store *sessions.CookieStore
 
 type Template struct {
 	templates *template.Template
@@ -42,6 +45,16 @@ type Derive struct {
 func main() {
 	initDatabase()
 	defer db.Close()
+
+	// Initialize session store
+	store = sessions.NewCookieStore([]byte("id-100-secret-key-change-in-production"))
+	store.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 30, // 30 days
+		HttpOnly: true,
+		Secure:   false, // Set to true in production with HTTPS
+		SameSite: 0,
+	}
 
 	e := echo.New()
 
