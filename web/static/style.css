@@ -14,12 +14,12 @@
   /* Colors */
   --black: #000;
   --white: #fff;
-  --gray-50: #fafafa;  /* Backgrounds */
+  --gray-50: #fafafa; /* Backgrounds */
   --gray-100: #f5f5f5; /* Light backgrounds, borders */
-  --gray-300: #ccc;    /* Placeholder, disabled */
-  --gray-600: #999;    /* Secondary text */
-  --gray-800: #666;    /* Primary text */
-  --gray-900: #333;    /* Dark elements */
+  --gray-300: #ccc; /* Placeholder, disabled */
+  --gray-600: #999; /* Secondary text */
+  --gray-800: #666; /* Primary text */
+  --gray-900: #333; /* Dark elements */
 
   /* Border Radius */
   --radius-sm: 8px;
@@ -28,9 +28,9 @@
   --radius-full: 50%;
 
   /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);   /* Subtle hover effects */
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);  /* Cards, elevated elements */
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);  /* Drawers, modals */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04); /* Subtle hover effects */
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08); /* Cards, elevated elements */
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08); /* Drawers, modals */
 
   /* Borders */
   --border-light: 1px solid rgba(0, 0, 0, 0.06);
@@ -68,7 +68,7 @@
 }
 
 body {
-  font-family: "Helvetica", sans-serif;
+  font-family: "Arial Rounded MT Bold", sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -427,7 +427,8 @@ main {
   overflow: visible;
   text-decoration: none;
   color: inherit;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition: transform var(--transition-fast),
+    box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
 .derive-card:hover {
@@ -920,7 +921,8 @@ input[type="text"]:focus {
   background: var(--white);
   display: flex;
   flex-direction: column;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition: transform var(--transition-fast),
+    box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
 .evidence-card:hover {

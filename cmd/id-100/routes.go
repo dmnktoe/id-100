@@ -28,10 +28,25 @@ func registerRoutes(e *echo.Echo) {
 	e.GET("/", homeHandler)
 	e.GET("/deriven", derivenHandler)
 	e.GET("/derive/:number", deriveHandler)
-	e.GET("/upload", uploadGetHandler)
-	e.POST("/upload", uploadPostHandler)
+	
+	// Upload routes - protected by token middleware with session support
+	e.GET("/upload", uploadGetHandler, tokenMiddlewareWithSession)
+	e.POST("/upload", uploadPostHandler, tokenMiddlewareWithSession)
+	e.POST("/upload/set-name", setPlayerNameHandler, tokenMiddlewareWithSession)
+	
 	e.GET("/spielregeln", rulesHandler)
 	e.GET("/about", aboutHandler)
+	
+	// Admin routes for token management
+	adminGroup := e.Group("/admin", basicAuthMiddleware)
+	adminGroup.GET("", adminDashboardHandler)
+	adminGroup.GET("/tokens", adminTokenListHandler)
+	adminGroup.POST("/tokens", adminCreateTokenHandler)
+	adminGroup.POST("/tokens/:id/deactivate", adminTokenDeactivateHandler)
+	adminGroup.POST("/tokens/:id/reset", adminTokenResetHandler)
+	adminGroup.POST("/tokens/:id/assign", adminTokenAssignHandler)
+	adminGroup.POST("/tokens/:id/quota", adminUpdateQuotaHandler)
+	adminGroup.GET("/tokens/:id/qr", adminDownloadQRHandler)
 }
 
 func homeHandler(c echo.Context) error {

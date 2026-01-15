@@ -4,10 +4,16 @@ import (
 	"bytes"
 	"html/template"
 	"io"
+	"log"
+	"os"
 
+	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
+
+var store *sessions.CookieStore
+var baseURL string
 
 type Template struct {
 	templates *template.Template
@@ -43,6 +49,33 @@ func main() {
 	initDatabase()
 	defer db.Close()
 
+	// Load environment variables
+	baseURL = os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
+
+	isProduction := os.Getenv("ENVIRONMENT") == "production"
+
+	sessionSecret := os.Getenv("SESSION_SECRET")
+	if sessionSecret == "" {
+		if isProduction {
+			log.Fatal("SESSION_SECRET must be set in production. Generate one with: openssl rand -base64 32")
+		}
+		log.Println("WARNING: Using insecure default SESSION_SECRET. Set SESSION_SECRET environment variable.")
+		sessionSecret = "id-100-secret-key-change-in-production"
+	}
+
+	// Initialize session store
+	store = sessions.NewCookieStore([]byte(sessionSecret))
+	store.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 30, // 30 days
+		HttpOnly: true,
+		Secure:   isProduction, // Enable in production with HTTPS
+		SameSite: 0,
+	}
+
 	e := echo.New()
 
 	e.Use(middleware.Logger())
@@ -56,5 +89,10 @@ func main() {
 	registerRoutes(e)
 	// routes are registered in routes.go
 
-	e.Logger.Fatal(e.Start(":8080"))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	e.Logger.Fatal(e.Start(":" + port))
 }
