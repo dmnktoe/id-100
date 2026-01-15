@@ -189,6 +189,11 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		
 		// Check if player name is set (first-time user flow)
 		if currentPlayer == "" {
+			// If this is a POST to /upload/set-name, let the handler process it
+			if c.Request().Method == "POST" && c.Request().URL.Path == "/upload/set-name" {
+				return next(c)
+			}
+			
 			// Check if name is in session
 			if sessName, ok := session.Values["player_name"].(string); ok && sessName != "" {
 				// Update DB with name from session
