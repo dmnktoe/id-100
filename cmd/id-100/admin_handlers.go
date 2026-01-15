@@ -192,9 +192,29 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			// Check if name is in session
 			if sessName, ok := session.Values["player_name"].(string); ok && sessName != "" {
 				// Update DB with name from session
-				db.Exec(context.Background(),
+				result, err := db.Exec(context.Background(),
 					"UPDATE upload_tokens SET current_player = $1, session_started_at = NOW() WHERE id = $2",
 					sessName, tokenID)
+				
+				if err != nil {
+					log.Printf("Failed to update current_player for token_id=%d with name=%s: %v", tokenID, sessName, err)
+					// Don't fail the request, but keep currentPlayer empty so name form shows again
+					return c.Render(http.StatusOK, "layout", map[string]interface{}{
+						"Title":           "Willkommen",
+						"ContentTemplate": "enter_name.content",
+						"CurrentPath":     c.Request().URL.Path,
+						"CurrentYear":     time.Now().Year(),
+						"BagName":         bagName,
+						"Token":           token,
+					})
+				}
+				
+				rows := result.RowsAffected()
+				if rows == 0 {
+					log.Printf("No rows updated when setting current_player for token_id=%d", tokenID)
+				}
+				
+				// Only set currentPlayer after successful DB update
 				currentPlayer = sessName
 			} else {
 				// Show name entry form
@@ -283,7 +303,8 @@ func adminTokenResetHandler(c echo.Context) error {
 		tokenID)
 	
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Database error: "+err.Error())
+		log.Printf("Database error in adminTokenResetHandler: %v", err)
+		return c.String(http.StatusInternalServerError, "Database error")
 	}
 	
 	rows := result.RowsAffected()
@@ -349,7 +370,8 @@ func adminTokenAssignHandler(c echo.Context) error {
 		req.PlayerName, tokenID)
 	
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Database error: "+err.Error())
+		log.Printf("Database error in adminTokenAssignHandler: %v", err)
+		return c.String(http.StatusInternalServerError, "Database error")
 	}
 	
 	rows := result.RowsAffected()
@@ -543,7 +565,9 @@ func adminDownloadQRHandler(c echo.Context) error {
 		}
 		
 		c.Response().Header().Set("Content-Type", "image/png")
-		c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"qr_%s.png\"", bagName))
+		// Use sanitizeFilename to prevent header injection
+		filename := fmt.Sprintf("qr_%s.png", sanitizeFilename(bagName))
+		c.Response().Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filename}))
 		return c.Blob(http.StatusOK, "image/png", pngBytes)
 		
 	default:
