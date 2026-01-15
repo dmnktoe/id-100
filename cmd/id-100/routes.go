@@ -32,7 +32,7 @@ func registerRoutes(e *echo.Echo) {
 	// Upload routes - protected by token middleware with session support
 	e.GET("/upload", uploadGetHandler, tokenMiddlewareWithSession)
 	e.POST("/upload", uploadPostHandler, tokenMiddlewareWithSession)
-	e.POST("/upload/set-name", setPlayerNameHandler)
+	e.POST("/upload/set-name", setPlayerNameHandler, tokenMiddlewareWithSession)
 	
 	e.GET("/spielregeln", rulesHandler)
 	e.GET("/about", aboutHandler)

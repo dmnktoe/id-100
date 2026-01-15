@@ -54,12 +54,16 @@ func main() {
 		baseURL = "http://localhost:8080"
 	}
 
+	isProduction := os.Getenv("ENVIRONMENT") == "production"
+
 	sessionSecret := os.Getenv("SESSION_SECRET")
 	if sessionSecret == "" {
+		if isProduction {
+			log.Fatal("SESSION_SECRET must be set in production. Generate one with: openssl rand -base64 32")
+		}
+		log.Println("WARNING: Using insecure default SESSION_SECRET. Set SESSION_SECRET environment variable.")
 		sessionSecret = "id-100-secret-key-change-in-production"
 	}
-
-	isProduction := os.Getenv("ENVIRONMENT") == "production"
 
 	// Initialize session store
 	store = sessions.NewCookieStore([]byte(sessionSecret))

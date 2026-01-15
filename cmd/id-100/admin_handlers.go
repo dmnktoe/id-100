@@ -3,11 +3,16 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
+	"encoding/xml"
 	"fmt"
+	"html"
 	"log"
+	"mime"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -82,13 +87,24 @@ func adminDashboardHandler(c echo.Context) error {
 	}
 	
 	// Get recent contributions
-	contribRows, _ := db.Query(context.Background(), `
+	contribRows, err := db.Query(context.Background(), `
 		SELECT c.image_url, COALESCE(ul.player_name, 'Anonym'), ul.derive_number
 		FROM contributions c
 		JOIN upload_logs ul ON ul.contribution_id = c.id
 		ORDER BY c.created_at DESC
 		LIMIT 20
 	`)
+	if err != nil {
+		log.Printf("Failed to fetch recent contributions: %v", err)
+		return c.Render(http.StatusOK, "layout", map[string]interface{}{
+			"Title":           "Admin Dashboard",
+			"ContentTemplate": "admin_dashboard.content",
+			"CurrentPath":     c.Request().URL.Path,
+			"CurrentYear":     time.Now().Year(),
+			"Tokens":          tokens,
+			"RecentContribs":  []RecentContrib{},
+		})
+	}
 	defer contribRows.Close()
 	
 	type RecentContrib struct {
@@ -399,15 +415,22 @@ func basicAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		adminUser := os.Getenv("ADMIN_USERNAME")
 		adminPass := os.Getenv("ADMIN_PASSWORD")
 		
-		if adminUser == "" {
-			adminUser = "admin"
-		}
-		if adminPass == "" {
-			adminPass = "admin"
+		if adminUser == "" || adminPass == "" {
+			log.Printf("ADMIN_USERNAME or ADMIN_PASSWORD not set")
+			return c.String(http.StatusInternalServerError, "Server misconfiguration")
 		}
 		
 		username, password, ok := c.Request().BasicAuth()
-		if !ok || username != adminUser || password != adminPass {
+		if !ok {
+			c.Response().Header().Set("WWW-Authenticate", `Basic realm="Admin Area"`)
+			return c.String(http.StatusUnauthorized, "Unauthorized")
+		}
+		
+		// Use constant-time comparison to prevent timing attacks
+		userMatch := subtle.ConstantTimeCompare([]byte(username), []byte(adminUser)) == 1
+		passMatch := subtle.ConstantTimeCompare([]byte(password), []byte(adminPass)) == 1
+		
+		if !userMatch || !passMatch {
 			c.Response().Header().Set("WWW-Authenticate", `Basic realm="Admin Area"`)
 			return c.String(http.StatusUnauthorized, "Unauthorized")
 		}
@@ -440,18 +463,25 @@ func adminCreateTokenHandler(c echo.Context) error {
 	}
 	
 	// Generate secure token
-	token := generateSecureToken(40)
+	token, err := generateSecureToken(40)
+	if err != nil {
+		log.Printf("Failed to generate token: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Internal server error",
+		})
+	}
 	
 	// Insert into database
 	var tokenID int
-	err := db.QueryRow(context.Background(),
+	err = db.QueryRow(context.Background(),
 		`INSERT INTO upload_tokens (token, bag_name, max_uploads, total_sessions) 
 		 VALUES ($1, $2, $3, 1) RETURNING id`,
 		token, req.BagName, req.MaxUploads).Scan(&tokenID)
 	
 	if err != nil {
+		log.Printf("Failed to create token: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Database error: " + err.Error(),
+			"error": "Internal server error",
 		})
 	}
 	
@@ -496,7 +526,9 @@ func adminDownloadQRHandler(c echo.Context) error {
 		// Generate SVG QR code using custom SVG generation
 		svg := generateQRCodeSVG(uploadURL, bagName)
 		c.Response().Header().Set("Content-Type", "image/svg+xml")
-		c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"qr_%s.svg\"", bagName))
+		// Use mime.FormatMediaType to safely encode filename
+		filename := fmt.Sprintf("qr_%s.svg", sanitizeFilename(bagName))
+		c.Response().Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filename}))
 		return c.String(http.StatusOK, svg)
 		
 	case "png":
@@ -561,12 +593,19 @@ func adminUpdateQuotaHandler(c echo.Context) error {
 }
 
 // generateSecureToken generates a cryptographically secure token
-func generateSecureToken(length int) string {
-	b := make([]byte, length)
+func generateSecureToken(length int) (string, error) {
+	// Calculate bytes needed to get desired length after base64 encoding
+	// base64 encoding produces 4 chars for every 3 bytes
+	bytesNeeded := (length*3 + 3) / 4
+	b := make([]byte, bytesNeeded)
 	if _, err := rand.Read(b); err != nil {
-		panic(err)
+		return "", fmt.Errorf("failed to generate random token: %w", err)
 	}
-	return base64.URLEncoding.EncodeToString(b)[:length]
+	encoded := base64.URLEncoding.EncodeToString(b)
+	if len(encoded) > length {
+		return encoded[:length], nil
+	}
+	return encoded, nil
 }
 
 // generateQRCodeSVG generates a simple SVG QR code with label
@@ -584,6 +623,9 @@ func generateQRCodeSVG(url, label string) string {
 	svgWidth := size*scale + 2*padding
 	svgHeight := size*scale + 2*padding + labelHeight
 	
+	// Escape label to prevent XSS
+	escapedLabel := html.EscapeString(label)
+	
 	svg := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">
 	<rect width="%d" height="%d" fill="white"/>
@@ -592,7 +634,7 @@ func generateQRCodeSVG(url, label string) string {
 	<g transform="translate(%d, %d)">`,
 		svgWidth, svgHeight, svgWidth, svgHeight,
 		svgWidth, svgHeight,
-		svgWidth/2, label,
+		svgWidth/2, escapedLabel,
 		svgWidth/2, svgHeight-20,
 		padding, padding+40)
 	
@@ -612,4 +654,14 @@ func generateQRCodeSVG(url, label string) string {
 </svg>`
 	
 	return svg
+}
+
+// sanitizeFilename removes characters that could cause header injection
+func sanitizeFilename(name string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\n' || r == '\r' || r == '"' || r == '\\' {
+			return '_'
+		}
+		return r
+	}, name)
 }
