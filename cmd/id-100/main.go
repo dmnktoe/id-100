@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"html/template"
 	"io"
+	"log"
 	"os"
 
 	"github.com/gorilla/sessions"

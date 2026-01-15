@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
-	"encoding/xml"
 	"fmt"
 	"html"
 	"log"
@@ -87,6 +86,12 @@ func adminDashboardHandler(c echo.Context) error {
 	}
 	
 	// Get recent contributions
+	type RecentContrib struct {
+		ImageUrl     string
+		PlayerName   string
+		DeriveNumber int
+	}
+	
 	contribRows, err := db.Query(context.Background(), `
 		SELECT c.image_url, COALESCE(ul.player_name, 'Anonym'), ul.derive_number
 		FROM contributions c
@@ -106,12 +111,6 @@ func adminDashboardHandler(c echo.Context) error {
 		})
 	}
 	defer contribRows.Close()
-	
-	type RecentContrib struct {
-		ImageUrl     string
-		PlayerName   string
-		DeriveNumber int
-	}
 	
 	var recentContribs []RecentContrib
 	for contribRows.Next() {
