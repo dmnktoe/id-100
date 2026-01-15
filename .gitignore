@@ -30,7 +30,10 @@ tmp/
 # Environment Files (Sensible Daten wie S3 Keys)
 .env
 .env.local
+.env.production
 
 # Docker
 .docker/
+
+# Binary
 /id-100

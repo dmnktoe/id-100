@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -395,14 +396,17 @@ func adminTokenListHandler(c echo.Context) error {
 // basicAuthMiddleware protects admin endpoints
 func basicAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		username, password, ok := c.Request().BasicAuth()
-		adminUser := "admin"  // os.Getenv("ADMIN_USERNAME")
-		adminPass := "admin"  // os.Getenv("ADMIN_PASSWORD")
+		adminUser := os.Getenv("ADMIN_USERNAME")
+		adminPass := os.Getenv("ADMIN_PASSWORD")
 		
-		if adminUser == "" || adminPass == "" {
-			return c.String(http.StatusInternalServerError, "Admin credentials not configured")
+		if adminUser == "" {
+			adminUser = "admin"
+		}
+		if adminPass == "" {
+			adminPass = "admin"
 		}
 		
+		username, password, ok := c.Request().BasicAuth()
 		if !ok || username != adminUser || password != adminPass {
 			c.Response().Header().Set("WWW-Authenticate", `Basic realm="Admin Area"`)
 			return c.String(http.StatusUnauthorized, "Unauthorized")
@@ -451,8 +455,7 @@ func adminCreateTokenHandler(c echo.Context) error {
 		})
 	}
 	
-	// Generate upload URL
-	baseURL := c.Scheme() + "://" + c.Request().Host
+	// Generate upload URL (use global baseURL from env)
 	uploadURL := fmt.Sprintf("%s/upload?token=%s", baseURL, token)
 	
 	return c.JSON(http.StatusOK, map[string]interface{}{
@@ -479,10 +482,9 @@ func adminDownloadQRHandler(c echo.Context) error {
 		return c.String(http.StatusNotFound, "Token not found")
 	}
 	
-	// Generate upload URL
-	baseURL := c.Scheme() + "://" + c.Request().Host
+	// Generate upload URL (use global baseURL from env)
 	uploadURL := fmt.Sprintf("%s/upload?token=%s", baseURL, token)
-	
+
 	// Check format parameter
 	format := c.QueryParam("format")
 	if format == "" {
