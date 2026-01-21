@@ -126,7 +126,8 @@ func derivenHandler(c echo.Context) error {
             SELECT 
                 d.id, d.number, d.title, d.description, 
                 COALESCE(c.image_url, ''), COALESCE(c.image_lqip, ''),
-                (SELECT COUNT(*) FROM contributions WHERE derive_id = d.id) as contrib_count
+                (SELECT COUNT(*) FROM contributions WHERE derive_id = d.id) as contrib_count,
+                d.points
             FROM deriven d
             LEFT JOIN LATERAL (
                 SELECT image_url, image_lqip FROM contributions 
@@ -146,12 +147,20 @@ func derivenHandler(c echo.Context) error {
 	var deriven []Derive
 	for rows.Next() {
 		var d Derive
-		if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.ImageLqip, &d.ContribCount); err != nil {
+		if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.ImageLqip, &d.ContribCount, &d.Points); err != nil {
 			log.Printf("Scan Error: %v", err)
 			return err
 		}
 		// Normalize image URL
 		d.ImageUrl = ensureFullImageURL(d.ImageUrl)
+		// map points to a simple tier (1..3) for badge + overlay selection
+		if d.Points <= 1 {
+			d.PointsTier = 1
+		} else if d.Points == 2 {
+			d.PointsTier = 2
+		} else {
+			d.PointsTier = 3
+		}
 		deriven = append(deriven, d)
 	}
 
@@ -220,14 +229,27 @@ func deriveHandler(c echo.Context) error {
 	
 	var d Derive
 	query := `
-            SELECT d.id, d.number, d.title, d.description, COALESCE(c.image_url, '')
+            SELECT d.id, d.number, d.title, d.description, COALESCE(c.image_url, ''), d.points
             FROM deriven d
             LEFT JOIN LATERAL (
                 SELECT image_url FROM contributions WHERE derive_id = d.id ORDER BY created_at DESC LIMIT 1
             ) c ON true
             WHERE d.number = $1`
 
-	err := db.QueryRow(context.Background(), query, num).Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl)
+	err := db.QueryRow(context.Background(), query, num).Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.Points)
+	if err != nil {
+		return c.Redirect(http.StatusSeeOther, "/deriven")
+	}
+	// Normalize derive image URL
+	d.ImageUrl = ensureFullImageURL(d.ImageUrl)
+	// compute PointsTier for styling
+	if d.Points <= 1 {
+		d.PointsTier = 1
+	} else if d.Points == 2 {
+		d.PointsTier = 2
+	} else {
+		d.PointsTier = 3
+	}
 	if err != nil {
 		return c.Redirect(http.StatusSeeOther, "/deriven")
 	}

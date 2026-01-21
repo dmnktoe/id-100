@@ -163,7 +163,9 @@ main {
   vertical-align: middle;
   opacity: 0.9;
   filter: blur(2px);
-  transition: filter 0.4s ease, opacity 0.4s ease;
+  transition:
+    filter 0.4s ease,
+    opacity 0.4s ease;
 }
 
 .brand-full.reverse-animated .brand-text {
@@ -390,7 +392,7 @@ main {
 .derive-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1.25rem;
+  gap: 4rem;
   padding: var(--pad-sm) 0;
 }
 
@@ -421,31 +423,30 @@ main {
 }
 .derive-card {
   display: block;
-  background: var(--white);
-  border: var(--border-light);
-  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  border-radius: 0;
   overflow: visible;
   text-decoration: none;
   color: inherit;
-  transition: transform var(--transition-fast),
-    box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .derive-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .card-image-box {
   position: relative;
-  height: 160px;
-  overflow: hidden;
-  background: var(--gray-50);
+  height: auto;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 11px 11px 0 0;
+  aspect-ratio: 2 / 3;
 }
 
 .card-img {
@@ -453,6 +454,153 @@ main {
   height: 100%;
   object-fit: cover;
   display: block;
+
+  clip-path: polygon(
+    7% 3%,
+    /* Oben links */ 66% 3%,
+    /* Oben Mitte */ 95% 2%,
+    /* Oben rechts */ 98% 52%,
+    /* Rechts Mitte */ 96% 99%,
+    /* Unten rechts */ 20% 98%,
+    /* Unten Mitte */ 7% 97%,
+    /* Unten links */ 2% 98% /* Links Mitte */
+  );
+
+  z-index: 1;
+}
+
+.card-image-box::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background-image: url("./../static/assets/images/card_frame-holder.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+
+  z-index: 2;
+  pointer-events: none;
+}
+
+.card-image-box::before {
+  content: "";
+  position: absolute;
+  /* larger default size so overlays are clearly visible on desktop */
+  width: clamp(180px, 28%, 320px);
+  aspect-ratio: 217 / 298;
+  z-index: 3; /* Über dem Rahmen */
+  pointer-events: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 1; /* Leicht transparent für besseren Look */
+  /* smooth transitions for size & position to avoid jumps on resize */
+  transition:
+    top 360ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    right 360ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    left 360ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    bottom 360ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    transform 360ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    width 360ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  will-change: top, right, left, bottom, transform, width;
+}
+
+/* Tier-based overlay placement with gentler translate nudges for larger overlays */
+.derive-card.overlay-1 .card-image-box::before {
+  background-image: url("./../static/assets/images/card_overlay-1.png");
+  top: 6%;
+  right: 6%;
+  transform: translate(8%, -8%) rotate(12deg);
+}
+
+.derive-card.overlay-2 .card-image-box::before {
+  background-image: url("./../static/assets/images/card_overlay-2.png");
+  bottom: 6%;
+  left: 6%;
+  transform: translate(-8%, 8%) rotate(-8deg);
+}
+
+.derive-card.overlay-3 .card-image-box::before {
+  background-image: url("./../static/assets/images/card_overlay-3.png");
+  /* slightly above centre on the right edge so it reads as a proper decoration */
+  top: 46%;
+  right: 6%;
+  transform: translate(8%, -46%) rotate(10deg);
+}
+
+/* Medium screens: keep overlays prominently visible */
+@media (max-width: 720px) {
+  .card-image-box::before {
+    width: clamp(140px, 26%, 260px);
+  }
+  .derive-card.overlay-1 .card-image-box::before {
+    top: 7%;
+    right: 7%;
+    transform: translate(9%, -9%) rotate(10deg);
+  }
+  .derive-card.overlay-2 .card-image-box::before {
+    bottom: 7%;
+    left: 7%;
+    transform: translate(-9%, 9%) rotate(-6deg);
+  }
+  .derive-card.overlay-3 .card-image-box::before {
+    top: 46%;
+    right: 7%;
+    transform: translate(9%, -46%) rotate(8deg);
+  }
+}
+
+/* Small screens: still visible but compact to avoid overlap */
+@media (max-width: 420px) {
+  .card-image-box::before {
+    width: clamp(100px, 26%, 180px);
+  }
+  .derive-card.overlay-1 .card-image-box::before {
+    top: 9%;
+    right: 9%;
+    transform: translate(8%, -8%) rotate(8deg);
+  }
+  .derive-card.overlay-2 .card-image-box::before {
+    bottom: 9%;
+    left: 9%;
+    transform: translate(-8%, 8%) rotate(-6deg);
+  }
+  .derive-card.overlay-3 .card-image-box::before {
+    top: 46%;
+    right: 9%;
+    transform: translate(8%, -46%) rotate(6deg);
+  }
+}
+
+/* Points badge (top-left) */
+.points-badge {
+  position: absolute;
+  left: -0.25rem;
+  top: -1.25rem;
+  z-index: 66;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.points-badge img {
+  width: 65px;
+  height: 65px;
+  display: block;
+}
+
+/* slight variation per tier if needed */
+.points-badge.points-tier-2 img {
+  transform: scale(1.02);
+}
+.points-badge.points-tier-3 img {
+  transform: scale(1.05);
 }
 
 .no-image {
@@ -475,6 +623,7 @@ main {
   font-weight: 400;
   box-shadow: var(--shadow-sm);
   letter-spacing: var(--letter-spacing-tight);
+  z-index: 65;
 }
 
 .card-content {
@@ -725,7 +874,8 @@ main {
 .nav-active {
   color: var(--black) !important;
   background: var(--bg-glass-active) !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08),
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
   font-weight: 500 !important;
 }
@@ -921,8 +1071,10 @@ input[type="text"]:focus {
   background: var(--white);
   display: flex;
   flex-direction: column;
-  transition: transform var(--transition-fast),
-    box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .evidence-card:hover {
@@ -1047,14 +1199,14 @@ body.drawer-open .drawer-panel {
    ======================================== */
 img.blur-up {
   filter: blur(12px);
-  transform: scale(1.02);
-  transition: filter 360ms ease, transform 360ms ease;
+  transition:
+    filter 360ms ease,
+    transform 360ms ease;
   will-change: filter, transform;
 }
 
 img.blur-up.loaded {
   filter: blur(0);
-  transform: scale(1);
 }
 
 /* ========================================

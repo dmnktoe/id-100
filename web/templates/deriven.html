@@ -4,13 +4,18 @@
         
         <div class="derive-grid">
             {{range .Deriven}}
-            <a href="/derive/{{.Number}}?page={{$.CurrentPage}}" class="derive-card">
+            <a href="/derive/{{.Number}}?page={{$.CurrentPage}}" class="derive-card overlay-{{.PointsTier}}">
                 <div class="card-image-box">
                     {{if .ImageUrl}}
                         <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="{{.Title}}">
                     {{else}}
                         <div class="no-image">kein bild</div>
                     {{end}}
+
+                    <!-- points badge (top-left) -->
+                    <div class="points-badge points-tier-{{.PointsTier}}">
+                        <img src="/static/assets/images/points_indicator_{{.PointsTier}}.png" alt="{{.Points}} Punkte">
+                    </div>
                     
                     <div class="contrib-badge">
                         {{.ContribCount}}x gelöst

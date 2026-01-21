@@ -1,4 +1,4 @@
-(function () {
+(() => {
   // Brand animation logic: animate on subpages, reverse on homepage return
   const brandFull = document.querySelector(".brand-full");
   const brandCompact = document.querySelector(".brand-compact");
@@ -56,7 +56,7 @@
         },
         {
           once: true,
-        }
+        },
       );
     }
 
@@ -85,7 +85,7 @@
       history.pushState(
         { drawer: true, number: number, page: pageParam },
         "",
-        url
+        url,
       );
     }
   }
@@ -228,7 +228,7 @@
             o.unobserve(img);
           });
         },
-        { root: null, rootMargin: "200px", threshold: 0.01 }
+        { root: null, rootMargin: "200px", threshold: 0.01 },
       );
 
       images.forEach((img) => {
