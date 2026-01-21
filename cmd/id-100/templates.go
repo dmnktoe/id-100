@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"path/filepath"
+	"strings"
 )
 
 func LoadTemplates() *Template {
@@ -16,6 +17,8 @@ func LoadTemplates() *Template {
 
 	funcs := template.FuncMap{
 		"eq": func(a, b string) bool { return a == b },
+		"or": func(a, b bool) bool { return a || b },
+		"hasprefix": func(s, prefix string) bool { return strings.HasPrefix(s, prefix) },
 	}
 	tmpl := template.New("").Funcs(funcs)
 	tmpls, err := tmpl.ParseFiles(files...)

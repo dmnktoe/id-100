@@ -25,8 +25,7 @@ import (
 func registerRoutes(e *echo.Echo) {
 	e.Static("/static", "web/static")
 
-	e.GET("/", homeHandler)
-	e.GET("/deriven", derivenHandler)
+	e.GET("/", derivenHandler)
 	e.GET("/derive/:number", deriveHandler)
 	
 	// Upload routes - protected by token middleware with session support
@@ -47,60 +46,6 @@ func registerRoutes(e *echo.Echo) {
 	adminGroup.POST("/tokens/:id/assign", adminTokenAssignHandler)
 	adminGroup.POST("/tokens/:id/quota", adminUpdateQuotaHandler)
 	adminGroup.GET("/tokens/:id/qr", adminDownloadQRHandler)
-}
-
-func homeHandler(c echo.Context) error {
-	stats := getFooterStats()
-	
-	// fetch latest contributions with derive meta
-	rows, err := db.Query(context.Background(), `
-		SELECT c.image_url, COALESCE(c.image_lqip,''), c.user_name, c.created_at, d.number, d.title
-		FROM contributions c
-		JOIN deriven d ON d.id = c.derive_id
-		ORDER BY c.created_at DESC
-		LIMIT $1`, 5)
-	if err != nil {
-		log.Printf("Query Error (recent contributions): %v", err)
-		// fallback render with empty list
-		return c.Render(http.StatusOK, "layout", map[string]interface{}{
-			"Title":           "🏠🆔💯 DÉRIVE 100",
-			"RecentContribs":  []interface{}{},
-			"ContentTemplate": "index.content",
-			"CurrentPath":     c.Request().URL.Path,
-			"CurrentYear":     time.Now().Year(),
-			"FooterStats":     stats,
-		})
-	}
-	defer rows.Close()
-
-	type RecentContribution struct {
-		ImageUrl  string
-		ImageLqip string
-		UserName  string
-		CreatedAt time.Time
-		Number    int
-		Title     string
-	}
-	var recent []RecentContribution
-	for rows.Next() {
-		var r RecentContribution
-		if err := rows.Scan(&r.ImageUrl, &r.ImageLqip, &r.UserName, &r.CreatedAt, &r.Number, &r.Title); err != nil {
-			log.Printf("Scan Error: %v", err)
-			continue
-		}
-		// Normalize image URL so templates can use it as-is
-		r.ImageUrl = ensureFullImageURL(r.ImageUrl)
-		recent = append(recent, r)
-	}
-
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "🏠🆔💯 DÉRIVE 100",
-		"RecentContribs":  recent,
-		"ContentTemplate": "index.content",
-		"CurrentPath":     c.Request().URL.Path,
-		"CurrentYear":     time.Now().Year(),
-		"FooterStats":     stats,
-	})
 }
 
 func derivenHandler(c echo.Context) error {
@@ -206,7 +151,7 @@ func derivenHandler(c echo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Index - DÉRIVE 100",
+		"Title":           "Innenstadt (🏠) ID (🆔)-100 (💯)",
 		"Deriven":         deriven,
 		"CurrentPage":     page,
 		"TotalPages":      totalPages,
@@ -238,7 +183,7 @@ func deriveHandler(c echo.Context) error {
 
 	err := db.QueryRow(context.Background(), query, num).Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.Points)
 	if err != nil {
-		return c.Redirect(http.StatusSeeOther, "/deriven")
+		return c.Redirect(http.StatusSeeOther, "/")
 	}
 	// Normalize derive image URL
 	d.ImageUrl = ensureFullImageURL(d.ImageUrl)
@@ -250,12 +195,6 @@ func deriveHandler(c echo.Context) error {
 	} else {
 		d.PointsTier = 3
 	}
-	if err != nil {
-		return c.Redirect(http.StatusSeeOther, "/deriven")
-	}
-
-	// Normalize derive image URL
-	d.ImageUrl = ensureFullImageURL(d.ImageUrl)
 
 	rows, _ := db.Query(context.Background(),
 		"SELECT image_url, COALESCE(image_lqip,''), user_name, created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
@@ -316,7 +255,7 @@ func uploadGetHandler(c echo.Context) error {
 		list = append(list, d)
 	}
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Submit Evidence - DÉRIVE 100",
+		"Title":           "beweis hochladen - 🏠🆔💯",
 		"Deriven":         list,
 		"ContentTemplate": "upload.content",
 		"CurrentPath":     c.Request().URL.Path,
@@ -433,13 +372,13 @@ func uploadPostHandler(c echo.Context) error {
 		// Don't fail the request, contribution is already saved
 	}
 
-	return c.Redirect(http.StatusSeeOther, "/deriven")
+	return c.Redirect(http.StatusSeeOther, "/")
 }
 
 func rulesHandler(c echo.Context) error {
 	stats := getFooterStats()
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Spielregeln - DÉRIVE 100",
+		"Title":           "spielregeln - 🏠🆔💯",
 		"ContentTemplate": "spielregeln.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
@@ -450,7 +389,7 @@ func rulesHandler(c echo.Context) error {
 func aboutHandler(c echo.Context) error {
 	stats := getFooterStats()
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "About - DÉRIVE 100",
+		"Title":           "about - 🏠🆔💯",
 		"ContentTemplate": "about.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),

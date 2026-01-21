@@ -181,8 +181,7 @@ go test ./cmd/id-100 -v
 
 | Methode | Pfad | Beschreibung |
 |---------|------|--------------|
-| `GET` | `/` | Startseite mit neuesten Beiträgen |
-| `GET` | `/deriven` | Übersicht aller Deriven |
+| `GET` | `/` | Übersicht aller Deriven (Index) |
 | `GET` | `/derive/:number` | Detail-Ansicht einer Derive |
 | `GET` | `/upload` | Upload-Formular |
 | `POST` | `/upload` | Beitrag hochladen |
