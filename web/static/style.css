@@ -392,7 +392,7 @@ main {
 .derive-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1.25rem;
+  gap: 4rem;
   padding: var(--pad-sm) 0;
 }
 
@@ -437,14 +437,11 @@ main {
 
 .derive-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .card-image-box {
   position: relative;
   height: auto;
-  overflow: hidden;
   background: transparent;
   display: flex;
   align-items: center;
@@ -491,33 +488,119 @@ main {
 .card-image-box::before {
   content: "";
   position: absolute;
-  width: 217px;
-  height: 298px;
+  /* larger default size so overlays are clearly visible on desktop */
+  width: clamp(180px, 28%, 320px);
+  aspect-ratio: 217 / 298;
   z-index: 3; /* Über dem Rahmen */
   pointer-events: none;
   background-size: contain;
   background-repeat: no-repeat;
+  background-position: center;
   opacity: 1; /* Leicht transparent für besseren Look */
+  /* smooth transitions for size & position to avoid jumps on resize */
+  transition:
+    top 360ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    right 360ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    left 360ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    bottom 360ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    transform 360ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    width 360ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  will-change: top, right, left, bottom, transform, width;
 }
 
-.derive-card:nth-child(3n + 1) .card-image-box::before {
+/* Tier-based overlay placement with gentler translate nudges for larger overlays */
+.derive-card.overlay-1 .card-image-box::before {
   background-image: url("./../static/assets/images/card_overlay-1.png");
-  top: 10px;
-  right: 10px;
-  transform: rotate(15deg);
+  top: 6%;
+  right: 6%;
+  transform: translate(8%, -8%) rotate(12deg);
 }
 
-.derive-card:nth-child(3n + 2) .card-image-box::before {
+.derive-card.overlay-2 .card-image-box::before {
   background-image: url("./../static/assets/images/card_overlay-2.png");
-  bottom: 15px;
-  left: 10px;
-  transform: rotate(-10deg);
+  bottom: 6%;
+  left: 6%;
+  transform: translate(-8%, 8%) rotate(-8deg);
 }
 
-.derive-card:nth-child(3n + 3) .card-image-box::before {
+.derive-card.overlay-3 .card-image-box::before {
   background-image: url("./../static/assets/images/card_overlay-3.png");
-  top: 10%;
-  right: -5px;
+  /* slightly above centre on the right edge so it reads as a proper decoration */
+  top: 46%;
+  right: 6%;
+  transform: translate(8%, -46%) rotate(10deg);
+}
+
+/* Medium screens: keep overlays prominently visible */
+@media (max-width: 720px) {
+  .card-image-box::before {
+    width: clamp(140px, 26%, 260px);
+  }
+  .derive-card.overlay-1 .card-image-box::before {
+    top: 7%;
+    right: 7%;
+    transform: translate(9%, -9%) rotate(10deg);
+  }
+  .derive-card.overlay-2 .card-image-box::before {
+    bottom: 7%;
+    left: 7%;
+    transform: translate(-9%, 9%) rotate(-6deg);
+  }
+  .derive-card.overlay-3 .card-image-box::before {
+    top: 46%;
+    right: 7%;
+    transform: translate(9%, -46%) rotate(8deg);
+  }
+}
+
+/* Small screens: still visible but compact to avoid overlap */
+@media (max-width: 420px) {
+  .card-image-box::before {
+    width: clamp(100px, 26%, 180px);
+  }
+  .derive-card.overlay-1 .card-image-box::before {
+    top: 9%;
+    right: 9%;
+    transform: translate(8%, -8%) rotate(8deg);
+  }
+  .derive-card.overlay-2 .card-image-box::before {
+    bottom: 9%;
+    left: 9%;
+    transform: translate(-8%, 8%) rotate(-6deg);
+  }
+  .derive-card.overlay-3 .card-image-box::before {
+    top: 46%;
+    right: 9%;
+    transform: translate(8%, -46%) rotate(6deg);
+  }
+}
+
+/* Points badge (top-left) */
+.points-badge {
+  position: absolute;
+  left: -0.25rem;
+  top: -1.25rem;
+  z-index: 66;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.points-badge img {
+  width: 65px;
+  height: 65px;
+  display: block;
+}
+
+/* slight variation per tier if needed */
+.points-badge.points-tier-2 img {
+  transform: scale(1.02);
+}
+.points-badge.points-tier-3 img {
+  transform: scale(1.05);
 }
 
 .no-image {
