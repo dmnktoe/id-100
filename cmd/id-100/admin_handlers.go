@@ -132,6 +132,11 @@ func adminDashboardHandler(c echo.Context) error {
 	}
 
 	status := c.QueryParam("bag_status")
+	// selected tab (server-side)
+	tab := c.QueryParam("tab")
+	if tab != "tokens" && tab != "requests" && tab != "contribs" {
+		tab = "tokens"
+	}
 
 	// counts for filter badges
 	var openCount, handledCount int
@@ -153,16 +158,16 @@ func adminDashboardHandler(c echo.Context) error {
 	}
 
 	reqRows, err := db.Query(context.Background(), query)
+	var bagRequests []BagRequest
 	if err != nil {
 		log.Printf("Failed to fetch bag requests: %v", err)
-	}
-	defer reqRows.Close()
-
-	var bagRequests []BagRequest
-	for reqRows.Next() {
-		var br BagRequest
-		if err := reqRows.Scan(&br.ID, &br.Email, &br.CreatedAt, &br.Handled); err == nil {
-			bagRequests = append(bagRequests, br)
+	} else {
+		defer reqRows.Close()
+		for reqRows.Next() {
+			var br BagRequest
+			if err := reqRows.Scan(&br.ID, &br.Email, &br.CreatedAt, &br.Handled); err == nil {
+				bagRequests = append(bagRequests, br)
+			}
 		}
 	}
 
@@ -175,6 +180,7 @@ func adminDashboardHandler(c echo.Context) error {
 		"BagStatus":       status,
 		"OpenCount":       openCount,
 		"HandledCount":    handledCount,
+		"Tab":             tab,
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 	})

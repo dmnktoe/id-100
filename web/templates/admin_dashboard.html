@@ -128,6 +128,29 @@
     color: #fff;
     border-color: #2196F3;
   }
+
+  /* Tabs for admin dashboard */
+  .admin-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .admin-tab {
+    padding: 0.45rem 0.8rem;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: #fafafa;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.95rem;
+  }
+
+  .admin-tab.active {
+    background: #2196F3;
+    color: #fff;
+    border-color: #2196F3;
+  }
 </style>
 
 <div class="admin-container">
@@ -136,7 +159,14 @@
     <p>Token-Verwaltung und Upload-Übersicht</p>
   </div>
 
-  <div class="admin-section">
+  <div class="admin-tabs">
+    <a href="/admin?tab=tokens" class="admin-tab{{if eq .Tab "tokens"}} active{{end}}">📱 Taschen & Tokens</a>
+    <a href="/admin?tab=requests" class="admin-tab{{if eq .Tab "requests"}} active{{end}}">👜 Taschen-Anfragen</a>
+    <a href="/admin?tab=contribs" class="admin-tab{{if eq .Tab "contribs"}} active{{end}}">📸 Neueste Contributions</a>
+  </div>
+
+  {{if eq .Tab "tokens"}}
+  <div id="tab-tokens" class="admin-section">
     <h2>➕ Neue Tasche erstellen</h2>
     <div style="background: #f5f5f5; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
       <form id="createTokenForm"
@@ -213,16 +243,18 @@
     </div>
     {{end}}
   </div>
+  {{end}}
 
-  <div class="admin-section">
+  {{if eq .Tab "requests"}}
+  <div id="tab-requests" class="admin-section">
     <h2>👜 Taschen-Anfragen</h2>
     <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:0.75rem;">
-      <a href="/admin?bag_status=all" class="filter-btn {{if or (not .BagStatus) (eq .BagStatus "all")}}active{{end}}">Alle ({{len .BagRequests}})</a>
-      <a href="/admin?bag_status=open" class="filter-btn {{if eq .BagStatus "open"}}active{{end}}">Offen ({{.OpenCount}})</a>
-      <a href="/admin?bag_status=handled" class="filter-btn {{if eq .BagStatus "handled"}}active{{end}}">Erledigt ({{.HandledCount}})</a>
+      <a href="/admin?tab=requests&bag_status=all" class="filter-btn {{if or (not .BagStatus) (eq .BagStatus "all")}}active{{end}}">Alle ({{len .BagRequests}})</a>
+      <a href="/admin?tab=requests&bag_status=open" class="filter-btn {{if eq .BagStatus "open"}}active{{end}}">Offen ({{.OpenCount}})</a>
+      <a href="/admin?tab=requests&bag_status=handled" class="filter-btn {{if eq .BagStatus "handled"}}active{{end}}">Erledigt ({{.HandledCount}})</a>
     </div>
 
-    <div style="background:#fff; padding:1rem; border-radius:8px; border:1px solid #eee; margin-bottom: 2rem;">
+    <div id="bagRequestsContainer" style="background:#fff; padding:1rem; border-radius:8px; border:1px solid #eee; margin-bottom: 2rem;">
       {{if .BagRequests}}
       <ul style="list-style:none; padding:0; margin:0;">
         {{range .BagRequests}}
@@ -250,8 +282,10 @@
       {{end}}
     </div>
   </div>
+  {{end}}
 
-  <div class="admin-section">
+  {{if eq .Tab "contribs"}}
+  <div id="tab-contribs" class="admin-section">
     <h2>📸 Neueste Contributions</h2>
     <div class="contrib-grid">
       {{range .RecentContribs}}
@@ -265,6 +299,7 @@
       {{end}}
     </div>
   </div>
+  {{end}}
 </div>
 
 <script>
@@ -379,5 +414,46 @@
       alert('Fehler: ' + err.message);
     }
   }
+
+  // AJAX filter for bag requests: replace the requests container to avoid full page reload and scrolling to top
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a.filter-btn');
+    if (!link) return;
+    // only handle links inside the admin section
+    if (!link.closest('.admin-section')) return;
+    e.preventDefault();
+
+    const href = link.getAttribute('href');
+    const fetchUrl = href.includes('?') ? href + '&partial=1' : href + '?partial=1';
+
+    fetch(fetchUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error('fetch failed');
+        return r.text();
+      })
+      .then((html) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newContainer = doc.querySelector('#bagRequestsContainer');
+        if (!newContainer) {
+          // fallback to full navigation
+          window.location.href = href;
+          return;
+        }
+        const container = document.getElementById('bagRequestsContainer');
+        container.innerHTML = newContainer.innerHTML;
+        // update active states on buttons
+        document.querySelectorAll('.admin-section a.filter-btn').forEach(a => a.classList.remove('active'));
+        link.classList.add('active');
+        // update URL without scrolling
+        history.pushState(null, '', href);
+      })
+      .catch((err) => {
+        console.error(err);
+        window.location.href = href;
+      });
+  });
+
+
 </script>
 {{end}}
