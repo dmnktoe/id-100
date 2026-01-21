@@ -11,6 +11,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -132,7 +133,42 @@ func adminDashboardHandler(c echo.Context) error {
 	})
 }
 
-// tokenMiddlewareis an updated middleware with session support
+// Session helpers for middleware
+func getSessionNumber(v interface{}) (int, bool) {
+	switch n := v.(type) {
+	case int:
+		return n, true
+	case int64:
+		return int(n), true
+	case float64:
+		return int(n), true
+	case string:
+		if x, err := strconv.Atoi(n); err == nil {
+			return x, true
+		}
+	}
+	return 0, false
+}
+
+func getSessionTime(v interface{}) (time.Time, bool) {
+	switch t := v.(type) {
+	case time.Time:
+		return t, true
+	case string:
+		if tm, err := time.Parse(time.RFC3339, t); err == nil {
+			return tm, true
+		}
+	case int64:
+		return time.Unix(t, 0), true
+	case int:
+		return time.Unix(int64(t), 0), true
+	case float64:
+		return time.Unix(int64(t), 0), true
+	}
+	return time.Time{}, false
+}
+
+// tokenMiddlewareWithSession is an updated middleware with session support
 func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Get session
@@ -164,12 +200,13 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		var isActive bool
 		var maxUploads, totalUploads, totalSessions int
 		var currentPlayer, bagName string
+		var sessionStartedAt time.Time
 		
 		err = db.QueryRow(context.Background(),
 			`SELECT id, is_active, max_uploads, total_uploads, total_sessions,
-			 COALESCE(current_player, ''), COALESCE(bag_name, '') 
+			 COALESCE(current_player, ''), COALESCE(bag_name, ''), COALESCE(session_started_at, created_at)
 			 FROM upload_tokens WHERE token = $1`,
-			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &bagName)
+			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &bagName, &sessionStartedAt)
 		
 		if err != nil {
 			log.Printf("Token validation error: %v", err)
@@ -185,6 +222,39 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		session.Values["token"] = token
 		session.Values["token_id"] = tokenID
 		session.Values["bag_name"] = bagName
+		
+		// session freshness: ensure session_number and session_started_at exist and match DB
+		sessNumVal := session.Values["session_number"]
+		if existing, ok := getSessionNumber(sessNumVal); ok {
+			if existing != totalSessions {
+				// session is stale: clear the stored player name and update stored session meta
+				delete(session.Values, "player_name")
+				session.Values["session_number"] = totalSessions
+				session.Values["session_started_at"] = sessionStartedAt
+				// force name flow
+				currentPlayer = ""
+			}
+		} else {
+			// initialize session metadata for this token so future admin resets can be detected
+			session.Values["session_number"] = totalSessions
+			session.Values["session_started_at"] = sessionStartedAt
+		}
+
+		// Additionally check session_started_at mismatch (covers manual DB edits without incrementing total_sessions)
+		sessStartVal := session.Values["session_started_at"]
+		if existingStart, ok := getSessionTime(sessStartVal); ok {
+			if !existingStart.Equal(sessionStartedAt) {
+				// session is stale: clear player_name and update stored session meta
+				delete(session.Values, "player_name")
+				session.Values["session_started_at"] = sessionStartedAt
+				session.Values["session_number"] = totalSessions
+				currentPlayer = ""
+			}
+		} else {
+			// ensure the session has the start time
+			session.Values["session_started_at"] = sessionStartedAt
+		}
+
 		session.Save(c.Request(), c.Response())
 		
 		// Check if player name is set (first-time user flow)
