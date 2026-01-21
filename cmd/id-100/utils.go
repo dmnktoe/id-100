@@ -11,32 +11,32 @@ import (
 
 // FooterStats holds database statistics for the footer
 type FooterStats struct {
-	TotalDeriven      int
+	TotalDeriven       int
 	TotalContributions int
-	ActiveUsers       int
-	LastActivity      time.Time
+	ActiveUsers        int
+	LastActivity       time.Time
 }
 
 // getFooterStats fetches creative database statistics
 func getFooterStats() FooterStats {
 	stats := FooterStats{}
-	
+
 	// Count total deriven
 	db.QueryRow(context.Background(), "SELECT COUNT(*) FROM deriven").Scan(&stats.TotalDeriven)
-	
+
 	// Count total contributions
 	db.QueryRow(context.Background(), "SELECT COUNT(*) FROM contributions").Scan(&stats.TotalContributions)
-	
+
 	// Count active users (users who contributed)
 	db.QueryRow(context.Background(), "SELECT COUNT(DISTINCT user_name) FROM contributions WHERE user_name != ''").Scan(&stats.ActiveUsers)
-	
+
 	// Get last activity timestamp
 	err := db.QueryRow(context.Background(), "SELECT MAX(created_at) FROM contributions").Scan(&stats.LastActivity)
 	if err != nil {
 		log.Printf("Error fetching last activity: %v", err)
 		stats.LastActivity = time.Now()
 	}
-	
+
 	return stats
 }
 

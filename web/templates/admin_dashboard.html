@@ -1,24 +1,156 @@
 {{define "admin_dashboard.content"}}
 <style>
-  .admin-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-  .admin-header { margin-bottom: 2rem; }
-  .admin-section { margin-bottom: 3rem; }
-  .token-card { background: #f5f5f5; padding: 1.5rem; margin-bottom: 1rem; border-radius: 8px; }
-  .token-card.inactive { opacity: 0.6; }
-  .token-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-  .token-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
-  .token-meta-item { font-size: 0.9rem; }
-  .token-meta-item strong { display: block; color: #666; }
-  .token-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .btn-admin { padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
-  .btn-reset { background: #4CAF50; color: white; }
-  .btn-deactivate { background: #f44336; color: white; }
-  .btn-activate { background: #2196F3; color: white; }
-  .btn-admin:disabled { opacity: 0.5; cursor: not-allowed; }
-  .contrib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
-  .contrib-card { aspect-ratio: 1; border-radius: 8px; overflow: hidden; position: relative; }
-  .contrib-card img { width: 100%; height: 100%; object-fit: cover; }
-  .contrib-meta { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 0.5rem; font-size: 0.8rem; }
+  /* stylelint-disable */
+  .admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .admin-header {
+    margin-bottom: 2rem;
+  }
+
+  .admin-section {
+    margin-bottom: 3rem;
+  }
+
+  .token-card {
+    background: #f5f5f5;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+  }
+
+  .token-card.inactive {
+    opacity: 0.6;
+  }
+
+  .token-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .token-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .token-meta-item {
+    font-size: 0.9rem;
+  }
+
+  .token-meta-item strong {
+    display: block;
+    color: #666;
+  }
+
+  .token-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-admin {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .btn-reset {
+    background: #4CAF50;
+    color: white;
+  }
+
+  .btn-deactivate {
+    background: #f44336;
+    color: white;
+  }
+
+  .btn-activate {
+    background: #2196F3;
+    color: white;
+  }
+
+  .btn-admin:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .contrib-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .contrib-card {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .contrib-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .contrib-meta {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .filter-btn {
+    background: #fafafa;
+    border: 1px solid #eee;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.9rem;
+  }
+
+  .filter-btn.active {
+    background: #2196F3;
+    color: #fff;
+    border-color: #2196F3;
+  }
+
+  /* Tabs for admin dashboard */
+  .admin-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .admin-tab {
+    padding: 0.45rem 0.8rem;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: #fafafa;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.95rem;
+  }
+
+  .admin-tab.active {
+    background: #2196F3;
+    color: #fff;
+    border-color: #2196F3;
+  }
 </style>
 
 <div class="admin-container">
@@ -27,19 +159,27 @@
     <p>Token-Verwaltung und Upload-Übersicht</p>
   </div>
 
-  <div class="admin-section">
+  <div class="admin-tabs">
+    <a href="/admin?tab=tokens" class="admin-tab{{if eq .Tab "tokens"}} active{{end}}">📱 Taschen & Tokens</a>
+    <a href="/admin?tab=requests" class="admin-tab{{if eq .Tab "requests"}} active{{end}}">👜 Taschen-Anfragen</a>
+    <a href="/admin?tab=contribs" class="admin-tab{{if eq .Tab "contribs"}} active{{end}}">📸 Neueste Contributions</a>
+  </div>
+
+  {{if eq .Tab "tokens"}}
+  <div id="tab-tokens" class="admin-section">
     <h2>➕ Neue Tasche erstellen</h2>
     <div style="background: #f5f5f5; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-      <form id="createTokenForm" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+      <form id="createTokenForm"
+        style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
         <div>
           <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Taschenname</label>
-          <input type="text" id="bagName" placeholder="z.B. Tasche #6" required 
-                 style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+          <input type="text" id="bagName" placeholder="z.B. Tasche #6" required
+            style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
         </div>
         <div>
           <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Max. Uploads</label>
           <input type="number" id="maxUploads" value="100" min="1" required
-                 style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
         </div>
         <button type="submit" class="btn-admin" style="background: #2196F3; color: white; padding: 0.6rem 1.5rem;">
           ✨ Erstellen
@@ -57,12 +197,12 @@
           {{if .IsActive}}● aktiv{{else}}○ inaktiv{{end}}
         </span>
       </div>
-      
+
       <div class="token-meta">
         <div class="token-meta-item">
           <strong>Uploads</strong>
-          <input type="number" id="quota-{{.ID}}" value="{{.MaxUploads}}" min="1" 
-                 style="width: 80px; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px; margin-top: 0.3rem;">
+          <input type="number" id="quota-{{.ID}}" value="{{.MaxUploads}}" min="1"
+            style="width: 80px; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px; margin-top: 0.3rem;">
           <span style="font-size: 0.9rem; color: #666;">/ {{.TotalUploads}} genutzt</span>
         </div>
         <div class="token-meta-item">
@@ -86,10 +226,12 @@
         <button class="btn-admin" style="background: #FF9800; color: white;" onclick="updateQuota({{.ID}})">
           💾 Kontingent speichern
         </button>
-        <button class="btn-admin" style="background: #9C27B0; color: white;" onclick="downloadQR({{.ID}}, '{{.BagName}}', 'svg')">
+        <button class="btn-admin" style="background: #9C27B0; color: white;"
+          onclick="downloadQR({{.ID}}, '{{.BagName}}', 'svg')">
           📥 QR (SVG)
         </button>
-        <button class="btn-admin" style="background: #673AB7; color: white;" onclick="downloadQR({{.ID}}, '{{.BagName}}', 'png')">
+        <button class="btn-admin" style="background: #673AB7; color: white;"
+          onclick="downloadQR({{.ID}}, '{{.BagName}}', 'png')">
           📥 QR (PNG)
         </button>
         {{if .IsActive}}
@@ -101,8 +243,49 @@
     </div>
     {{end}}
   </div>
+  {{end}}
 
-  <div class="admin-section">
+  {{if eq .Tab "requests"}}
+  <div id="tab-requests" class="admin-section">
+    <h2>👜 Taschen-Anfragen</h2>
+    <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:0.75rem;">
+      <a href="/admin?tab=requests&bag_status=all" class="filter-btn {{if or (not .BagStatus) (eq .BagStatus "all")}}active{{end}}">Alle ({{len .BagRequests}})</a>
+      <a href="/admin?tab=requests&bag_status=open" class="filter-btn {{if eq .BagStatus "open"}}active{{end}}">Offen ({{.OpenCount}})</a>
+      <a href="/admin?tab=requests&bag_status=handled" class="filter-btn {{if eq .BagStatus "handled"}}active{{end}}">Erledigt ({{.HandledCount}})</a>
+    </div>
+
+    <div id="bagRequestsContainer" style="background:#fff; padding:1rem; border-radius:8px; border:1px solid #eee; margin-bottom: 2rem;">
+      {{if .BagRequests}}
+      <ul style="list-style:none; padding:0; margin:0;">
+        {{range .BagRequests}}
+        <li
+          style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid #f5f5f5;">
+          <div>
+            <strong style="display:inline-block; margin-right:0.5rem;">{{.Email}}</strong>
+            <div style="font-size:0.85rem; color:#666; display:inline-block;">{{.CreatedAt.Format "02.01.2006 15:04"}}
+            </div>
+          </div>
+          <div>
+            {{if .Handled}}
+            <span style="color:#4CAF50; font-weight:600;">✅ Erledigt</span>
+            {{else}}
+            <button class="btn-admin"
+              style="background:#4CAF50; color:white; padding:0.35rem 0.6rem; border-radius:6px;"
+              onclick="markBagRequestDone({{.ID}}, this)">✅ Erledigt</button>
+            {{end}}
+          </div>
+        </li>
+        {{end}}
+      </ul>
+      {{else}}
+      <div style="color:#666; padding:1rem;">Noch keine Anfragen.</div>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  {{if eq .Tab "contribs"}}
+  <div id="tab-contribs" class="admin-section">
     <h2>📸 Neueste Contributions</h2>
     <div class="contrib-grid">
       {{range .RecentContribs}}
@@ -116,101 +299,161 @@
       {{end}}
     </div>
   </div>
+  {{end}}
 </div>
 
 <script>
-// Create new token/bag
-document.getElementById('createTokenForm').onsubmit = async function(e) {
-  e.preventDefault();
-  
-  const bagName = document.getElementById('bagName').value;
-  const maxUploads = parseInt(document.getElementById('maxUploads').value);
-  
-  try {
-    const response = await fetch('/admin/tokens', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bag_name: bagName, max_uploads: maxUploads })
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      const resultDiv = document.getElementById('createResult');
-      resultDiv.style.display = 'block';
-      resultDiv.style.background = '#e8f5e9';
-      resultDiv.style.padding = '1rem';
-      resultDiv.style.borderRadius = '4px';
-      resultDiv.innerHTML = `
+  /* eslint-disable */
+  // Create new token/bag
+  document.getElementById('createTokenForm').onsubmit = async function (e) {
+    e.preventDefault();
+
+    const bagName = document.getElementById('bagName').value;
+    const maxUploads = parseInt(document.getElementById('maxUploads').value);
+
+    try {
+      const response = await fetch('/admin/tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bag_name: bagName, max_uploads: maxUploads })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const resultDiv = document.getElementById('createResult');
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#e8f5e9';
+        resultDiv.style.padding = '1rem';
+        resultDiv.style.borderRadius = '4px';
+        resultDiv.innerHTML = `
         <strong>✅ Token erstellt!</strong><br>
         <small>Token-ID: ${data.token_id}</small><br>
         <a href="${data.qr_url}?format=svg" target="_blank" style="color: #2196F3;">📥 QR-Code (SVG) herunterladen</a> | 
         <a href="${data.qr_url}?format=png" target="_blank" style="color: #2196F3;">📥 QR-Code (PNG) herunterladen</a><br>
         <small style="word-break: break-all;">URL: ${data.upload_url}</small>
       `;
-      
-      // Reload nach 3 Sekunden
-      setTimeout(() => location.reload(), 3000);
-    } else {
-      alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+
+        // Reload nach 3 Sekunden
+        setTimeout(() => location.reload(), 3000);
+      } else {
+        alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+      }
+    } catch (err) {
+      alert('Fehler: ' + err.message);
     }
-  } catch (err) {
-    alert('Fehler: ' + err.message);
-  }
-};
+  };
 
-async function resetToken(id, name) {
-  if (!confirm(`${name} wirklich zurücksetzen? Der Upload-Counter wird auf 0 gesetzt.`)) return;
-  
-  try {
-    const response = await fetch(`/admin/tokens/${id}/reset`, { method: 'POST' });
-    const data = await response.json();
-    alert(data.message || 'Token wurde zurückgesetzt');
-    location.reload();
-  } catch (err) {
-    alert('Fehler: ' + err.message);
-  }
-}
+  async function resetToken(id, name) {
+    if (!confirm(`${name} wirklich zurücksetzen? Der Upload-Counter wird auf 0 gesetzt.`)) return;
 
-async function deactivateToken(id, name) {
-  if (!confirm(`${name} wirklich deaktivieren?`)) return;
-  
-  try {
-    const response = await fetch(`/admin/tokens/${id}/deactivate`, { method: 'POST' });
-    const data = await response.json();
-    alert(data.status || 'Token wurde deaktiviert');
-    location.reload();
-  } catch (err) {
-    alert('Fehler: ' + err.message);
+    try {
+      const response = await fetch(`/admin/tokens/${id}/reset`, { method: 'POST' });
+      const data = await response.json();
+      alert(data.message || 'Token wurde zurückgesetzt');
+      location.reload();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    }
   }
-}
 
-async function updateQuota(id) {
-  const newQuota = parseInt(document.getElementById(`quota-${id}`).value);
-  
-  if (newQuota <= 0) {
-    alert('Kontingent muss größer als 0 sein');
-    return;
-  }
-  
-  try {
-    const response = await fetch(`/admin/tokens/${id}/quota`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ max_uploads: newQuota })
-    });
-    
-    const data = await response.json();
-    alert(`✅ Kontingent auf ${data.max_uploads} aktualisiert`);
-    location.reload();
-  } catch (err) {
-    alert('Fehler: ' + err.message);
-  }
-}
+  async function deactivateToken(id, name) {
+    if (!confirm(`${name} wirklich deaktivieren?`)) return;
 
-function downloadQR(id, name, format) {
-  const url = `/admin/tokens/${id}/qr?format=${format}`;
-  window.open(url, '_blank');
-}
+    try {
+      const response = await fetch(`/admin/tokens/${id}/deactivate`, { method: 'POST' });
+      const data = await response.json();
+      alert(data.status || 'Token wurde deaktiviert');
+      location.reload();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    }
+  }
+
+  async function updateQuota(id) {
+    const newQuota = parseInt(document.getElementById(`quota-${id}`).value);
+
+    if (newQuota <= 0) {
+      alert('Kontingent muss größer als 0 sein');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/admin/tokens/${id}/quota`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ max_uploads: newQuota })
+      });
+
+      const data = await response.json();
+      alert(`✅ Kontingent auf ${data.max_uploads} aktualisiert`);
+      location.reload();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    }
+  }
+
+  function downloadQR(id, name, format) {
+    const url = `/admin/tokens/${id}/qr?format=${format}`;
+    window.open(url, '_blank');
+  }
+
+  async function markBagRequestDone(id, btn) {
+    if (!confirm('Als erledigt markieren?')) return;
+    try {
+      const res = await fetch(`/admin/bag-requests/${id}/complete`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        const li = btn.closest('li');
+        btn.replaceWith((() => { const s = document.createElement('span'); s.style.color = '#4CAF50'; s.style.fontWeight = '600'; s.textContent = '✅ Erledigt'; return s; })());
+        li.style.opacity = '0.8';
+      } else {
+        alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+      }
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    }
+  }
+
+  // AJAX filter for bag requests: replace the requests container to avoid full page reload and scrolling to top
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a.filter-btn');
+    if (!link) return;
+    // only handle links inside the admin section
+    if (!link.closest('.admin-section')) return;
+    e.preventDefault();
+
+    const href = link.getAttribute('href');
+    const fetchUrl = href.includes('?') ? href + '&partial=1' : href + '?partial=1';
+
+    fetch(fetchUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error('fetch failed');
+        return r.text();
+      })
+      .then((html) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newContainer = doc.querySelector('#bagRequestsContainer');
+        if (!newContainer) {
+          // fallback to full navigation
+          window.location.href = href;
+          return;
+        }
+        const container = document.getElementById('bagRequestsContainer');
+        container.innerHTML = newContainer.innerHTML;
+        // update active states on buttons
+        document.querySelectorAll('.admin-section a.filter-btn').forEach(a => a.classList.remove('active'));
+        link.classList.add('active');
+        // update URL without scrolling
+        history.pushState(null, '', href);
+      })
+      .catch((err) => {
+        console.error(err);
+        window.location.href = href;
+      });
+  });
+
+
 </script>
 {{end}}

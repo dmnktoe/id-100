@@ -16,8 +16,8 @@ func LoadTemplates() *Template {
 	files = append(files, comps...)
 
 	funcs := template.FuncMap{
-		"eq": func(a, b string) bool { return a == b },
-		"or": func(a, b bool) bool { return a || b },
+		"eq":        func(a, b string) bool { return a == b },
+		"or":        func(a, b bool) bool { return a || b },
 		"hasprefix": func(s, prefix string) bool { return strings.HasPrefix(s, prefix) },
 	}
 	tmpl := template.New("").Funcs(funcs)

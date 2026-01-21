@@ -25,11 +25,15 @@
   const backdrop = document.getElementById("drawer-backdrop");
 
   function closeDrawer(pushBack) {
+    const pushed = panel.dataset.drawerPushed === "true";
     document.body.classList.remove("drawer-open");
     panel.innerHTML = "";
     panel.setAttribute("aria-hidden", "true");
     backdrop.setAttribute("aria-hidden", "true");
-    if (pushBack) history.back();
+    // only navigate back if caller requested AND this drawer actually pushed a history entry
+    if (pushBack && pushed) history.back();
+    // clear stored flag
+    delete panel.dataset.drawerPushed;
   }
 
   function openDrawer(number, html, pushState, pageParam) {
@@ -87,6 +91,10 @@
         "",
         url,
       );
+      panel.dataset.drawerPushed = "true";
+    } else {
+      // record that we did not push history for this drawer instance
+      panel.dataset.drawerPushed = "false";
     }
   }
 
@@ -124,6 +132,67 @@
       .catch((err) => {
         console.error(err);
         window.location.href = href;
+      });
+  });
+
+  // Click delegation for simple drawer links (e.g., "tasche anfordern")
+  document.addEventListener("click", (e) => {
+    const link = e.target.closest(".drawer-link");
+    if (!link) return;
+    e.preventDefault();
+    const href = link.getAttribute("href");
+    const fetchUrl = href + (href.includes("?") ? "&partial=1" : "?partial=1");
+    fetch(fetchUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error("fetch failed");
+        return r.text();
+      })
+      .then((html) => openDrawer(0, html, false, null))
+      .catch((err) => {
+        console.error(err);
+        window.location.href = href;
+      });
+  });
+
+  // Handle request-bag form submission inside drawer
+  document.addEventListener("submit", (e) => {
+    const form = e.target;
+    if (!form || form.id !== "requestBagForm") return;
+    e.preventDefault();
+    const email = form.querySelector('input[name="email"]').value.trim();
+    const btn = form.querySelector("button[type=submit]");
+    const resultDiv = form.querySelector("#requestResult");
+    if (!email || !email.includes("@")) {
+      resultDiv.style.display = "block";
+      resultDiv.style.color = "#d32f2f";
+      resultDiv.innerText = "Bitte gib eine gültige E‑Mail an.";
+      return;
+    }
+    btn.disabled = true;
+    btn.innerText = "sende...";
+    fetch("/request-bag", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === "ok") {
+          form.innerHTML = `<p style="font-weight:500;">Danke! Wir benachrichtigen dich per E‑Mail, sobald eine Tasche verfügbar ist.</p>`;
+        } else {
+          resultDiv.style.display = "block";
+          resultDiv.style.color = "#d32f2f";
+          resultDiv.innerText = data.error || "Etwas ging schief.";
+          btn.disabled = false;
+          btn.innerText = "anfragen";
+        }
+      })
+      .catch((err) => {
+        resultDiv.style.display = "block";
+        resultDiv.style.color = "#d32f2f";
+        resultDiv.innerText = "Netzwerkfehler. Bitte versuche es erneut.";
+        btn.disabled = false;
+        btn.innerText = "anfragen";
       });
   });
 

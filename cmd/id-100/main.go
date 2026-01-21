@@ -42,9 +42,9 @@ type Derive struct {
 	ImageLqip    string `json:"image_lqip"`
 	ContribCount int    `json:"contrib_count"`
 	// Points assigned to the derive (used for badges and overlay selection)
-	Points       int    `json:"points"`
+	Points int `json:"points"`
 	// PointsTier maps points to 1..3 for styling purposes
-	PointsTier   int    `json:"points_tier"`
+	PointsTier int `json:"points_tier"`
 }
 
 // ensureFullImageURL is implemented in cmd/id-100/utils.go to keep main.go smaller.

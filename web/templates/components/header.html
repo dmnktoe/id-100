@@ -16,6 +16,7 @@
         <a href="/" {{if or (eq .CurrentPath "/") (hasprefix .CurrentPath "/derive")}}class="nav-active"{{end}}>dériven</a>
         <a href="/spielregeln" {{if eq .CurrentPath "/spielregeln"}}class="nav-active"{{end}}>spielregeln</a>
         <a href="/about" {{if eq .CurrentPath "/about"}}class="nav-active"{{end}}>über</a>
+        <a href="/request-bag" class="drawer-link">tasche anfordern</a>
     </nav>
 </header>
 {{end}}
