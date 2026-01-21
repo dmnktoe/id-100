@@ -8,7 +8,6 @@ Eine moderne Go-Webanwendung für kreative Beiträge mit Echo-Framework, Supabas
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
 
 [![CI](https://github.com/dmnktoe/id-100/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/dmnktoe/id-100/actions/workflows/go.yml)
-[![Coverage](https://img.shields.io/badge/Coverage-0.0%25-red?style=flat)](https://github.com/dmnktoe/id-100/actions/workflows/go.yml)
 
 ## ✨ Features
 
