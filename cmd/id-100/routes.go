@@ -151,7 +151,7 @@ func derivenHandler(c echo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Index - DÉRIVE 100",
+		"Title":           "Innenstadt (🏠) ID (🆔)-100 (💯)",
 		"Deriven":         deriven,
 		"CurrentPage":     page,
 		"TotalPages":      totalPages,
@@ -255,7 +255,7 @@ func uploadGetHandler(c echo.Context) error {
 		list = append(list, d)
 	}
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Submit Evidence - DÉRIVE 100",
+		"Title":           "beweis hochladen - 🏠🆔💯",
 		"Deriven":         list,
 		"ContentTemplate": "upload.content",
 		"CurrentPath":     c.Request().URL.Path,
@@ -378,7 +378,7 @@ func uploadPostHandler(c echo.Context) error {
 func rulesHandler(c echo.Context) error {
 	stats := getFooterStats()
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Spielregeln - DÉRIVE 100",
+		"Title":           "spielregeln - 🏠🆔💯",
 		"ContentTemplate": "spielregeln.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
@@ -389,7 +389,7 @@ func rulesHandler(c echo.Context) error {
 func aboutHandler(c echo.Context) error {
 	stats := getFooterStats()
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "About - DÉRIVE 100",
+		"Title":           "about - 🏠🆔💯",
 		"ContentTemplate": "about.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
