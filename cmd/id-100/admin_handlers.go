@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"math"
 
 	"github.com/labstack/echo/v4"
 	qrcode "github.com/skip2/go-qrcode"
@@ -208,7 +209,84 @@ func adminBagRequestCompleteHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
 
-// tokenMiddlewareis an updated middleware with session support
+// Session helpers for middleware
+func getSessionNumber(v interface{}) (int, bool) {
+	// Determine platform int bounds using strconv.IntSize
+	bits := strconv.IntSize
+	maxInt64 := int64(1<<(bits-1) - 1)
+	minInt64 := -int64(1<<(bits-1))
+
+	switch n := v.(type) {
+	case int:
+		return n, true
+	case int64:
+		if n >= minInt64 && n <= maxInt64 {
+			return int(n), true
+		}
+		return 0, false
+	case float64:
+		if math.IsNaN(n) || math.IsInf(n, 0) {
+			return 0, false
+		}
+		if math.Trunc(n) != n {
+			return 0, false
+		}
+		// Ensure the float value fits in the platform int range before converting
+		if n < float64(minInt64) || n > float64(maxInt64) {
+			return 0, false
+		}
+		asInt64 := int64(n)
+		return int(asInt64), true
+	case string:
+		if x, err := strconv.Atoi(n); err == nil {
+			return x, true
+		}
+	}
+	return 0, false
+}
+
+func getSessionTime(v interface{}) (time.Time, bool) {
+	// Compute safe Unix second bounds such that sec*1e9 doesn't overflow int64
+	maxInt64 := int64(^uint64(0) >> 1)
+	minInt64 := -maxInt64 - 1
+	maxSec := maxInt64 / 1e9
+	minSec := minInt64 / 1e9
+
+	switch t := v.(type) {
+	case time.Time:
+		return t, true
+	case string:
+		if tm, err := time.Parse(time.RFC3339, t); err == nil {
+			return tm, true
+		}
+	case int64:
+		if t >= minSec && t <= maxSec {
+			return time.Unix(t, 0), true
+		}
+		return time.Time{}, false
+	case int:
+		sec := int64(t)
+		if sec >= minSec && sec <= maxSec {
+			return time.Unix(sec, 0), true
+		}
+		return time.Time{}, false
+	case float64:
+		if math.IsNaN(t) || math.IsInf(t, 0) {
+			return time.Time{}, false
+		}
+		if math.Trunc(t) != t {
+			return time.Time{}, false
+		}
+		sec := int64(t)
+		if sec >= minSec && sec <= maxSec {
+			return time.Unix(sec, 0), true
+		}
+		return time.Time{}, false
+	}
+	return time.Time{}, false
+}
+
+// tokenMiddlewareWithSession is an updated middleware with session support
 func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Get session
@@ -240,13 +318,14 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		var isActive bool
 		var maxUploads, totalUploads, totalSessions int
 		var currentPlayer, bagName string
-
+		var sessionStartedAt time.Time
+		
 		err = db.QueryRow(context.Background(),
 			`SELECT id, is_active, max_uploads, total_uploads, total_sessions,
-			 COALESCE(current_player, ''), COALESCE(bag_name, '') 
+			 COALESCE(current_player, ''), COALESCE(bag_name, ''), COALESCE(session_started_at, created_at)
 			 FROM upload_tokens WHERE token = $1`,
-			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &bagName)
-
+			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &bagName, &sessionStartedAt)
+    
 		if err != nil {
 			log.Printf("Token validation error: %v", err)
 			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
@@ -261,6 +340,39 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		session.Values["token"] = token
 		session.Values["token_id"] = tokenID
 		session.Values["bag_name"] = bagName
+		
+		// session freshness: ensure session_number and session_started_at exist and match DB
+		sessNumVal := session.Values["session_number"]
+		if existing, ok := getSessionNumber(sessNumVal); ok {
+			if existing != totalSessions {
+				// session is stale: clear the stored player name and update stored session meta
+				delete(session.Values, "player_name")
+				session.Values["session_number"] = totalSessions
+				session.Values["session_started_at"] = sessionStartedAt
+				// force name flow
+				currentPlayer = ""
+			}
+		} else {
+			// initialize session metadata for this token so future admin resets can be detected
+			session.Values["session_number"] = totalSessions
+			session.Values["session_started_at"] = sessionStartedAt
+		}
+
+		// Additionally check session_started_at mismatch (covers manual DB edits without incrementing total_sessions)
+		sessStartVal := session.Values["session_started_at"]
+		if existingStart, ok := getSessionTime(sessStartVal); ok {
+			if !existingStart.Equal(sessionStartedAt) {
+				// session is stale: clear player_name and update stored session meta
+				delete(session.Values, "player_name")
+				session.Values["session_started_at"] = sessionStartedAt
+				session.Values["session_number"] = totalSessions
+				currentPlayer = ""
+			}
+		} else {
+			// ensure the session has the start time
+			session.Values["session_started_at"] = sessionStartedAt
+		}
+
 		session.Save(c.Request(), c.Response())
 
 		// Check if player name is set (first-time user flow)
