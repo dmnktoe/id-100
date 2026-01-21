@@ -28,19 +28,19 @@ func registerRoutes(e *echo.Echo) {
 
 	e.GET("/", derivenHandler)
 	e.GET("/derive/:number", deriveHandler)
-	
+
 	// Upload routes - protected by token middleware with session support
 	e.GET("/upload", uploadGetHandler, tokenMiddlewareWithSession)
 	e.POST("/upload", uploadPostHandler, tokenMiddlewareWithSession)
 	e.POST("/upload/set-name", setPlayerNameHandler, tokenMiddlewareWithSession)
-	
+
 	e.GET("/spielregeln", rulesHandler)
 	e.GET("/about", aboutHandler)
 
 	// Public bag-request endpoints
 	e.GET("/request-bag", requestBagHandler)
 	e.POST("/request-bag", requestBagPostHandler)
-	
+
 	// Admin routes for token management
 	adminGroup := e.Group("/admin", basicAuthMiddleware)
 	adminGroup.GET("", adminDashboardHandler)
@@ -51,11 +51,14 @@ func registerRoutes(e *echo.Echo) {
 	adminGroup.POST("/tokens/:id/assign", adminTokenAssignHandler)
 	adminGroup.POST("/tokens/:id/quota", adminUpdateQuotaHandler)
 	adminGroup.GET("/tokens/:id/qr", adminDownloadQRHandler)
+
+	// Bag request management
+	adminGroup.POST("/bag-requests/:id/complete", adminBagRequestCompleteHandler)
 }
 
 func derivenHandler(c echo.Context) error {
 	stats := getFooterStats()
-	
+
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	if page < 1 {
 		page = 1
@@ -176,7 +179,7 @@ func deriveHandler(c echo.Context) error {
 	stats := getFooterStats()
 	num := c.Param("number")
 	pageParam := c.QueryParam("page") // Capture page parameter for back navigation
-	
+
 	var d Derive
 	query := `
             SELECT d.id, d.number, d.title, d.description, COALESCE(c.image_url, ''), d.points
@@ -265,7 +268,9 @@ func requestBagHandler(c echo.Context) error {
 
 // POST /request-bag
 func requestBagPostHandler(c echo.Context) error {
-	type payload struct{ Email string `json:"email"` }
+	type payload struct {
+		Email string `json:"email"`
+	}
 	var p payload
 	if strings.Contains(c.Request().Header.Get("Content-Type"), "application/json") {
 		if err := c.Bind(&p); err != nil {
@@ -319,16 +324,16 @@ func uploadPostHandler(c echo.Context) error {
 	if !ok {
 		return c.String(http.StatusForbidden, "Token nicht gefunden")
 	}
-	
+
 	currentPlayer, _ := c.Get("current_player").(string)
 	sessionNumber, _ := c.Get("session_number").(int)
-	
+
 	deriveNumberStr := c.FormValue("derive_number")
 	deriveNumber, err := strconv.Atoi(deriveNumberStr)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "Ungültige Aufgabennummer")
 	}
-	
+
 	file, err := c.FormFile("image")
 	if err != nil {
 		return c.String(http.StatusBadRequest, "Kein Bild gefunden")
@@ -405,17 +410,17 @@ func uploadPostHandler(c echo.Context) error {
 		`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id)
 		 VALUES ($1, $2, $3, $4, $5)`,
 		tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID)
-	
+
 	if err != nil {
 		log.Printf("Failed to log upload: %v", err)
 		// Don't fail the request, contribution is already saved
 	}
-	
+
 	// Increment total_uploads counter for token
 	_, err = db.Exec(context.Background(),
 		"UPDATE upload_tokens SET total_uploads = total_uploads + 1 WHERE id = $1",
 		tokenID)
-	
+
 	if err != nil {
 		log.Printf("Failed to increment upload counter: %v", err)
 		// Don't fail the request, contribution is already saved

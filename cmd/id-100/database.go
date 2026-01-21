@@ -25,9 +25,16 @@ func initDatabase() {
 	CREATE TABLE IF NOT EXISTS bag_requests (
 		id SERIAL PRIMARY KEY,
 		email TEXT NOT NULL,
-		created_at TIMESTAMPTZ DEFAULT NOW()
-	)`) 
+		created_at TIMESTAMPTZ DEFAULT NOW(),
+		handled BOOLEAN DEFAULT FALSE
+	)`)
 	if err != nil {
 		log.Printf("Failed to ensure bag_requests table: %v", err)
+	}
+
+	// For existing installations, ensure the column exists
+	_, err = db.Exec(context.Background(), `ALTER TABLE bag_requests ADD COLUMN IF NOT EXISTS handled BOOLEAN DEFAULT FALSE`)
+	if err != nil {
+		log.Printf("Failed to add handled column to bag_requests: %v", err)
 	}
 }
