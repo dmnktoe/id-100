@@ -25,11 +25,15 @@
   const backdrop = document.getElementById("drawer-backdrop");
 
   function closeDrawer(pushBack) {
+    const pushed = panel.dataset.drawerPushed === "true";
     document.body.classList.remove("drawer-open");
     panel.innerHTML = "";
     panel.setAttribute("aria-hidden", "true");
     backdrop.setAttribute("aria-hidden", "true");
-    if (pushBack) history.back();
+    // only navigate back if caller requested AND this drawer actually pushed a history entry
+    if (pushBack && pushed) history.back();
+    // clear stored flag
+    delete panel.dataset.drawerPushed;
   }
 
   function openDrawer(number, html, pushState, pageParam) {
@@ -87,6 +91,10 @@
         "",
         url,
       );
+      panel.dataset.drawerPushed = "true";
+    } else {
+      // record that we did not push history for this drawer instance
+      panel.dataset.drawerPushed = "false";
     }
   }
 
