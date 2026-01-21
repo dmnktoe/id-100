@@ -155,11 +155,6 @@ func derivenHandler(c echo.Context) error {
 		deriven = append(deriven, d)
 	}
 
-	// debug: log types/values to debug template field issue
-	for i, d := range deriven {
-		log.Printf("derive[%d] type=%T ImageLqip=%q", i, d, d.ImageLqip)
-	}
-
 	// Build pagination pages for template
 	type PageNumber struct {
 		Number    int
