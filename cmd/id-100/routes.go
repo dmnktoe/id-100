@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -35,6 +36,10 @@ func registerRoutes(e *echo.Echo) {
 	
 	e.GET("/spielregeln", rulesHandler)
 	e.GET("/about", aboutHandler)
+
+	// Public bag-request endpoints
+	e.GET("/request-bag", requestBagHandler)
+	e.POST("/request-bag", requestBagPostHandler)
 	
 	// Admin routes for token management
 	adminGroup := e.Group("/admin", basicAuthMiddleware)
@@ -236,6 +241,50 @@ func deriveHandler(c echo.Context) error {
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
 	})
+}
+
+// GET /request-bag
+func requestBagHandler(c echo.Context) error {
+	stats := getFooterStats()
+	if c.QueryParam("partial") == "1" {
+		return c.Render(http.StatusOK, "request_bag.content", map[string]interface{}{
+			"CurrentPath": c.Request().URL.Path,
+			"CurrentYear": time.Now().Year(),
+			"FooterStats": stats,
+			"IsPartial":   true,
+		})
+	}
+	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+		"Title":           "tasche anfordern - 🏠🆔💯",
+		"ContentTemplate": "request_bag.content",
+		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
+	})
+}
+
+// POST /request-bag
+func requestBagPostHandler(c echo.Context) error {
+	type payload struct{ Email string `json:"email"` }
+	var p payload
+	if strings.Contains(c.Request().Header.Get("Content-Type"), "application/json") {
+		if err := c.Bind(&p); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Ungültiger Request"})
+		}
+	} else {
+		p.Email = c.FormValue("email")
+	}
+	email := strings.TrimSpace(p.Email)
+	if email == "" || !strings.Contains(email, "@") {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Ungültige E-Mail"})
+	}
+
+	_, err := db.Exec(context.Background(), "INSERT INTO bag_requests (email) VALUES ($1)", email)
+	if err != nil {
+		log.Printf("Failed to insert bag request: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Serverfehler"})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func uploadGetHandler(c echo.Context) error {

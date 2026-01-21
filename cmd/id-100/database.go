@@ -19,4 +19,15 @@ func initDatabase() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Ensure bag_requests table exists (simple migration)
+	_, err = db.Exec(context.Background(), `
+	CREATE TABLE IF NOT EXISTS bag_requests (
+		id SERIAL PRIMARY KEY,
+		email TEXT NOT NULL,
+		created_at TIMESTAMPTZ DEFAULT NOW()
+	)`) 
+	if err != nil {
+		log.Printf("Failed to ensure bag_requests table: %v", err)
+	}
 }

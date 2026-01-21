@@ -122,11 +122,32 @@ func adminDashboardHandler(c echo.Context) error {
 		recentContribs = append(recentContribs, rc)
 	}
 	
+	// Fetch bag requests
+	type BagRequest struct {
+		ID        int
+		Email     string
+		CreatedAt time.Time
+	}
+	reqRows, err := db.Query(context.Background(), "SELECT id, email, created_at FROM bag_requests ORDER BY created_at DESC LIMIT 50")
+	if err != nil {
+		log.Printf("Failed to fetch bag requests: %v", err)
+	}
+	defer reqRows.Close()
+
+	var bagRequests []BagRequest
+	for reqRows.Next() {
+		var br BagRequest
+		if err := reqRows.Scan(&br.ID, &br.Email, &br.CreatedAt); err == nil {
+			bagRequests = append(bagRequests, br)
+		}
+	}
+
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Admin Dashboard",
 		"ContentTemplate": "admin_dashboard.content",
 		"Tokens":          tokens,
 		"RecentContribs":  recentContribs,
+		"BagRequests":     bagRequests,
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 	})

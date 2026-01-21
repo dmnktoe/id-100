@@ -103,6 +103,24 @@
   </div>
 
   <div class="admin-section">
+    <h2>👜 Taschen-Anfragen</h2>
+    <div style="background:#fff; padding:1rem; border-radius:8px; border:1px solid #eee; margin-bottom: 2rem;">
+      {{if .BagRequests}}
+      <ul style="list-style:none; padding:0; margin:0;">
+        {{range .BagRequests}}
+        <li style="padding:0.5rem 0; border-bottom:1px solid #f5f5f5;">
+          <strong>{{.Email}}</strong>
+          <div style="font-size:0.85rem; color:#666;">{{.CreatedAt.Format "02.01.2006 15:04"}}</div>
+        </li>
+        {{end}}
+      </ul>
+      {{else}}
+      <div style="color:#666; padding:1rem;">Noch keine Anfragen.</div>
+      {{end}}
+    </div>
+  </div>
+
+  <div class="admin-section">
     <h2>📸 Neueste Contributions</h2>
     <div class="contrib-grid">
       {{range .RecentContribs}}
