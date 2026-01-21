@@ -3,10 +3,7 @@
         {{if .IsPartial}}<button class="drawer-close" aria-label="close">✕</button>{{end}}
 
         <header class="detail-header">
-            <div class="meta-info">
-                <span class="badge-id">#{{printf "%03d" .Derive.Number}}</span>
-            </div>
-            <h1 class="detail-title">{{.Derive.Title}}</h1>
+            <h1 class="detail-title">🆔 {{printf "%03d" .Derive.Number}}</h1>
             <p class="detail-description">{{.Derive.Description}}</p>
         </header>
 
