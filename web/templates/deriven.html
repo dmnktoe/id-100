@@ -33,7 +33,7 @@
 
         <nav class="pagination">
             {{if .HasPrev}}
-                <a href="/deriven?page={{.PrevPage}}" class="pagination-btn">←<span class="pagination-label"> zurück</span></a>
+                <a href="/?page={{.PrevPage}}" class="pagination-btn">←<span class="pagination-label"> zurück</span></a>
             {{else}}
                 <span class="pagination-btn disabled">←<span class="pagination-label"> zurück</span></span>
             {{end}}
@@ -45,13 +45,13 @@
                     {{else if .IsCurrent}}
                         <span class="page-number active">{{.Number}}</span>
                     {{else}}
-                        <a href="/deriven?page={{.Number}}" class="page-number">{{.Number}}</a>
+                        <a href="/?page={{.Number}}" class="page-number">{{.Number}}</a>
                     {{end}}
                 {{end}}
             </div>
 
             {{if .HasNext}}
-                <a href="/deriven?page={{.NextPage}}" class="pagination-btn"><span class="pagination-label">weiter </span>→</a>
+                <a href="/?page={{.NextPage}}" class="pagination-btn"><span class="pagination-label">weiter </span>→</a>
             {{else}}
                 <span class="pagination-btn disabled"><span class="pagination-label">weiter </span>→</span>
             {{end}}

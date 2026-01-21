@@ -13,8 +13,7 @@
         {{end}}
     </div>
     <nav class="main-nav">
-        <a href="/" {{if eq .CurrentPath "/"}}class="nav-active"{{end}}>start</a>
-        <a href="/deriven" {{if eq .CurrentPath "/deriven"}}class="nav-active"{{end}}>dériven</a>
+        <a href="/" {{if or (eq .CurrentPath "/") (hasprefix .CurrentPath "/derive")}}class="nav-active"{{end}}>dériven</a>
         <a href="/spielregeln" {{if eq .CurrentPath "/spielregeln"}}class="nav-active"{{end}}>spielregeln</a>
         <a href="/about" {{if eq .CurrentPath "/about"}}class="nav-active"{{end}}>über</a>
     </nav>
