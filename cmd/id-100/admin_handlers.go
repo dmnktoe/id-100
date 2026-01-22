@@ -375,6 +375,15 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		session.Save(c.Request(), c.Response())
 
+		// If DB currently has no current_player (e.g. after an admin reset), remove any stored player_name from the session
+		if currentPlayer == "" {
+			if _, ok := session.Values["player_name"].(string); ok {
+				delete(session.Values, "player_name")
+				// persist session changes
+				session.Save(c.Request(), c.Response())
+			}
+		}
+
 		// Check if player name is set (first-time user flow)
 		if currentPlayer == "" {
 			// If this is a POST to /upload/set-name, let the handler process it
