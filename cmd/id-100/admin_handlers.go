@@ -295,8 +295,14 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			log.Printf("Session error: %v", err)
 		}
 
-		// Get token from query param (QR code) or session
+		// Get token from query param (QR code), POST form, or session
 		token := c.QueryParam("token")
+		// If missing, also check POST form values (works for form-encoded and multipart)
+		if token == "" && c.Request().Method == "POST" {
+			if formToken := c.FormValue("token"); formToken != "" {
+				token = formToken
+			}
+		}
 		if token == "" {
 			// Try to get from session
 			if sessToken, ok := session.Values["token"].(string); ok {
