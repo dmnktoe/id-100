@@ -525,6 +525,7 @@ func uploadDeleteHandler(c echo.Context) error {
 	})
 	if err != nil {
 		log.Printf("S3 delete error for key=%s: %v", key, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "s3 delete failed"})
 	}
 
 	// Delete DB records within a transaction to keep DB consistent
