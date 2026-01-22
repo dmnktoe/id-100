@@ -32,6 +32,7 @@ func registerRoutes(e *echo.Echo) {
 	// Upload routes - protected by token middleware with session support
 	e.GET("/upload", uploadGetHandler, tokenMiddlewareWithSession)
 	e.POST("/upload", uploadPostHandler, tokenMiddlewareWithSession)
+	e.POST("/upload/delete", uploadDeleteHandler, tokenMiddlewareWithSession)
 	e.POST("/upload/set-name", setPlayerNameHandler, tokenMiddlewareWithSession)
 
 	e.GET("/spielregeln", rulesHandler)
@@ -308,6 +309,42 @@ func uploadGetHandler(c echo.Context) error {
 		}
 		list = append(list, d)
 	}
+
+	// Fetch session uploads for this token/session so we can display them under the upload form
+	tokenID, _ := c.Get("token_id").(int)
+	sessionNumber, _ := c.Get("session_number").(int)
+	uRows, err := db.Query(context.Background(), `
+		SELECT c.id, d.number, c.image_url
+		FROM contributions c
+		JOIN upload_logs ul ON ul.contribution_id = c.id
+		JOIN deriven d ON d.id = c.derive_id
+		WHERE ul.token_id = $1 AND ul.session_number = $2
+		ORDER BY ul.uploaded_at DESC
+	`, tokenID, sessionNumber)
+	if err != nil {
+		log.Printf("Failed to fetch session uploads: %v", err)
+	} 
+	defer func() {
+		if uRows != nil {
+			uRows.Close()
+		}
+	}()
+
+	var sessionContribs []map[string]interface{}
+	for uRows != nil && uRows.Next() {
+		var id int
+		var deriveNumber int
+		var imageUrl string
+		if err := uRows.Scan(&id, &deriveNumber, &imageUrl); err != nil {
+			continue
+		}
+		sessionContribs = append(sessionContribs, map[string]interface{}{
+			"id":        id,
+			"derive":    deriveNumber,
+			"image_url": ensureFullImageURL(imageUrl),
+		})
+	}
+
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "beweis hochladen - 🏠🆔💯",
 		"Deriven":         list,
@@ -315,8 +352,10 @@ func uploadGetHandler(c echo.Context) error {
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
+		"SessionContribs": sessionContribs,
+		"SelectedDerive":  c.QueryParam("derive"),
 	})
-}
+} 
 
 func uploadPostHandler(c echo.Context) error {
 	// Get token info from middleware context
@@ -426,7 +465,72 @@ func uploadPostHandler(c echo.Context) error {
 		// Don't fail the request, contribution is already saved
 	}
 
-	return c.Redirect(http.StatusSeeOther, "/")
+	// Redirect back to the upload page, preselect the derive so the user stays in flow
+	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/upload?derive=%s", deriveNumberStr))
+} 
+
+func uploadDeleteHandler(c echo.Context) error {
+	tokenID, _ := c.Get("token_id").(int)
+	sessionNumber, _ := c.Get("session_number").(int)
+
+	type Req struct{ ID int `json:"id"` }
+	var req Req
+	if err := c.Bind(&req); err != nil || req.ID == 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	}
+
+	// Verify upload belongs to this token and session
+	var ownerToken int
+	var ownerSession int
+	err := db.QueryRow(context.Background(), "SELECT token_id, session_number FROM upload_logs WHERE contribution_id = $1 LIMIT 1", req.ID).Scan(&ownerToken, &ownerSession)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "not found"})
+	}
+	if ownerToken != tokenID || ownerSession != sessionNumber {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "not allowed"})
+	}
+
+	// Get image_url for S3 deletion
+	var imageURL string
+	err = db.QueryRow(context.Background(), "SELECT image_url FROM contributions WHERE id = $1", req.ID).Scan(&imageURL)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+	}
+
+	// Extract key from url (filename)
+	parts := strings.Split(imageURL, "/")
+	key := parts[len(parts)-1]
+
+	// Delete S3 object (best-effort)
+	cfg, _ := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(os.Getenv("S3_REGION")),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+			os.Getenv("S3_ACCESS_KEY"),
+			os.Getenv("S3_SECRET_KEY"),
+			""),
+		),
+	)
+	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		if endpoint := os.Getenv("S3_ENDPOINT"); endpoint != "" {
+			o.BaseEndpoint = aws.String(endpoint)
+		}
+		o.UsePathStyle = true
+	})
+
+	_, err = s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		Bucket: aws.String(os.Getenv("S3_BUCKET")),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		log.Printf("S3 delete error for key=%s: %v", key, err)
+	}
+
+	// Delete DB records
+	_, _ = db.Exec(context.Background(), "DELETE FROM upload_logs WHERE contribution_id = $1", req.ID)
+	_, _ = db.Exec(context.Background(), "DELETE FROM contributions WHERE id = $1", req.ID)
+	_, _ = db.Exec(context.Background(), "UPDATE upload_tokens SET total_uploads = GREATEST(total_uploads - 1, 0) WHERE id = $1", tokenID)
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func rulesHandler(c echo.Context) error {

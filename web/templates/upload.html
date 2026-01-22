@@ -69,6 +69,57 @@
       btn.disabled = true;
       btn.innerText = "optimiere...";
     };
+
+    // Prefill derive if present in query param
+    (function(){
+      try {
+        const params = new URLSearchParams(location.search);
+        const d = params.get('derive');
+        if (d) {
+          const el = document.getElementById('deriveInput');
+          if (el) el.value = d;
+        }
+      } catch (e) { /* ignore */ }
+    })();
+
+    async function deleteSessionUpload(id, btn) {
+      if (!confirm('Wirklich löschen?')) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch('/upload/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          const el = document.getElementById('session-upload-' + id);
+          if (el) el.remove();
+        } else {
+          alert(data.error || 'Fehler');
+          btn.disabled = false;
+        }
+      } catch (e) {
+        alert(e.message || 'Fehler');
+        btn.disabled = false;
+      }
+    }
   </script>
+
+  <!-- Session uploads -->
+  {{if .SessionContribs}}
+  <div style="margin-top:1.5rem;">
+    <h3>Deine Uploads in dieser Session</h3>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+      {{range .SessionContribs}}
+      <div style="width:120px;text-align:center;" id="session-upload-{{.id}}">
+        <img src="{{.image_url}}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;" alt="upload">
+        <div style="font-size:0.85rem;margin-top:0.3rem;">#{{.derive}}</div>
+        <button class="btn-black" style="margin-top:0.3rem;" onclick="deleteSessionUpload({{.id}}, this)">Löschen</button>
+      </div>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
 </div>
 {{end}}
