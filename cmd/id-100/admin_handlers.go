@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"html"
 	"log"
+	"math"
 	"mime"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-	"math"
 
 	"github.com/labstack/echo/v4"
 	qrcode "github.com/skip2/go-qrcode"
@@ -214,7 +214,7 @@ func getSessionNumber(v interface{}) (int, bool) {
 	// Determine platform int bounds using strconv.IntSize
 	bits := strconv.IntSize
 	maxInt64 := int64(1<<(bits-1) - 1)
-	minInt64 := -int64(1<<(bits-1))
+	minInt64 := -int64(1 << (bits - 1))
 
 	switch n := v.(type) {
 	case int:
@@ -319,13 +319,13 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		var maxUploads, totalUploads, totalSessions int
 		var currentPlayer, bagName string
 		var sessionStartedAt time.Time
-		
+
 		err = db.QueryRow(context.Background(),
 			`SELECT id, is_active, max_uploads, total_uploads, total_sessions,
 			 COALESCE(current_player, ''), COALESCE(bag_name, ''), COALESCE(session_started_at, created_at)
 			 FROM upload_tokens WHERE token = $1`,
 			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &bagName, &sessionStartedAt)
-    
+
 		if err != nil {
 			log.Printf("Token validation error: %v", err)
 			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
@@ -340,7 +340,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		session.Values["token"] = token
 		session.Values["token_id"] = tokenID
 		session.Values["bag_name"] = bagName
-		
+
 		// session freshness: ensure session_number and session_started_at exist and match DB
 		sessNumVal := session.Values["session_number"]
 		if existing, ok := getSessionNumber(sessNumVal); ok {
