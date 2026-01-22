@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -31,9 +32,14 @@ func getFooterStats() FooterStats {
 	db.QueryRow(context.Background(), "SELECT COUNT(DISTINCT user_name) FROM contributions WHERE user_name != ''").Scan(&stats.ActiveUsers)
 
 	// Get last activity timestamp
-	err := db.QueryRow(context.Background(), "SELECT MAX(created_at) FROM contributions").Scan(&stats.LastActivity)
+	var last sql.NullTime
+	err := db.QueryRow(context.Background(), "SELECT MAX(created_at) FROM contributions").Scan(&last)
 	if err != nil {
 		log.Printf("Error fetching last activity: %v", err)
+		stats.LastActivity = time.Now()
+	} else if last.Valid {
+		stats.LastActivity = last.Time
+	} else {
 		stats.LastActivity = time.Now()
 	}
 

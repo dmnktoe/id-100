@@ -7,7 +7,7 @@
     Bitte gib deinen Namen ein, um fortzufahren.
   </p>
 
-  <form action="/upload/set-name" method="POST" id="nameForm">
+  <form action="/upload/set-name?token={{.Token}}" method="POST" id="nameForm">
     <input type="hidden" name="token" value="{{.Token}}">
     
     <div class="form-group">
