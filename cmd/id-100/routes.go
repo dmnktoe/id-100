@@ -614,8 +614,6 @@ func uploadDeleteHandler(c echo.Context) error {
 	sessionNumber, _ := c.Get("session_number").(int)
 	currentPlayer, _ := c.Get("current_player").(string)
 
-	log.Printf("uploadDeleteHandler called: contribution=%d tokenID=%d sessionNumber=%d currentPlayer=%q", c.Request().FormValue("id"), tokenID, sessionNumber, currentPlayer)
-
 	type Req struct {
 		ID int `json:"id"`
 	}
@@ -623,6 +621,7 @@ func uploadDeleteHandler(c echo.Context) error {
 	if err := c.Bind(&req); err != nil || req.ID == 0 {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
+	log.Printf("uploadDeleteHandler called: contribution=%d tokenID=%d sessionNumber=%d currentPlayer=%q", req.ID, tokenID, sessionNumber, currentPlayer)
 
 	// Verify upload belongs to this token and session
 	var ownerToken int
