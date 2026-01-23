@@ -22,6 +22,12 @@ import (
 
 // setPlayerNameHandler handles the name entry form submission
 func setPlayerNameHandler(c echo.Context) error {
+	// Protect against large request bodies before parsing form values
+	const maxFormSize = int64(2 * 1024 * 1024) // 2 MiB
+	if strings.Contains(c.Request().Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
+		c.Request().Body = http.MaxBytesReader(c.Response().Writer, c.Request().Body, maxFormSize)
+	}
+
 	playerName := c.FormValue("player_name")
 	token := c.FormValue("token")
 
@@ -295,12 +301,23 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			log.Printf("Session error: %v", err)
 		}
 
-		// Get token from query param (QR code), POST form, or session
+		// Get token from query param (QR code), POST form (only for form-encoded or explicit routes), or session
 		token := c.QueryParam("token")
-		// If missing, also check POST form values (works for form-encoded and multipart)
+		// If missing, for POST requests consider parsing form-encoded bodies only. Do NOT parse multipart uploads here.
 		if token == "" && c.Request().Method == "POST" {
-			if formToken := c.FormValue("token"); formToken != "" {
-				token = formToken
+			const maxFormSize = int64(2 * 1024 * 1024) // 2 MiB
+			contentType := c.Request().Header.Get("Content-Type")
+			isFormEncoded := strings.Contains(contentType, "application/x-www-form-urlencoded")
+			// Allow explicit route(s) that accept form-encoded tokens (e.g., the upload set-name endpoint)
+			if !isFormEncoded && c.Request().URL.Path == "/upload/set-name" {
+				isFormEncoded = true
+			}
+			if isFormEncoded {
+				// Limit the body size before any parsing to guard against large uploads
+				c.Request().Body = http.MaxBytesReader(c.Response().Writer, c.Request().Body, maxFormSize)
+				if formToken := c.FormValue("token"); formToken != "" {
+					token = formToken
+				}
 			}
 		}
 		if token == "" {
