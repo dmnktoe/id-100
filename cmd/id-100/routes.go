@@ -511,8 +511,8 @@ func uploadPostHandler(c echo.Context) error {
 		// Use session_started_at from upload_tokens to determine same session
 		err = db.QueryRow(context.Background(),
 			`SELECT c.id FROM contributions c JOIN upload_tokens t ON t.id = $1
-			 WHERE c.derive_id = $2 AND c.user_name = $3 AND c.created_at >= COALESCE(t.session_started_at, t.created_at) LIMIT 1`,
-			tokenID, internalID, currentPlayer).Scan(&priorContributionID)
+			 WHERE c.derive_id = $2 AND c.user_name = $3 AND c.created_at >= COALESCE(t.session_started_at, t.created_at) AND c.id <> $4 LIMIT 1`,
+			tokenID, internalID, currentPlayer, contributionID).Scan(&priorContributionID)
 		if err == nil {
 			log.Printf("Found prior contribution %d for token=%d derive=%d by player=%s in current session — replacing", priorContributionID, tokenID, deriveNumber, currentPlayer)
 
