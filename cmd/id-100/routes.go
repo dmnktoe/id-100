@@ -614,6 +614,8 @@ func uploadDeleteHandler(c echo.Context) error {
 	sessionNumber, _ := c.Get("session_number").(int)
 	currentPlayer, _ := c.Get("current_player").(string)
 
+	log.Printf("uploadDeleteHandler called: contribution=%d tokenID=%d sessionNumber=%d currentPlayer=%q", c.Request().FormValue("id"), tokenID, sessionNumber, currentPlayer)
+
 	type Req struct {
 		ID int `json:"id"`
 	}

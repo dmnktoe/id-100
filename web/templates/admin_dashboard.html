@@ -295,8 +295,8 @@
           <div>{{.PlayerName}}</div>
           <div>Derive #{{.DeriveNumber}}</div>
         </div>
-        <div style="margin-top:0.5rem; text-align:center;">
-          <button class="btn-admin" style="background:#d32f2f; color:white; padding:0.35rem 0.6rem; border-radius:6px;" onclick="adminDeleteContribution({{.ID}}, this)">Löschen</button>
+        <div style="position:absolute; top:6px; right:6px; z-index:20;">
+          <button class="btn-admin" style="background:#d32f2f; color:white; padding:0.25rem 0.5rem; border-radius:6px; font-size:0.8rem;" onclick="adminDeleteContribution({{.ID}}, this)">Löschen</button>
         </div>
       </div>
       {{end}}

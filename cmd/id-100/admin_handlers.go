@@ -18,6 +18,11 @@ import (
 	"errors"
 	"database/sql"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 	qrcode "github.com/skip2/go-qrcode"
@@ -746,11 +751,26 @@ func adminDeleteContributionHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
 	}
 
-	// Best-effort delete S3 object
+	// Best-effort delete S3 object (instantiate s3 client similarly to upload handlers)
 	if imageURL != "" {
+		cfg, _ := config.LoadDefaultConfig(context.TODO(),
+			config.WithRegion(os.Getenv("S3_REGION")),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+				os.Getenv("S3_ACCESS_KEY"),
+				os.Getenv("S3_SECRET_KEY"),
+				"",
+			)),
+		)
+		s3ClientLocal := s3.NewFromConfig(cfg, func(o *s3.Options) {
+			if endpoint := os.Getenv("S3_ENDPOINT"); endpoint != "" {
+				o.BaseEndpoint = aws.String(endpoint)
+			}
+			o.UsePathStyle = true
+		})
+
 		parts := strings.Split(imageURL, "/")
 		key := parts[len(parts)-1]
-		if _, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		if _, err := s3ClientLocal.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 			Bucket: aws.String(os.Getenv("S3_BUCKET")),
 			Key:    aws.String(key),
 		}); err != nil {
