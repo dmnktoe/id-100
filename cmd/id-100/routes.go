@@ -345,6 +345,7 @@ func uploadGetHandler(c echo.Context) error {
 		})
 	}
 
+	token, _ := c.Get("token").(string)
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "beweis hochladen - 🏠🆔💯",
 		"Deriven":         list,
@@ -354,6 +355,7 @@ func uploadGetHandler(c echo.Context) error {
 		"FooterStats":     stats,
 		"SessionContribs": sessionContribs,
 		"SelectedDerive":  c.QueryParam("derive"),
+		"Token":           token,
 	})
 }
 

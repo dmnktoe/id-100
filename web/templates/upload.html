@@ -2,7 +2,8 @@
 <div class="container upload">
   <h2 class="page-title">beitrag hochladen</h2>
 
-  <form action="/upload" method="POST" enctype="multipart/form-data" id="uploadForm">
+  <form action="/upload?token={{.Token}}" method="POST" enctype="multipart/form-data" id="uploadForm">
+      <input type="hidden" name="token" value="{{.Token}}">
       <div class="form-group">
         <label for="deriveInput">aufgabe</label>
         <input list="derivenList" name="derive_number" id="deriveInput" class="autocomplete-input" placeholder="suche..." required>
