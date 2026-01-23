@@ -89,10 +89,20 @@
       try {
         const res = await fetch('/upload/delete', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify({ id })
         });
-        const data = await res.json();
+        const ct = res.headers.get('content-type') || '';
+        let data = null;
+        if (ct.includes('application/json')) {
+          data = await res.json();
+        } else {
+          // Server returned HTML or plain text (e.g. name prompt / access denied). Show a helpful excerpt.
+          const txt = await res.text();
+          alert('Server-Antwort: ' + txt.slice(0, 300));
+          btn.disabled = false;
+          return;
+        }
         if (res.ok) {
           const el = document.getElementById('session-upload-' + id);
           if (el) el.remove();
