@@ -480,7 +480,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			})
 		}
 
-		// For POST requests: Check cooldown (2 minutes)
+		// For POST requests: Check cooldown (5 seconds)
 		if c.Request().Method == "POST" {
 			var lastUpload *time.Time
 			err = db.QueryRow(context.Background(),
@@ -489,7 +489,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 			if err == nil && lastUpload != nil {
 				timeSince := time.Since(*lastUpload)
-				cooldownDuration := 2 * time.Minute
+				cooldownDuration := 5 * time.Second
 
 				if timeSince < cooldownDuration {
 					remainingSeconds := int(cooldownDuration.Seconds() - timeSince.Seconds())
