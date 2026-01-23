@@ -337,6 +337,13 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
             if isJSON {
                 return c.JSON(http.StatusForbidden, map[string]string{"error": "forbidden", "reason": "no_token"})
             }
+            return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
+                "Title":           "Zugang verweigert",
+                "ContentTemplate": "access_denied.content",
+                "CurrentPath":     c.Request().URL.Path,
+                "CurrentYear":     time.Now().Year(),
+            })
+        }
 
 		// Validate token
 		var tokenID int
@@ -353,14 +360,16 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		if err != nil {
 			log.Printf("Token validation error: %v", err)
-            if isJSON {
-                return c.JSON(http.StatusForbidden, map[string]string{"error": "invalid_token"})
-            }
+			if isJSON {
+				return c.JSON(http.StatusForbidden, map[string]string{"error": "invalid_token"})
+			}
+			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
+				"Title":           "Ungültiger Token",
 				"ContentTemplate": "invalid_token.content",
 				"CurrentPath":     c.Request().URL.Path,
 				"CurrentYear":     time.Now().Year(),
 			})
-		}
+		} 
 
 		// Save token in session for subsequent requests
 		session.Values["token"] = token
@@ -426,17 +435,19 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 				if err != nil {
 					log.Printf("Failed to update current_player for token_id=%d with name=%s: %v", tokenID, sessName, err)
-                    // Don't fail the request; for API callers return JSON error so JS can react
-                    if isJSON {
-                        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
-                    }
+					// Don't fail the request; for API callers return JSON error so JS can react
+					if isJSON {
+						return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+					}
+					return c.Render(http.StatusOK, "layout", map[string]interface{}{
+						"Title":           "Willkommen",
 						"ContentTemplate": "enter_name.content",
 						"CurrentPath":     c.Request().URL.Path,
 						"CurrentYear":     time.Now().Year(),
 						"BagName":         bagName,
 						"Token":           token,
 					})
-				}
+				} 
 
 				rows := result.RowsAffected()
 				if rows == 0 {
@@ -464,25 +475,27 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Check if token is active
 		if !isActive {
-            if isJSON {
-                return c.JSON(http.StatusForbidden, map[string]string{"error": "token_deactivated"})
-            }
+			if isJSON {
+				return c.JSON(http.StatusForbidden, map[string]string{"error": "token_deactivated"})
+			}
+			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
 				"Title":           "Token deaktiviert",
 				"ContentTemplate": "token_deactivated.content",
 				"CurrentPath":     c.Request().URL.Path,
 				"CurrentYear":     time.Now().Year(),
 			})
-		}
+		} 
 
 		// Check upload limit
 		if totalUploads >= maxUploads {
-            if isJSON {
-                return c.JSON(http.StatusForbidden, map[string]interface{}{
-                    "error":         "limit_reached",
-                    "total_uploads": totalUploads,
-                    "max_uploads":   maxUploads,
-                })
-            }
+			if isJSON {
+				return c.JSON(http.StatusForbidden, map[string]interface{}{
+					"error":         "limit_reached",
+					"total_uploads": totalUploads,
+					"max_uploads":   maxUploads,
+				})
+			}
+			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
 				"Title":           "Upload-Limit erreicht",
 				"ContentTemplate": "limit_reached.content",
 				"CurrentPath":     c.Request().URL.Path,
