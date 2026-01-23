@@ -55,6 +55,7 @@ func registerRoutes(e *echo.Echo) {
 	adminGroup.POST("/tokens/:id/assign", adminTokenAssignHandler)
 	adminGroup.POST("/tokens/:id/quota", adminUpdateQuotaHandler)
 	adminGroup.GET("/tokens/:id/qr", adminDownloadQRHandler)
+	adminGroup.POST("/contribs/:id/delete", adminDeleteContributionHandler)
 
 	// Bag request management
 	adminGroup.POST("/bag-requests/:id/complete", adminBagRequestCompleteHandler)
@@ -678,9 +679,11 @@ func uploadDeleteHandler(c echo.Context) error {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
 		}
 	}
-	if ownerToken != tokenID || ownerSession != sessionNumber {
+	if ownerToken != tokenID {
+		log.Printf("Forbidden delete attempt: contribution=%d ownerToken=%d ownerSession=%d tokenID=%d sessionNumber=%d currentPlayer=%q", req.ID, ownerToken, ownerSession, tokenID, sessionNumber, currentPlayer)
 		return c.JSON(http.StatusForbidden, map[string]string{"error": "not allowed"})
 	}
+	// Owner token matches; allow deletion even if session numbers differ (previous sessions owned by same token allowed)
 
 	// Get image_url for S3 deletion
 	var imageURL string

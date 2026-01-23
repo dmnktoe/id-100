@@ -289,11 +289,14 @@
     <h2>📸 Neueste Contributions</h2>
     <div class="contrib-grid">
       {{range .RecentContribs}}
-      <div class="contrib-card">
+      <div class="contrib-card" id="admin-contrib-{{.ID}}">
         <img src="{{.ImageUrl}}" alt="Contribution" loading="lazy">
         <div class="contrib-meta">
           <div>{{.PlayerName}}</div>
           <div>Derive #{{.DeriveNumber}}</div>
+        </div>
+        <div style="margin-top:0.5rem; text-align:center;">
+          <button class="btn-admin" style="background:#d32f2f; color:white; padding:0.35rem 0.6rem; border-radius:6px;" onclick="adminDeleteContribution({{.ID}}, this)">Löschen</button>
         </div>
       </div>
       {{end}}
@@ -338,6 +341,37 @@
         setTimeout(() => location.reload(), 3000);
       } else {
         alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+      }
+
+    } catch (e) {
+      alert('Fehler: ' + e.message);
+    }
+  }
+
+  // Admin: delete a contribution (with its upload_log and S3 object)
+  async function adminDeleteContribution(id, btn) {
+    if (!confirm('Wirklich löschen?')) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch('/admin/contribs/' + id + '/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin'
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const el = document.getElementById('admin-contrib-' + id);
+        if (el) el.remove();
+      } else {
+        alert(data.error || 'Fehler');
+        btn.disabled = false;
+      }
+    } catch (e) {
+      alert(e.message || 'Fehler');
+      btn.disabled = false;
+    }
+  }
+
       }
     } catch (err) {
       alert('Fehler: ' + err.message);
