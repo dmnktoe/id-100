@@ -15,7 +15,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"errors"
+	"database/sql"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 	qrcode "github.com/skip2/go-qrcode"
 )
@@ -95,13 +103,14 @@ func adminDashboardHandler(c echo.Context) error {
 
 	// Get recent contributions
 	type RecentContrib struct {
+		ID           int
 		ImageUrl     string
 		PlayerName   string
 		DeriveNumber int
 	}
 
 	contribRows, err := db.Query(context.Background(), `
-		SELECT c.image_url, COALESCE(ul.player_name, 'Anonym'), ul.derive_number
+		SELECT c.id, c.image_url, COALESCE(ul.player_name, 'Anonym'), ul.derive_number
 		FROM contributions c
 		JOIN upload_logs ul ON ul.contribution_id = c.id
 		ORDER BY c.created_at DESC
@@ -123,7 +132,7 @@ func adminDashboardHandler(c echo.Context) error {
 	var recentContribs []RecentContrib
 	for contribRows.Next() {
 		var rc RecentContrib
-		if err := contribRows.Scan(&rc.ImageUrl, &rc.PlayerName, &rc.DeriveNumber); err != nil {
+		if err := contribRows.Scan(&rc.ID, &rc.ImageUrl, &rc.PlayerName, &rc.DeriveNumber); err != nil {
 			continue
 		}
 		rc.ImageUrl = ensureFullImageURL(rc.ImageUrl)
@@ -678,6 +687,106 @@ func adminTokenListHandler(c echo.Context) error {
 		"tokens": tokens,
 		"count":  len(tokens),
 	})
+}
+
+// adminDeleteContributionHandler deletes a contribution and its upload_log and S3 object
+func adminDeleteContributionHandler(c echo.Context) error {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid id"})
+	}
+
+	// Get image URL for S3 deletion and check contribution exists
+	var imageURL string
+	if err := db.QueryRow(context.Background(), "SELECT image_url FROM contributions WHERE id = $1", id).Scan(&imageURL); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "not found"})
+		}
+		log.Printf("DB error fetching contribution %d: %v", id, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+	}
+
+	// Try to find associated token_id from upload_logs for counter decrement
+	var tokenID sql.NullInt64
+	err = db.QueryRow(context.Background(), "SELECT token_id FROM upload_logs WHERE contribution_id = $1 LIMIT 1", id).Scan(&tokenID)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		log.Printf("DB error fetching upload_log for contribution %d: %v", id, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+	}
+
+	// Start transaction
+	tx, txErr := db.Begin(context.Background())
+	if txErr != nil {
+		log.Printf("Failed to begin tx for admin delete contribution %d: %v", id, txErr)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+	}
+	defer func() { _ = tx.Rollback(context.Background()) }()
+
+	// Delete upload_logs for this contribution
+	if _, err := tx.Exec(context.Background(), "DELETE FROM upload_logs WHERE contribution_id = $1", id); err != nil {
+		log.Printf("Failed to delete upload_logs for contribution %d: %v", id, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+	}
+
+	// Delete contribution
+	ct, err := tx.Exec(context.Background(), "DELETE FROM contributions WHERE id = $1", id)
+	if err != nil {
+		log.Printf("Failed to delete contribution %d: %v", id, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+	}
+	if ct.RowsAffected() == 0 {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "not found"})
+	}
+
+	// Decrement upload counter if token was found
+	if tokenID.Valid {
+		ctx := c.Request().Context()
+		if _, err := tx.Exec(ctx, "UPDATE upload_tokens SET total_uploads = GREATEST(total_uploads - 1, 0) WHERE id = $1", tokenID.Int64); err != nil {
+			// Attempt to rollback the transaction using the same context so we don't commit inconsistent state
+			if rbErr := tx.Rollback(ctx); rbErr != nil {
+				log.Printf("Failed to rollback tx after failing to decrement upload counter for token %d: %v (rollback error: %v)", tokenID.Int64, err, rbErr)
+			} else {
+				log.Printf("Rolled back tx after failing to decrement upload counter for token %d: %v", tokenID.Int64, err)
+			}
+			// Propagate error to caller so the deletion is not committed
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+		}
+	}
+
+	if err := tx.Commit(context.Background()); err != nil {
+		log.Printf("Failed to commit admin delete for contribution %d: %v", id, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+	}
+
+	// Best-effort delete S3 object (instantiate s3 client similarly to upload handlers)
+	if imageURL != "" {
+		cfg, _ := config.LoadDefaultConfig(context.TODO(),
+			config.WithRegion(os.Getenv("S3_REGION")),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+				os.Getenv("S3_ACCESS_KEY"),
+				os.Getenv("S3_SECRET_KEY"),
+				"",
+			)),
+		)
+		s3ClientLocal := s3.NewFromConfig(cfg, func(o *s3.Options) {
+			if endpoint := os.Getenv("S3_ENDPOINT"); endpoint != "" {
+				o.BaseEndpoint = aws.String(endpoint)
+			}
+			o.UsePathStyle = true
+		})
+
+		parts := strings.Split(imageURL, "/")
+		key := parts[len(parts)-1]
+		if _, err := s3ClientLocal.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+			Bucket: aws.String(os.Getenv("S3_BUCKET")),
+			Key:    aws.String(key),
+		}); err != nil {
+			log.Printf("Failed to delete S3 object for contribution %d key=%s: %v", id, key, err)
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
 
 // basicAuthMiddleware protects admin endpoints
