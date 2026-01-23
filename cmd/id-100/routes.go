@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"net/url"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -468,7 +469,26 @@ func uploadPostHandler(c echo.Context) error {
 	}
 
 	// Redirect back to the upload page, preselect the derive so the user stays in flow
-	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/upload?derive=%s", deriveNumberStr))
+	// Only propagate a token if the original client request actually provided one
+	// (either via query string or a form-encoded body). Do NOT leak cookie/session tokens.
+	redirectURL := fmt.Sprintf("/upload?derive=%s", deriveNumberStr)
+	// Prefer raw query param (avoids parsing body/multipart)
+	originalToken := c.Request().URL.Query().Get("token")
+	if originalToken == "" && c.Request().Method == "POST" {
+		contentType := c.Request().Header.Get("Content-Type")
+		if strings.Contains(contentType, "application/x-www-form-urlencoded") {
+			// Limit body size before parsing, consistent with middleware
+			const maxFormSize = int64(2 * 1024 * 1024) // 2 MiB
+			c.Request().Body = http.MaxBytesReader(c.Response().Writer, c.Request().Body, maxFormSize)
+			if formToken := c.FormValue("token"); formToken != "" {
+				originalToken = formToken
+			}
+		}
+	}
+	if originalToken != "" {
+		redirectURL = fmt.Sprintf("%s&token=%s", redirectURL, url.QueryEscape(originalToken))
+	}
+	return c.Redirect(http.StatusSeeOther, redirectURL)
 }
 
 func uploadDeleteHandler(c echo.Context) error {
