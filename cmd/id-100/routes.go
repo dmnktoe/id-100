@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"net/url"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -468,7 +469,13 @@ func uploadPostHandler(c echo.Context) error {
 	}
 
 	// Redirect back to the upload page, preselect the derive so the user stays in flow
-	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/upload?derive=%s", deriveNumberStr))
+	// Preserve token in the redirect so clients without cookies still have access
+	token, _ := c.Get("token").(string)
+	redirectURL := fmt.Sprintf("/upload?derive=%s", deriveNumberStr)
+	if token != "" {
+		redirectURL = fmt.Sprintf("%s&token=%s", redirectURL, url.QueryEscape(token))
+	}
+	return c.Redirect(http.StatusSeeOther, redirectURL)
 }
 
 func uploadDeleteHandler(c echo.Context) error {
