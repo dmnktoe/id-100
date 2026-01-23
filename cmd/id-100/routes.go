@@ -15,12 +15,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/chai2010/webp"
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 )
 
@@ -447,35 +449,140 @@ func uploadPostHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "DB Error")
 	}
 
-	// Log upload in upload_logs table (insert or update last log for same token/derive/session)
-	_, err = db.Exec(context.Background(),
-		`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id)
-		 VALUES ($1, $2, $3, $4, $5)`,
-		tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID)
+	// Check if a log already exists for (token, derive, session)
+	var existingContributionID int
+	err = db.QueryRow(context.Background(), "SELECT contribution_id FROM upload_logs WHERE token_id = $1 AND derive_number = $2 AND session_number = $3 LIMIT 1", tokenID, deriveNumber, sessionNumber).Scan(&existingContributionID)
+	if err == nil {
+		// There is an existing upload for this derive/session by this token: replace it.
+		log.Printf("Replacing existing contribution %d with new contribution %d for token=%d derive=%d session=%d", existingContributionID, contributionID, tokenID, deriveNumber, sessionNumber)
+		// Start a transaction to atomically update upload_logs to point to the new contribution
+		tx, txErr := db.Begin(context.Background())
+		if txErr != nil {
+			log.Printf("Failed to begin tx for upload_logs update: %v", txErr)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+		}
+		defer func() {
+			_ = tx.Rollback(context.Background())
+		}()
 
-	if err != nil {
-		// Possibly a unique constraint (one log per token/derive/session). Try updating existing row to assign the latest contribution to the session.
-		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "unique") {
-			if _, err2 := db.Exec(context.Background(),
-				`UPDATE upload_logs SET contribution_id = $1, player_name = $2, uploaded_at = NOW()
-				 WHERE token_id = $3 AND derive_number = $4 AND session_number = $5`,
-				contributionID, currentPlayer, tokenID, deriveNumber, sessionNumber); err2 != nil {
-				log.Printf("Failed to update existing upload_log (after unique violation): %v (orig: %v)", err2, err)
+		if res, updErr := tx.Exec(context.Background(),
+			`UPDATE upload_logs SET contribution_id = $1, player_name = $2, uploaded_at = NOW() WHERE token_id = $3 AND derive_number = $4 AND session_number = $5`,
+			contributionID, currentPlayer, tokenID, deriveNumber, sessionNumber); updErr != nil {
+			log.Printf("Failed to update existing upload_log (tx): %v", updErr)
+			_ = tx.Rollback(context.Background())
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+		} else {
+			if res.RowsAffected() == 0 {
+				// No rows affected -> perform insert as fallback
+				if _, insErr := tx.Exec(context.Background(),
+					`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id) VALUES ($1,$2,$3,$4,$5)`,
+					tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID); insErr != nil {
+					log.Printf("Failed to insert upload_log during tx fallback: %v", insErr)
+					_ = tx.Rollback(context.Background())
+					return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+				}
+			}
+		}
+
+		// Commit the tx before removing previous contribution/S3 to ensure upload_log points at the new contribution
+		if errCommit := tx.Commit(context.Background()); errCommit != nil {
+			log.Printf("Failed to commit upload_logs tx: %v", errCommit)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+		}
+
+		// Now best-effort clean up previous S3 object and contribution row
+		var prevImageURL string
+		if err2 := db.QueryRow(context.Background(), "SELECT image_url FROM contributions WHERE id = $1", existingContributionID).Scan(&prevImageURL); err2 == nil {
+			parts := strings.Split(prevImageURL, "/")
+			prevKey := parts[len(parts)-1]
+			if _, err3 := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+				Bucket: aws.String(os.Getenv("S3_BUCKET")),
+				Key:    aws.String(prevKey),
+			}); err3 != nil {
+				log.Printf("Failed to delete previous S3 object %s: %v", prevKey, err3)
+			}
+			if _, err4 := db.Exec(context.Background(), "DELETE FROM contributions WHERE id = $1", existingContributionID); err4 != nil {
+				log.Printf("Failed to delete previous contribution %d: %v", existingContributionID, err4)
+			}
+		}
+	} else if errors.Is(err, pgx.ErrNoRows) {
+		// No upload_log found — attempt to detect an existing contribution by this player in the current session and replace it
+		var priorContributionID int
+		// Use session_started_at from upload_tokens to determine same session
+		err = db.QueryRow(context.Background(),
+			`SELECT c.id FROM contributions c JOIN upload_tokens t ON t.id = $1
+			 WHERE c.derive_id = $2 AND c.user_name = $3 AND c.created_at >= COALESCE(t.session_started_at, t.created_at) AND c.id <> $4 LIMIT 1`,
+			tokenID, internalID, currentPlayer, contributionID).Scan(&priorContributionID)
+		if err == nil {
+			log.Printf("Found prior contribution %d for token=%d derive=%d by player=%s in current session — replacing", priorContributionID, tokenID, deriveNumber, currentPlayer)
+
+			// Start transaction to atomically ensure upload_logs points at the new contribution before cleaning up.
+			tx, txErr := db.Begin(context.Background())
+			if txErr != nil {
+				log.Printf("Failed to begin tx for replacement flow: %v", txErr)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+			}
+			defer func() { _ = tx.Rollback(context.Background()) }()
+
+			if res, err5 := tx.Exec(context.Background(),
+				`UPDATE upload_logs SET contribution_id = $1, player_name = $2, uploaded_at = NOW() WHERE token_id = $3 AND derive_number = $4 AND session_number = $5`,
+				contributionID, currentPlayer, tokenID, deriveNumber, sessionNumber); err5 != nil {
+				log.Printf("Failed to update upload_log during replacement flow (tx): %v", err5)
+				_ = tx.Rollback(context.Background())
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+			} else {
+				if res.RowsAffected() == 0 {
+					if _, err6 := tx.Exec(context.Background(),
+						`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id) VALUES ($1,$2,$3,$4,$5)`,
+						tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID); err6 != nil {
+						log.Printf("Failed to insert upload_log during replacement flow (tx): %v", err6)
+						_ = tx.Rollback(context.Background())
+						return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+					}
+				}
+			}
+
+			if errCommit := tx.Commit(context.Background()); errCommit != nil {
+				log.Printf("Failed to commit upload_logs replacement tx: %v", errCommit)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+			}
+
+			// After successful commit remove previous S3 object and contribution row (best-effort)
+			var prevImageURL string
+			if err2 := db.QueryRow(context.Background(), "SELECT image_url FROM contributions WHERE id = $1", priorContributionID).Scan(&prevImageURL); err2 == nil {
+				parts := strings.Split(prevImageURL, "/")
+				prevKey := parts[len(parts)-1]
+				if _, err3 := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+					Bucket: aws.String(os.Getenv("S3_BUCKET")),
+					Key:    aws.String(prevKey),
+				}); err3 != nil {
+					log.Printf("Failed to delete previous S3 object %s: %v", prevKey, err3)
+				}
+				if _, err4 := db.Exec(context.Background(), "DELETE FROM contributions WHERE id = $1", priorContributionID); err4 != nil {
+					log.Printf("Failed to delete previous contribution %d: %v", priorContributionID, err4)
+				}
+			}
+		} else if errors.Is(err, pgx.ErrNoRows) {
+			// No prior contribution found: insert new upload_log and increment counter as usual
+			_, err = db.Exec(context.Background(),
+				`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id) VALUES ($1, $2, $3, $4, $5)`,
+				tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID)
+			if err != nil {
+				log.Printf("Failed to log upload: %v", err)
+				// Don't fail the request, contribution is already saved
+			} else {
+				// Increment total_uploads counter for token
+				if _, err = db.Exec(context.Background(), "UPDATE upload_tokens SET total_uploads = total_uploads + 1 WHERE id = $1", tokenID); err != nil {
+					log.Printf("Failed to increment upload counter: %v", err)
+				}
 			}
 		} else {
-			log.Printf("Failed to log upload: %v", err)
+			log.Printf("DB error checking previous contributions: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
 		}
-		// Don't fail the request, contribution is already saved
-	}
-
-	// Increment total_uploads counter for token
-	_, err = db.Exec(context.Background(),
-		"UPDATE upload_tokens SET total_uploads = total_uploads + 1 WHERE id = $1",
-		tokenID)
-
-	if err != nil {
-		log.Printf("Failed to increment upload counter: %v", err)
-		// Don't fail the request, contribution is already saved
+	} else {
+		log.Printf("DB error checking upload_logs: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
 	}
 
 	// Redirect back to the upload page, preselect the derive so the user stays in flow
@@ -504,6 +611,7 @@ func uploadPostHandler(c echo.Context) error {
 func uploadDeleteHandler(c echo.Context) error {
 	tokenID, _ := c.Get("token_id").(int)
 	sessionNumber, _ := c.Get("session_number").(int)
+	currentPlayer, _ := c.Get("current_player").(string)
 
 	type Req struct {
 		ID int `json:"id"`
@@ -518,7 +626,57 @@ func uploadDeleteHandler(c echo.Context) error {
 	var ownerSession int
 	err := db.QueryRow(context.Background(), "SELECT token_id, session_number FROM upload_logs WHERE contribution_id = $1 LIMIT 1", req.ID).Scan(&ownerToken, &ownerSession)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "not found"})
+		if errors.Is(err, pgx.ErrNoRows) {
+			// No upload_log found - attempt to reconcile by checking contribution owner and attach a log for current session if the user matches
+			var contribOwner string
+			if err2 := db.QueryRow(context.Background(), "SELECT user_name FROM contributions WHERE id = $1", req.ID).Scan(&contribOwner); err2 == nil {
+				if contribOwner == currentPlayer {
+					// Find derive number for the contribution
+					var deriveNumber int
+					if err3 := db.QueryRow(context.Background(), "SELECT d.number FROM contributions c JOIN deriven d ON d.id = c.derive_id WHERE c.id = $1", req.ID).Scan(&deriveNumber); err3 == nil {
+						// Try to insert log; on unique violation update existing log
+						if _, err4 := db.Exec(context.Background(),
+							`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id)
+							 VALUES ($1, $2, $3, $4, $5)`,
+							tokenID, deriveNumber, currentPlayer, sessionNumber, req.ID); err4 != nil {
+							if strings.Contains(err4.Error(), "duplicate") || strings.Contains(err4.Error(), "unique") {
+								if _, err5 := db.Exec(context.Background(),
+									`UPDATE upload_logs SET contribution_id = $1, player_name = $2, uploaded_at = NOW()
+									 WHERE token_id = $3 AND derive_number = $4 AND session_number = $5`,
+									req.ID, currentPlayer, tokenID, deriveNumber, sessionNumber); err5 != nil {
+									log.Printf("Failed to update existing upload_log (reconcile on delete): %v (orig: %v)", err5, err4)
+								}
+							} else {
+								log.Printf("Failed to insert upload_log during reconcile: %v", err4)
+							}
+						}
+						// Set ownerToken/ownerSession to current so deletion can proceed
+						ownerToken = tokenID
+						ownerSession = sessionNumber
+					} else if errors.Is(err3, pgx.ErrNoRows) {
+						// Contribution exists but derive lookup returned no row? treat as not found
+						log.Printf("Failed to determine derive number for contribution %d: no row", req.ID)
+						return c.JSON(http.StatusNotFound, map[string]string{"error": "not found"})
+					} else {
+						log.Printf("DB error determining derive number for contribution %d: %v", req.ID, err3)
+						return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+					}
+				} else {
+					// Contribution is owned by someone else; respond forbidden
+					return c.JSON(http.StatusForbidden, map[string]string{"error": "not allowed"})
+				}
+			} else if errors.Is(err2, pgx.ErrNoRows) {
+				// Contribution not found
+				return c.JSON(http.StatusNotFound, map[string]string{"error": "not found"})
+			} else {
+				log.Printf("DB error fetching contribution owner for id=%d: %v", req.ID, err2)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+			}
+		} else {
+			// Real DB error when looking up upload_logs
+			log.Printf("DB error checking upload_logs for contribution %d: %v", req.ID, err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+		}
 	}
 	if ownerToken != tokenID || ownerSession != sessionNumber {
 		return c.JSON(http.StatusForbidden, map[string]string{"error": "not allowed"})
