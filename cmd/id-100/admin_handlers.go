@@ -741,8 +741,16 @@ func adminDeleteContributionHandler(c echo.Context) error {
 
 	// Decrement upload counter if token was found
 	if tokenID.Valid {
-		if _, err := tx.Exec(context.Background(), "UPDATE upload_tokens SET total_uploads = GREATEST(total_uploads - 1, 0) WHERE id = $1", tokenID.Int64); err != nil {
-			log.Printf("Failed to decrement upload counter for token %d: %v", tokenID.Int64, err)
+		ctx := c.Request().Context()
+		if _, err := tx.Exec(ctx, "UPDATE upload_tokens SET total_uploads = GREATEST(total_uploads - 1, 0) WHERE id = $1", tokenID.Int64); err != nil {
+			// Attempt to rollback the transaction using the same context so we don't commit inconsistent state
+			if rbErr := tx.Rollback(ctx); rbErr != nil {
+				log.Printf("Failed to rollback tx after failing to decrement upload counter for token %d: %v (rollback error: %v)", tokenID.Int64, err, rbErr)
+			} else {
+				log.Printf("Rolled back tx after failing to decrement upload counter for token %d: %v", tokenID.Int64, err)
+			}
+			// Propagate error to caller so the deletion is not committed
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
 		}
 	}
 
