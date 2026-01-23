@@ -455,7 +455,42 @@ func uploadPostHandler(c echo.Context) error {
 	if err == nil {
 		// There is an existing upload for this derive/session by this token: replace it.
 		log.Printf("Replacing existing contribution %d with new contribution %d for token=%d derive=%d session=%d", existingContributionID, contributionID, tokenID, deriveNumber, sessionNumber)
-		// Try to delete previous S3 object and contribution row (best-effort)
+		// Start a transaction to atomically update upload_logs to point to the new contribution
+		tx, txErr := db.Begin(context.Background())
+		if txErr != nil {
+			log.Printf("Failed to begin tx for upload_logs update: %v", txErr)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+		}
+		defer func() {
+			_ = tx.Rollback(context.Background())
+		}()
+
+		if res, updErr := tx.Exec(context.Background(),
+			`UPDATE upload_logs SET contribution_id = $1, player_name = $2, uploaded_at = NOW() WHERE token_id = $3 AND derive_number = $4 AND session_number = $5`,
+			contributionID, currentPlayer, tokenID, deriveNumber, sessionNumber); updErr != nil {
+			log.Printf("Failed to update existing upload_log (tx): %v", updErr)
+			_ = tx.Rollback(context.Background())
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+		} else {
+			if res.RowsAffected() == 0 {
+				// No rows affected -> perform insert as fallback
+				if _, insErr := tx.Exec(context.Background(),
+					`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id) VALUES ($1,$2,$3,$4,$5)`,
+					tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID); insErr != nil {
+					log.Printf("Failed to insert upload_log during tx fallback: %v", insErr)
+					_ = tx.Rollback(context.Background())
+					return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+				}
+			}
+		}
+
+		// Commit the tx before removing previous contribution/S3 to ensure upload_log points at the new contribution
+		if errCommit := tx.Commit(context.Background()); errCommit != nil {
+			log.Printf("Failed to commit upload_logs tx: %v", errCommit)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+		}
+
+		// Now best-effort clean up previous S3 object and contribution row
 		var prevImageURL string
 		if err2 := db.QueryRow(context.Background(), "SELECT image_url FROM contributions WHERE id = $1", existingContributionID).Scan(&prevImageURL); err2 == nil {
 			parts := strings.Split(prevImageURL, "/")
@@ -470,22 +505,6 @@ func uploadPostHandler(c echo.Context) error {
 				log.Printf("Failed to delete previous contribution %d: %v", existingContributionID, err4)
 			}
 		}
-
-		// Update the upload_log to point to the new contribution and ensure it actually affected a row
-		if res, err5 := db.Exec(context.Background(),
-			`UPDATE upload_logs SET contribution_id = $1, player_name = $2, uploaded_at = NOW() WHERE token_id = $3 AND derive_number = $4 AND session_number = $5`,
-			contributionID, currentPlayer, tokenID, deriveNumber, sessionNumber); err5 != nil {
-			log.Printf("Failed to update existing upload_log: %v", err5)
-		} else {
-			if res.RowsAffected() == 0 {
-				// No rows affected (unexpected); try to insert as fallback
-				if _, err6 := db.Exec(context.Background(),
-					`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id) VALUES ($1,$2,$3,$4,$5)`,
-					tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID); err6 != nil {
-					log.Printf("Failed to insert upload_log after 0-affected update: %v", err6)
-				}
-			}
-		}
 	} else if errors.Is(err, pgx.ErrNoRows) {
 		// No upload_log found — attempt to detect an existing contribution by this player in the current session and replace it
 		var priorContributionID int
@@ -496,7 +515,39 @@ func uploadPostHandler(c echo.Context) error {
 			tokenID, internalID, currentPlayer).Scan(&priorContributionID)
 		if err == nil {
 			log.Printf("Found prior contribution %d for token=%d derive=%d by player=%s in current session — replacing", priorContributionID, tokenID, deriveNumber, currentPlayer)
-			// Delete previous S3 object and contribution row (best-effort)
+
+			// Start transaction to atomically ensure upload_logs points at the new contribution before cleaning up.
+			tx, txErr := db.Begin(context.Background())
+			if txErr != nil {
+				log.Printf("Failed to begin tx for replacement flow: %v", txErr)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+			}
+			defer func() { _ = tx.Rollback(context.Background()) }()
+
+			if res, err5 := tx.Exec(context.Background(),
+				`UPDATE upload_logs SET contribution_id = $1, player_name = $2, uploaded_at = NOW() WHERE token_id = $3 AND derive_number = $4 AND session_number = $5`,
+				contributionID, currentPlayer, tokenID, deriveNumber, sessionNumber); err5 != nil {
+				log.Printf("Failed to update upload_log during replacement flow (tx): %v", err5)
+				_ = tx.Rollback(context.Background())
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+			} else {
+				if res.RowsAffected() == 0 {
+					if _, err6 := tx.Exec(context.Background(),
+						`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id) VALUES ($1,$2,$3,$4,$5)`,
+						tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID); err6 != nil {
+						log.Printf("Failed to insert upload_log during replacement flow (tx): %v", err6)
+						_ = tx.Rollback(context.Background())
+						return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+					}
+				}
+			}
+
+			if errCommit := tx.Commit(context.Background()); errCommit != nil {
+				log.Printf("Failed to commit upload_logs replacement tx: %v", errCommit)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
+			}
+
+			// After successful commit remove previous S3 object and contribution row (best-effort)
 			var prevImageURL string
 			if err2 := db.QueryRow(context.Background(), "SELECT image_url FROM contributions WHERE id = $1", priorContributionID).Scan(&prevImageURL); err2 == nil {
 				parts := strings.Split(prevImageURL, "/")
@@ -511,29 +562,6 @@ func uploadPostHandler(c echo.Context) error {
 					log.Printf("Failed to delete previous contribution %d: %v", priorContributionID, err4)
 				}
 			}
-
-			// Try to update an existing upload_log row for this token/derive/session if present, otherwise insert one
-			if res, err5 := db.Exec(context.Background(),
-				`UPDATE upload_logs SET contribution_id = $1, player_name = $2, uploaded_at = NOW() WHERE token_id = $3 AND derive_number = $4 AND session_number = $5`,
-				contributionID, currentPlayer, tokenID, deriveNumber, sessionNumber); err5 != nil {
-				log.Printf("Failed to update upload_log during replacement flow: %v", err5)
-				// Try insert as a fallback
-				if _, err6 := db.Exec(context.Background(),
-					`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id) VALUES ($1,$2,$3,$4,$5)`,
-					tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID); err6 != nil {
-					log.Printf("Failed to upsert upload_log during replacement flow: %v (orig: %v)", err6, err5)
-				}
-			} else {
-				if res.RowsAffected() == 0 {
-					// No update performed — insert
-					if _, err6 := db.Exec(context.Background(),
-						`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id) VALUES ($1,$2,$3,$4,$5)`,
-						tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID); err6 != nil {
-						log.Printf("Failed to upsert upload_log during replacement flow: %v (orig: %v)", err6, err5)
-					}
-				}
-			}
-			// Do not increment total_uploads — it's a replacement
 		} else if errors.Is(err, pgx.ErrNoRows) {
 			// No prior contribution found: insert new upload_log and increment counter as usual
 			_, err = db.Exec(context.Background(),
