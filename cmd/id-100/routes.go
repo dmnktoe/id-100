@@ -447,14 +447,24 @@ func uploadPostHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "DB Error")
 	}
 
-	// Log upload in upload_logs table
+	// Log upload in upload_logs table (insert or update last log for same token/derive/session)
 	_, err = db.Exec(context.Background(),
 		`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id)
 		 VALUES ($1, $2, $3, $4, $5)`,
 		tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID)
 
 	if err != nil {
-		log.Printf("Failed to log upload: %v", err)
+		// Possibly a unique constraint (one log per token/derive/session). Try updating existing row to assign the latest contribution to the session.
+		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "unique") {
+			if _, err2 := db.Exec(context.Background(),
+				`UPDATE upload_logs SET contribution_id = $1, player_name = $2, uploaded_at = NOW()
+				 WHERE token_id = $3 AND derive_number = $4 AND session_number = $5`,
+				contributionID, currentPlayer, tokenID, deriveNumber, sessionNumber); err2 != nil {
+				log.Printf("Failed to update existing upload_log (after unique violation): %v (orig: %v)", err2, err)
+			}
+		} else {
+			log.Printf("Failed to log upload: %v", err)
+		}
 		// Don't fail the request, contribution is already saved
 	}
 
