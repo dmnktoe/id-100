@@ -1110,6 +1110,12 @@ input[type="text"]:focus {
   gap: var(--gap-md);
 }
 
+/* Contributions grid on detail pages should match the ID index look & feel */
+.contributions-grid {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--gap-md);
+}
+
 .evidence-card {
   border: var(--border-light);
   border-radius: var(--radius-md);
