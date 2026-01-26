@@ -33,7 +33,6 @@ func registerRoutes(e *echo.Echo) {
 	// Upload routes - protected by token middleware with session support
 	e.GET("/upload", uploadGetHandler, tokenMiddlewareWithSession)
 	e.POST("/upload", uploadPostHandler, tokenMiddlewareWithSession)
-	e.POST("/upload/delete", uploadDeleteHandler, tokenMiddlewareWithSession)
 	e.POST("/upload/set-name", setPlayerNameHandler, tokenMiddlewareWithSession)
 
 	e.GET("/spielregeln", rulesHandler)
@@ -491,106 +490,8 @@ func uploadPostHandler(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, redirectURL)
 }
 
-func uploadDeleteHandler(c echo.Context) error {
-	tokenID, _ := c.Get("token_id").(int)
-	sessionNumber, _ := c.Get("session_number").(int)
+// uploadDeleteHandler removed per request to eliminate upload/delete functionality
 
-	type Req struct {
-		ID int `json:"id"`
-	}
-	var req Req
-	if err := c.Bind(&req); err != nil || req.ID == 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
-	}
-
-	// Verify upload belongs to this token and session
-	var ownerToken int
-	var ownerSession int
-	err := db.QueryRow(context.Background(), "SELECT token_id, session_number FROM upload_logs WHERE contribution_id = $1 LIMIT 1", req.ID).Scan(&ownerToken, &ownerSession)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "not found"})
-	}
-	if ownerToken != tokenID || ownerSession != sessionNumber {
-		return c.JSON(http.StatusForbidden, map[string]string{"error": "not allowed"})
-	}
-
-	// Get image_url for S3 deletion
-	var imageURL string
-	err = db.QueryRow(context.Background(), "SELECT image_url FROM contributions WHERE id = $1", req.ID).Scan(&imageURL)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
-	}
-
-	// Extract key from url (filename)
-	parts := strings.Split(imageURL, "/")
-	key := parts[len(parts)-1]
-
-	// Delete S3 object (best-effort)
-	cfg, _ := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(os.Getenv("S3_REGION")),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			os.Getenv("S3_ACCESS_KEY"),
-			os.Getenv("S3_SECRET_KEY"),
-			""),
-		),
-	)
-	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		if endpoint := os.Getenv("S3_ENDPOINT"); endpoint != "" {
-			o.BaseEndpoint = aws.String(endpoint)
-		}
-		o.UsePathStyle = true
-	})
-
-	_, err = s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
-		Bucket: aws.String(os.Getenv("S3_BUCKET")),
-		Key:    aws.String(key),
-	})
-	if err != nil {
-		log.Printf("S3 delete error for key=%s: %v", key, err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "s3 delete failed"})
-	}
-
-	// Delete DB records within a transaction to keep DB consistent
-	tx, err := db.Begin(context.Background())
-	if err != nil {
-		log.Printf("Failed to begin tx: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
-	}
-	defer func() {
-		// Safe to call rollback; if commit succeeded this will return pgx.ErrTxClosed and be ignored
-		_ = tx.Rollback(context.Background())
-	}()
-
-	// Delete upload_logs for this contribution
-	if _, err := tx.Exec(context.Background(), "DELETE FROM upload_logs WHERE contribution_id = $1", req.ID); err != nil {
-		log.Printf("Failed to delete upload_logs for contribution %d: %v", req.ID, err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
-	}
-
-	// Delete contribution row and ensure it existed
-	ct, err := tx.Exec(context.Background(), "DELETE FROM contributions WHERE id = $1", req.ID)
-	if err != nil {
-		log.Printf("Failed to delete contribution %d: %v", req.ID, err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
-	}
-	if ct.RowsAffected() == 0 {
-		log.Printf("Contribution %d not found during delete", req.ID)
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "not found"})
-	}
-
-	// Decrement token counter now that contribution is gone
-	if _, err := tx.Exec(context.Background(), "UPDATE upload_tokens SET total_uploads = GREATEST(total_uploads - 1, 0) WHERE id = $1", tokenID); err != nil {
-		log.Printf("Failed to decrement upload counter for token %d: %v", tokenID, err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
-	}
-
-	if err := tx.Commit(context.Background()); err != nil {
-		log.Printf("Failed to commit transaction: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "db error"})
-	}
-
-	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-}
 
 func rulesHandler(c echo.Context) error {
 	stats := getFooterStats()
