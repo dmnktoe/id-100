@@ -10,23 +10,26 @@
         <section class="contributions-section">
             <h2 class="section-label">Eingereichte Beiträge ({{len .Contributions}})</h2>
 
-            <div class="evidence-grid">
+            {{if gt (len .Contributions) 0}}
+            <div class="id-grid contributions-grid">
                 {{range .Contributions}}
-                <div class="evidence-card">
-                    <div class="evidence-img-wrapper">
-                        <img class="lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="Beweisfoto">
+                <div class="id-card" role="article">
+                    <div class="card-image-box">
+                        <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="Beweisfoto">
                     </div>
-                    <div class="evidence-meta">
-                        <span class="user-tag">{{.UserName}}</span>
-                        <span class="date-tag">{{.CreatedAt.Format "02.01.2006"}}</span>
+                    <div class="card-content">
+                        <span class="card-number">Beitrag</span>
+                        <h3 class="card-title">{{.UserName}}</h3>
+                        <p class="card-desc">{{.CreatedAt.Format "02.01.2006"}}</p>
                     </div>
-                </div>
-                {{else}}
-                <div class="empty-state">
-                    Noch keine Beiträge. Sei der Erste.
                 </div>
                 {{end}}
             </div>
+            {{else}}
+            <div class="empty-state">
+                Noch keine Beiträge. Sei der Erste.
+            </div>
+            {{end}}
         </section>
 
         <footer class="detail-footer">
