@@ -16,7 +16,13 @@
              placeholder="z.B. Max Mustermann" required minlength="2" maxlength="100">
     </div>
 
+    <div class="form-group checkbox-row">
+      <input type="checkbox" id="agreePrivacy" name="agree_privacy" required>
+      <label for="agreePrivacy">Ich bestätige, dass ich nur Bilder hochlade, die keine erkennbaren Personen ohne Einwilligung zeigen, und stimme der <a href="/about">Datenschutzerklärung</a> zu.</label>
+      {{if .FormError}}<div class="form-error">{{.FormError}}</div>{{end}}
+    </div>
+
     <button type="submit" class="btn-black submit-btn">Weiter zum Upload</button>
-  </form>
+  </form> 
 </div>
 {{end}}
