@@ -234,6 +234,10 @@
           onclick="downloadQR({{.ID}}, '{{.BagName}}', 'png')">
           📥 QR (PNG)
         </button>
+        <button class="btn-admin" style="background: #00BCD4; color: white;"
+          onclick="copyUploadURL('{{.Token}}', '{{.BagName}}')">
+          🔗 URL kopieren
+        </button>
         {{if .IsActive}}
         <button class="btn-admin btn-deactivate" onclick="deactivateToken({{.ID}}, '{{.BagName}}')">
           🚫 Deaktivieren
@@ -331,8 +335,17 @@
         <small>Token-ID: ${data.token_id}</small><br>
         <a href="${data.qr_url}?format=svg" target="_blank" style="color: #2196F3;">📥 QR-Code (SVG) herunterladen</a> | 
         <a href="${data.qr_url}?format=png" target="_blank" style="color: #2196F3;">📥 QR-Code (PNG) herunterladen</a><br>
-        <small style="word-break: break-all;">URL: ${data.upload_url}</small>
+        <small style="word-break: break-all;">URL: ${data.upload_url} <button id="copyNewUrlBtn" style="margin-left:0.5rem; padding:0.2rem 0.4rem; border-radius:4px;">🔗 Kopieren</button></small>
       `;
+
+        document.getElementById('copyNewUrlBtn').onclick = async function () {
+          try {
+            await navigator.clipboard.writeText(data.upload_url);
+            alert('URL kopiert');
+          } catch (err) {
+            prompt('URL kopieren:', data.upload_url);
+          }
+        };
 
         // Reload nach 3 Sekunden
         setTimeout(() => location.reload(), 3000);
@@ -396,6 +409,17 @@
   function downloadQR(id, name, format) {
     const url = `/admin/tokens/${id}/qr?format=${format}`;
     window.open(url, '_blank');
+  }
+
+  async function copyUploadURL(token, name) {
+    const url = `${location.origin}/upload?token=${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('URL kopiert: ' + url);
+    } catch (err) {
+      // fallback to prompt if clipboard API fails
+      prompt('URL kopieren:', url);
+    }
   }
 
   async function markBagRequestDone(id, btn) {
