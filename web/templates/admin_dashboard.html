@@ -412,7 +412,8 @@
   }
 
   async function copyUploadURL(token, name) {
-    const url = `${location.origin}/upload?token=${token}`;
+    const encodedToken = encodeURIComponent(token);
+    const url = `${location.origin}/upload?token=${encodedToken}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('URL kopiert: ' + url);
