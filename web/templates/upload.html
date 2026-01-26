@@ -10,9 +10,10 @@
         <select name="derive_number" id="deriveInput" class="autocomplete-input" required>
           <option value="" disabled {{if not .SelectedNumber}}selected{{end}}>Bitte wählen...</option>
           {{range .Deriven}}
-          <option value="{{.Number}}" {{if eq $.SelectedNumber (printf "%d" .Number)}}selected{{end}}>🆔 {{.Number}}</option>
+          <option value="{{.Number}}" {{if index $.UploadedNumbers (printf "%d" .Number)}}disabled class="uploaded" title="Du hast bereits hochgeladen"{{end}} {{if eq $.SelectedNumber (printf "%d" .Number)}}selected{{end}}>🆔 {{.Number}}{{if index $.UploadedNumbers (printf "%d" .Number)}} (hast du schon bearbeitet){{end}}</option>
           {{end}}
         </select>
+        <small style="display:block; margin-top:0.5rem; color:#666;">Für ausgegraute IDs existiert bereits ein Beweisfoto von dir.</small>
       </div>
 
       <div class="form-group">
@@ -78,8 +79,63 @@
         const d = params.get('number');
         if (d) {
           const el = document.getElementById('deriveInput');
-          if (el) el.value = d;
+          if (el) {
+            el.value = d;
+            // don't leave a disabled (already-uploaded) option selected
+            const selectedOpt = el.querySelector('option[value="' + d + '"]');
+            if (selectedOpt && selectedOpt.disabled) {
+              el.value = '';
+            }
+          }
         }
+
+        // If redirected after successful upload, clear selection and reset form
+        const uploaded = params.get('uploaded');
+        if (uploaded === '1') {
+          const el = document.getElementById('deriveInput');
+          const fileInput = document.getElementById('fileInput');
+          const preview = document.getElementById('preview');
+          const dropText = document.getElementById('drop-text');
+          const submitBtn = document.getElementById('submitBtn');
+          // clear selection
+          if (el) el.value = '';
+          // reset file input & preview
+          if (fileInput) {
+            try { fileInput.value = null; } catch(e) { /* ignore */ }
+          }
+          if (preview) {
+            preview.src = '#';
+            preview.style.display = 'none';
+          }
+          if (dropText) dropText.style.display = 'block';
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'hochladen';
+          }
+          // show temporary success message
+          let result = document.getElementById('uploadResult');
+          if (!result) {
+            result = document.createElement('div');
+            result.id = 'uploadResult';
+            result.style.marginTop = '1rem';
+            result.style.fontWeight = '500';
+            document.querySelector('.container.upload').insertBefore(result, document.querySelector('.session-uploads'));
+          }
+          result.innerText = 'Upload erfolgreich!';
+          result.style.color = '#2e7d32';
+          result.style.display = 'block';
+          setTimeout(() => {
+            if (result) result.style.display = 'none';
+          }, 4000);
+
+          // Remove uploaded param from URL to avoid repeated behavior on refresh
+          try {
+            params.delete('uploaded');
+            const newUrl = location.pathname + (params.toString() ? '?' + params.toString() : '');
+            history.replaceState(null, '', newUrl);
+          } catch(e) { /* ignore */ }
+        }
+
       } catch (e) { /* ignore */ }
     })();
 

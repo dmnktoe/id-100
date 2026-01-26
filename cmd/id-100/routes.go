@@ -295,7 +295,10 @@ func requestBagPostHandler(c echo.Context) error {
 
 func uploadGetHandler(c echo.Context) error {
 	stats := getFooterStats()
-	rows, err := db.Query(context.Background(), "SELECT number, title FROM deriven ORDER BY number ASC")
+	rows, err := db.Query(context.Background(), `
+SELECT d.number, d.title, COALESCE((SELECT COUNT(*) FROM contributions WHERE derive_id = d.id),0) as contrib_count
+FROM deriven d
+ORDER BY d.number ASC`)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Datenbankfehler")
 	}
@@ -304,7 +307,7 @@ func uploadGetHandler(c echo.Context) error {
 	var list []Derive
 	for rows.Next() {
 		var d Derive
-		if err := rows.Scan(&d.Number, &d.Title); err != nil {
+		if err := rows.Scan(&d.Number, &d.Title, &d.ContribCount); err != nil {
 			return err
 		}
 		list = append(list, d)
@@ -350,6 +353,14 @@ func uploadGetHandler(c echo.Context) error {
 	token, _ := c.Get("token").(string)
 	currentPlayer, _ := c.Get("current_player").(string)
 
+	// Build a map[string]bool of derive numbers that were uploaded in THIS session/token
+	uploadedNumbers := make(map[string]bool)
+	for _, sc := range sessionContribs {
+		if num, ok := sc["number"].(int); ok {
+			uploadedNumbers[strconv.Itoa(num)] = true
+		}
+	}
+
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Beweis hochladen - 🏠🆔💯",
 		"Deriven":         list,
@@ -361,6 +372,7 @@ func uploadGetHandler(c echo.Context) error {
 		"SelectedNumber":  c.QueryParam("number"),
 		"Token":           token,
 		"CurrentPlayer":   currentPlayer,
+		"UploadedNumbers": uploadedNumbers,
 	})
 }
 
@@ -472,10 +484,11 @@ func uploadPostHandler(c echo.Context) error {
 		// Don't fail the request, contribution is already saved
 	}
 
-	// Redirect back to the upload page, preselect the derive so the user stays in flow
+	// Redirect back to the upload page with an uploaded flag so the client can
+	// clear the derive selection and show a success message.
 	// Only propagate a token if the original client request actually provided one
 	// (either via query string or a form-encoded body). Do NOT leak cookie/session tokens.
-	redirectURL := fmt.Sprintf("/upload?number=%s", deriveNumberStr)
+	redirectURL := "/upload?uploaded=1"
 	// Prefer raw query param (avoids parsing body/multipart)
 	originalToken := c.Request().URL.Query().Get("token")
 	if originalToken == "" && c.Request().Method == "POST" {
