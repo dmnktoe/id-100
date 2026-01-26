@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -22,6 +21,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/chai2010/webp"
 	"github.com/labstack/echo/v4"
+
+	"id-100/cmd/id-100/imgutil"
 )
 
 func registerRoutes(e *echo.Echo) {
@@ -387,9 +388,10 @@ func uploadPostHandler(c echo.Context) error {
 
 	src, _ := file.Open()
 	defer src.Close()
-	img, _, err := image.Decode(src)
+	// Decode and auto-orient based on EXIF so mobile uploads keep the correct rotation
+	img, err := imgutil.DecodeAutoOriented(src)
 	if err != nil {
-		return c.String(http.StatusBadRequest, "Ungültiges Bildformat")
+		return c.String(http.StatusBadRequest, "Ungültiges Bildformat oder Korrektur fehlgeschlagen")
 	}
 	var buf bytes.Buffer
 	if err := webp.Encode(&buf, img, &webp.Options{Lossless: false, Quality: 75}); err != nil {
