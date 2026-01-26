@@ -1,23 +1,24 @@
 {{define "upload.content"}}
 <div class="container upload">
-  <h2 class="page-title">beitrag hochladen</h2>
+  <div class="current-player">{{if .CurrentPlayer}}👤 {{.CurrentPlayer}}{{end}}</div>
+  <h2 class="page-title">Beweisfoto hochladen</h2>
 
   <form action="/upload?token={{.Token}}" method="POST" enctype="multipart/form-data" id="uploadForm">
       <input type="hidden" name="token" value="{{.Token}}">
       <div class="form-group">
-        <label for="deriveInput">aufgabe</label>
-        <input list="derivenList" name="derive_number" id="deriveInput" class="autocomplete-input" placeholder="suche..." required>
-        <datalist id="derivenList">
+        <label for="deriveInput">Aufgabe</label>
+        <select name="derive_number" id="deriveInput" class="autocomplete-input" required>
+          <option value="" disabled {{if not .SelectedNumber}}selected{{end}}>Bitte wählen...</option>
           {{range .Deriven}}
-          <option value="{{.Number}}">{{.Title}}</option>
+          <option value="{{.Number}}" {{if eq $.SelectedNumber (printf "%d" .Number)}}selected{{end}}>🆔 {{.Number}}</option>
           {{end}}
-        </datalist>
+        </select>
       </div>
 
       <div class="form-group">
-        <label>bild</label>
+        <label>Bild</label>
         <div id="drop-zone">
-          <span id="drop-text">bild ablegen oder klicken</span>
+          <span id="drop-text">Bild ablegen oder klicken</span>
           <input type="file" name="image" id="fileInput" hidden accept="image/*" required>
           <img id="preview" src="#" alt="Preview">
         </div>
@@ -25,7 +26,6 @@
 
       <button type="submit" class="btn-black submit-btn" id="submitBtn">hochladen</button>
     </form>
-  </div>
 
   <script>
     const dz = document.getElementById('drop-zone');
@@ -71,11 +71,11 @@
       btn.innerText = "optimiere...";
     };
 
-    // Prefill derive if present in query param
+    // Prefill number if present in query param
     (function(){
       try {
         const params = new URLSearchParams(location.search);
-        const d = params.get('derive');
+        const d = params.get('number');
         if (d) {
           const el = document.getElementById('deriveInput');
           if (el) el.value = d;
@@ -83,20 +83,19 @@
       } catch (e) { /* ignore */ }
     })();
 
-    // deleteSessionUpload removed per request; session uploads can no longer be deleted by users from the client.
-
   </script>
 
   <!-- Session uploads -->
   {{if .SessionContribs}}
-  <div style="margin-top:1.5rem;">
+  <div class="session-uploads" style="margin-top:1.5rem;">
     <h3>Deine Uploads in dieser Session</h3>
-    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <div class="session-grid">
       {{range .SessionContribs}}
-      <div style="width:120px;text-align:center;" id="session-upload-{{.id}}">
-        <img src="{{.image_url}}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;" alt="upload">
-        <div style="font-size:0.85rem;margin-top:0.3rem;">#{{.derive}}</div>
-
+      <div class="session-card" id="session-upload-{{index . "id"}}">
+        <div class="session-img-wrapper">
+          <img class="lazy blur-up" data-src="{{index . "image_url"}}" data-lqip="{{index . "image_lqip"}}" src="{{if index . "image_lqip"}}{{index . "image_lqip"}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="upload">
+        </div>
+        <div class="session-meta">🆔 {{index . "number"}}</div>
       </div>
       {{end}}
     </div>

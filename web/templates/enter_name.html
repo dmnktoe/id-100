@@ -1,6 +1,6 @@
 {{define "enter_name.content"}}
 <div class="container upload">
-  <h2 class="page-title">willkommen bei dérive 100!</h2>
+  <h2 class="page-title">Willkommen bei ID-100!</h2>
   
   <p style="text-align: center; margin-bottom: 2rem;">
     Du hast <strong>{{.BagName}}</strong> gescannt.<br>
@@ -11,12 +11,12 @@
     <input type="hidden" name="token" value="{{.Token}}">
     
     <div class="form-group">
-      <label for="playerName">dein name</label>
+      <label for="playerName">Dein Name</label>
       <input type="text" name="player_name" id="playerName" class="autocomplete-input" 
              placeholder="z.B. Max Mustermann" required minlength="2" maxlength="100">
     </div>
 
-    <button type="submit" class="btn-black submit-btn">weiter zum upload</button>
+    <button type="submit" class="btn-black submit-btn">Weiter zum Upload</button>
   </form>
 </div>
 {{end}}

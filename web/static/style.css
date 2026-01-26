@@ -389,7 +389,7 @@ main {
   padding: var(--gap-lg) 0;
 }
 
-.derive-grid {
+.id-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 4rem;
@@ -421,7 +421,7 @@ main {
   font-weight: 300;
   grid-column: 1 / -1;
 }
-.derive-card {
+.id-card {
   display: block;
   background: transparent;
   border: none;
@@ -435,7 +435,7 @@ main {
     border-color var(--transition-fast);
 }
 
-.derive-card:hover {
+.id-card:hover {
   transform: translateY(-4px);
 }
 
@@ -509,21 +509,21 @@ main {
 }
 
 /* Tier-based overlay placement with gentler translate nudges for larger overlays */
-.derive-card.overlay-1 .card-image-box::before {
+.id-card.overlay-1 .card-image-box::before {
   background-image: url("./../static/assets/images/card_overlay-1.png");
   top: 6%;
   right: 6%;
   transform: translate(8%, -8%) rotate(12deg);
 }
 
-.derive-card.overlay-2 .card-image-box::before {
+.id-card.overlay-2 .card-image-box::before {
   background-image: url("./../static/assets/images/card_overlay-2.png");
   bottom: 6%;
   left: 6%;
   transform: translate(-8%, 8%) rotate(-8deg);
 }
 
-.derive-card.overlay-3 .card-image-box::before {
+.id-card.overlay-3 .card-image-box::before {
   background-image: url("./../static/assets/images/card_overlay-3.png");
   /* slightly above centre on the right edge so it reads as a proper decoration */
   top: 46%;
@@ -536,17 +536,17 @@ main {
   .card-image-box::before {
     width: clamp(140px, 26%, 260px);
   }
-  .derive-card.overlay-1 .card-image-box::before {
+  .id-card.overlay-1 .card-image-box::before {
     top: 7%;
     right: 7%;
     transform: translate(9%, -9%) rotate(10deg);
   }
-  .derive-card.overlay-2 .card-image-box::before {
+  .id-card.overlay-2 .card-image-box::before {
     bottom: 7%;
     left: 7%;
     transform: translate(-9%, 9%) rotate(-6deg);
   }
-  .derive-card.overlay-3 .card-image-box::before {
+  .id-card.overlay-3 .card-image-box::before {
     top: 46%;
     right: 7%;
     transform: translate(9%, -46%) rotate(8deg);
@@ -558,17 +558,17 @@ main {
   .card-image-box::before {
     width: clamp(100px, 26%, 180px);
   }
-  .derive-card.overlay-1 .card-image-box::before {
+  .id-card.overlay-1 .card-image-box::before {
     top: 9%;
     right: 9%;
     transform: translate(8%, -8%) rotate(8deg);
   }
-  .derive-card.overlay-2 .card-image-box::before {
+  .id-card.overlay-2 .card-image-box::before {
     bottom: 9%;
     left: 9%;
     transform: translate(-8%, 8%) rotate(-6deg);
   }
-  .derive-card.overlay-3 .card-image-box::before {
+  .id-card.overlay-3 .card-image-box::before {
     top: 46%;
     right: 9%;
     transform: translate(8%, -46%) rotate(6deg);
@@ -825,7 +825,6 @@ main {
   font-size: 0.75rem;
   font-weight: 400;
   color: var(--gray-600);
-  text-transform: lowercase;
   letter-spacing: var(--letter-spacing-tight);
 }
 
@@ -885,6 +884,53 @@ main {
    ======================================== */
 .container.upload {
   max-width: 580px;
+}
+
+/* Session uploads grid inside upload form container */
+.session-uploads h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.current-player {
+  font-size: 0.95rem;
+  color: var(--gray-800);
+  margin-bottom: 0.35rem;
+  font-weight: 500;
+}
+
+.session-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.5rem;
+  align-items: start;
+  justify-content: start;
+}
+
+.session-card {
+  text-align: center;
+  max-width: 120px; /* don't stretch beyond the intended thumbnail */
+  width: 100%;
+}
+
+.session-card .session-img-wrapper {
+  width: 100%;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 6px;
+  margin: 0 auto;
+}
+
+.session-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.session-card .session-meta {
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
 }
 
 .form-group {
@@ -1282,11 +1328,11 @@ img.blur-up.loaded {
     height: 40vh;
   }
 
-  .derive-grid {
+  .id-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
 
-  .derive-card {
+  .id-card {
     border-radius: 8px;
   }
 }

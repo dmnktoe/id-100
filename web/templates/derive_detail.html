@@ -1,14 +1,14 @@
-{{define "derive_detail.content"}}
+{{define "id_detail.content"}}
     <main class="detail-container">
         {{if .IsPartial}}<button class="drawer-close" aria-label="close">✕</button>{{end}}
 
         <header class="detail-header">
-            <h1 class="detail-title">🆔 {{printf "%03d" .Derive.Number}}</h1>
+            <h1 class="detail-title">🆔 {{.Derive.Number}}</h1>
             <p class="detail-description">{{.Derive.Description}}</p>
         </header>
 
         <section class="contributions-section">
-            <h2 class="section-label">eingereichte beiträge ({{len .Contributions}})</h2>
+            <h2 class="section-label">Eingereichte Beiträge ({{len .Contributions}})</h2>
 
             <div class="evidence-grid">
                 {{range .Contributions}}
@@ -23,14 +23,14 @@
                 </div>
                 {{else}}
                 <div class="empty-state">
-                    noch keine beiträge. sei der erste.
+                    Noch keine Beiträge. Sei der Erste.
                 </div>
                 {{end}}
             </div>
         </section>
 
         <footer class="detail-footer">
-            <a href="/{{if .PageParam}}?page={{.PageParam}}{{end}}" class="back-link drawer-back-link">← zurück zum index</a>
+            <a href="/{{if .PageParam}}?page={{.PageParam}}{{end}}" class="back-link drawer-back-link">← zurück zum Index</a>
         </footer>
     </main>
 {{end}}

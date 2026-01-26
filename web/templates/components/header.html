@@ -3,20 +3,20 @@
     <div class="brand">
         {{if eq .CurrentPath "/"}}
             <h1 class="brand-full">
-                <span class="brand-text">Innenstadt (</span><span class="brand-emoji">🏠</span><span class="brand-text">) ID (</span><span class="brand-emoji">🆔</span><span class="brand-text">)-100 (</span><span class="brand-emoji">💯</span><span class="brand-text">)</span>
+                <span class="brand-text">Innenstadt (</span><span class="brand-emoji">🏠</span><span class="brand-text">) ID (</span><span class="brand-emoji">🆔</span><span class="brand-text">) - 100 (</span><span class="brand-emoji">💯</span><span class="brand-text">)</span>
             </h1>
         {{else}}
             <h1 class="brand-compact">
-                <span class="brand-text">Innenstadt (</span><span class="brand-emoji">🏠</span><span class="brand-text">) ID (</span><span class="brand-emoji">🆔</span><span class="brand-text">)-100 (</span><span class="brand-emoji">💯</span><span class="brand-text">)</span>
+                <span class="brand-text">Innenstadt (</span><span class="brand-emoji">🏠</span><span class="brand-text">) ID (</span><span class="brand-emoji">🆔</span><span class="brand-text">) - 100 (</span><span class="brand-emoji">💯</span><span class="brand-text">)</span>
             </h1>
             <a class="sr-only" href="/">Startseite</a>
         {{end}}
     </div>
     <nav class="main-nav">
-        <a href="/" {{if or (eq .CurrentPath "/") (hasprefix .CurrentPath "/derive")}}class="nav-active"{{end}}>dériven</a>
-        <a href="/spielregeln" {{if eq .CurrentPath "/spielregeln"}}class="nav-active"{{end}}>spielregeln</a>
+        <a href="/" {{if or (eq .CurrentPath "/") (hasprefix .CurrentPath "/id")}}class="nav-active"{{end}}>ID 1-100</a>
+        <a href="/leitfaden" {{if eq .CurrentPath "/leitfaden"}}class="nav-active"{{end}}>Leitfaden</a>
         <a href="/about" {{if eq .CurrentPath "/about"}}class="nav-active"{{end}}>über</a>
-        <a href="/request-bag" class="drawer-link">tasche anfordern</a>
+        <a href="/tasche-anfordern" class="drawer-link">Tasche anfordern</a>
     </nav>
 </header>
 {{end}}
