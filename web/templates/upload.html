@@ -10,9 +10,10 @@
         <select name="derive_number" id="deriveInput" class="autocomplete-input" required>
           <option value="" disabled {{if not .SelectedNumber}}selected{{end}}>Bitte wählen...</option>
           {{range .Deriven}}
-          <option value="{{.Number}}" {{if eq $.SelectedNumber (printf "%d" .Number)}}selected{{end}}>🆔 {{.Number}}</option>
+          <option value="{{.Number}}" {{if index $.UploadedNumbers (printf "%d" .Number)}}disabled class="uploaded" title="Du hast bereits hochgeladen"{{end}} {{if eq $.SelectedNumber (printf "%d" .Number)}}selected{{end}}>🆔 {{.Number}}{{if index $.UploadedNumbers (printf "%d" .Number)}} (hast du schon bearbeitet){{end}}</option>
           {{end}}
         </select>
+        <small style="display:block; margin-top:0.5rem; color:#666;">Für ausgegraute IDs existiert bereits ein Beweisfoto von dir.</small>
       </div>
 
       <div class="form-group">
@@ -78,7 +79,14 @@
         const d = params.get('number');
         if (d) {
           const el = document.getElementById('deriveInput');
-          if (el) el.value = d;
+          if (el) {
+            el.value = d;
+            // don't leave a disabled (already-uploaded) option selected
+            const selectedOpt = el.querySelector('option[value="' + d + '"]');
+            if (selectedOpt && selectedOpt.disabled) {
+              el.value = '';
+            }
+          }
         }
 
         // If redirected after successful upload, clear selection and reset form
