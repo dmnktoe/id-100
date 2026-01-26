@@ -183,10 +183,10 @@ go test ./cmd/id-100 -v
 
 | Methode | Pfad | Beschreibung |
 |---------|------|--------------|
-| `GET` | `/` | Übersicht aller Deriven (Index) |
-| `GET` | `/derive/:number` | Detail-Ansicht einer Derive |
+| `GET` | `/` | Übersicht aller IDs (Index) |
+| `GET` | `/id/:number` | Detail-Ansicht einer ID |
 | `GET` | `/upload` | Upload-Formular |
 | `POST` | `/upload` | Beitrag hochladen |
-| `GET` | `/spielregeln` | Spielregeln |
+| `GET` | `/leitfaden` | Leitfaden |
 | `GET` | `/about` | Über das Projekt |
 | `GET` | `/static/*` | Statische Dateien |

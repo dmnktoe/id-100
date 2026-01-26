@@ -84,8 +84,8 @@
 
     if (pushState) {
       const url = pageParam
-        ? `/derive/${number}?page=${pageParam}`
-        : `/derive/${number}`;
+        ? `/id/${number}?page=${pageParam}`
+        : `/id/${number}`;
       history.pushState(
         { drawer: true, number: number, page: pageParam },
         "",
@@ -100,9 +100,9 @@
 
   backdrop.addEventListener("click", () => closeDrawer(true));
 
-  // Click delegation for derive cards
+  // Click delegation for id cards
   document.addEventListener("click", (e) => {
-    const card = e.target.closest(".derive-card");
+    const card = e.target.closest(".id-card");
     if (!card) return;
     e.preventDefault();
     const href =
@@ -110,8 +110,8 @@
       card.querySelector("a")?.getAttribute("href");
     if (!href) return;
 
-    // extract number and page parameter from href /derive/:number?page=X
-    const m = href.match(/\/derive\/(\d+)/);
+    // extract number and page parameter from href /id/:number?page=X
+    const m = href.match(/\/id\/(\d+)/);
     if (!m) return;
     const num = m[1];
 
@@ -120,8 +120,8 @@
     const pageParam = url.searchParams.get("page");
 
     const fetchUrl = pageParam
-      ? `/derive/${num}?partial=1&page=${pageParam}`
-      : `/derive/${num}?partial=1`;
+      ? `/id/${num}?partial=1&page=${pageParam}`
+      : `/id/${num}?partial=1`;
 
     fetch(fetchUrl)
       .then((r) => {
@@ -154,7 +154,7 @@
       });
   });
 
-  // Handle request-bag form submission inside drawer
+  // Formular "tasche anfordern" submission handler
   document.addEventListener("submit", (e) => {
     const form = e.target;
     if (!form || form.id !== "requestBagForm") return;
@@ -170,7 +170,7 @@
     }
     btn.disabled = true;
     btn.innerText = "sende...";
-    fetch("/request-bag", {
+    fetch("/tasche-anfordern", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
@@ -199,15 +199,15 @@
   // popstate: close drawer when state removed
   window.addEventListener("popstate", (ev) => {
     if (document.body.classList.contains("drawer-open")) {
-      // if new location is a derive path keep it open, otherwise close
+      // if new location is an id path keep it open, otherwise close
       const path = location.pathname;
-      const m = path.match(/\/derive\/(\d+)/);
+      const m = path.match(/\/id\/(\d+)/);
       if (m) {
         const num = m[1];
         const pageParam = new URLSearchParams(location.search).get("page");
         const fetchUrl = pageParam
-          ? `/derive/${num}?partial=1&page=${pageParam}`
-          : `/derive/${num}?partial=1`;
+          ? `/id/${num}?partial=1&page=${pageParam}`
+          : `/id/${num}?partial=1`;
         // fetch and open if different
         fetch(fetchUrl)
           .then((r) => r.text())
@@ -216,14 +216,14 @@
         closeDrawer(false);
       }
     } else {
-      // if not open but user navigated directly to derive path (e.g. via back), and page has .derive-grid, open it
-      const m = location.pathname.match(/\/derive\/(\d+)/);
-      if (m && document.querySelector(".derive-grid")) {
+      // if not open but user navigated directly to id path (e.g. via back), and page has .id-grid, open it
+      const m = location.pathname.match(/\/id\/(\d+)/);
+      if (m && document.querySelector(".id-grid")) {
         const num = m[1];
         const pageParam = new URLSearchParams(location.search).get("page");
         const fetchUrl = pageParam
-          ? `/derive/${num}?partial=1&page=${pageParam}`
-          : `/derive/${num}?partial=1`;
+          ? `/id/${num}?partial=1&page=${pageParam}`
+          : `/id/${num}?partial=1`;
         fetch(fetchUrl)
           .then((r) => r.text())
           .then((html) => openDrawer(num, html, false, pageParam));

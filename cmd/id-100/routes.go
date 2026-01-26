@@ -28,19 +28,19 @@ func registerRoutes(e *echo.Echo) {
 	e.Static("/static", "web/static")
 
 	e.GET("/", derivenHandler)
-	e.GET("/derive/:number", deriveHandler)
+	e.GET("/id/:number", deriveHandler)
 
 	// Upload routes - protected by token middleware with session support
 	e.GET("/upload", uploadGetHandler, tokenMiddlewareWithSession)
 	e.POST("/upload", uploadPostHandler, tokenMiddlewareWithSession)
 	e.POST("/upload/set-name", setPlayerNameHandler, tokenMiddlewareWithSession)
 
-	e.GET("/spielregeln", rulesHandler)
+	e.GET("/leitfaden", rulesHandler)
 	e.GET("/about", aboutHandler)
 
 	// Public bag-request endpoints
-	e.GET("/request-bag", requestBagHandler)
-	e.POST("/request-bag", requestBagPostHandler)
+	e.GET("/tasche-anfordern", requestBagHandler)
+	e.POST("/tasche-anfordern", requestBagPostHandler)
 
 	// Admin routes for token management
 	adminGroup := e.Group("/admin", basicAuthMiddleware)
@@ -54,7 +54,7 @@ func registerRoutes(e *echo.Echo) {
 	adminGroup.GET("/tokens/:id/qr", adminDownloadQRHandler)
 
 	// Bag request management
-	adminGroup.POST("/bag-requests/:id/complete", adminBagRequestCompleteHandler)
+	adminGroup.POST("/taschen-anfragen/:id/complete", adminBagRequestCompleteHandler)
 }
 
 func derivenHandler(c echo.Context) error {
@@ -160,7 +160,7 @@ func derivenHandler(c echo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Innenstadt (🏠) ID (🆔)-100 (💯)",
+		"Title":           "Innenstadt (🏠) ID (🆔) - 100 (💯)",
 		"Deriven":         deriven,
 		"CurrentPage":     page,
 		"TotalPages":      totalPages,
@@ -169,7 +169,7 @@ func derivenHandler(c echo.Context) error {
 		"HasPrev":         page > 1,
 		"NextPage":        page + 1,
 		"PrevPage":        page - 1,
-		"ContentTemplate": "deriven.content",
+		"ContentTemplate": "ids.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
@@ -226,7 +226,7 @@ func deriveHandler(c echo.Context) error {
 
 	// If requested as a partial (AJAX), return only the detail fragment
 	if c.QueryParam("partial") == "1" {
-		return c.Render(http.StatusOK, "derive_detail.content", map[string]interface{}{
+		return c.Render(http.StatusOK, "id_detail.content", map[string]interface{}{
 			"Derive":        d,
 			"Contributions": contribs,
 			"PageParam":     pageParam,
@@ -240,14 +240,14 @@ func deriveHandler(c echo.Context) error {
 		"Contributions":   contribs,
 		"PageParam":       pageParam,
 		"IsPartial":       false,
-		"ContentTemplate": "derive_detail.content",
+		"ContentTemplate": "id_detail.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
 	})
 }
 
-// GET /request-bag
+// GET /tasche-anfordern
 func requestBagHandler(c echo.Context) error {
 	stats := getFooterStats()
 	if c.QueryParam("partial") == "1" {
@@ -259,7 +259,7 @@ func requestBagHandler(c echo.Context) error {
 		})
 	}
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "tasche anfordern - 🏠🆔💯",
+		"Title":           "Tasche anfordern - 🏠🆔💯",
 		"ContentTemplate": "request_bag.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
@@ -267,7 +267,7 @@ func requestBagHandler(c echo.Context) error {
 	})
 }
 
-// POST /request-bag
+// POST /tasche-anfordern
 func requestBagPostHandler(c echo.Context) error {
 	type payload struct {
 		Email string `json:"email"`
@@ -314,7 +314,7 @@ func uploadGetHandler(c echo.Context) error {
 	tokenID, _ := c.Get("token_id").(int)
 	sessionNumber, _ := c.Get("session_number").(int)
 	uRows, err := db.Query(context.Background(), `
-		SELECT c.id, d.number, c.image_url
+		SELECT c.id, d.number, c.image_url, COALESCE(c.image_lqip, '')
 		FROM contributions c
 		JOIN upload_logs ul ON ul.contribution_id = c.id
 		JOIN deriven d ON d.id = c.derive_id
@@ -335,27 +335,32 @@ func uploadGetHandler(c echo.Context) error {
 		var id int
 		var deriveNumber int
 		var imageUrl string
-		if err := uRows.Scan(&id, &deriveNumber, &imageUrl); err != nil {
+		var imageLqip string
+		if err := uRows.Scan(&id, &deriveNumber, &imageUrl, &imageLqip); err != nil {
 			continue
 		}
 		sessionContribs = append(sessionContribs, map[string]interface{}{
-			"id":        id,
-			"derive":    deriveNumber,
-			"image_url": ensureFullImageURL(imageUrl),
+			"id":         id,
+			"number":     deriveNumber,
+			"image_url":  ensureFullImageURL(imageUrl),
+			"image_lqip": imageLqip,
 		})
 	}
 
 	token, _ := c.Get("token").(string)
+	currentPlayer, _ := c.Get("current_player").(string)
+
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "beweis hochladen - 🏠🆔💯",
+		"Title":           "Beweis hochladen - 🏠🆔💯",
 		"Deriven":         list,
 		"ContentTemplate": "upload.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
 		"SessionContribs": sessionContribs,
-		"SelectedDerive":  c.QueryParam("derive"),
+		"SelectedNumber":  c.QueryParam("number"),
 		"Token":           token,
+		"CurrentPlayer":   currentPlayer,
 	})
 }
 
@@ -470,7 +475,7 @@ func uploadPostHandler(c echo.Context) error {
 	// Redirect back to the upload page, preselect the derive so the user stays in flow
 	// Only propagate a token if the original client request actually provided one
 	// (either via query string or a form-encoded body). Do NOT leak cookie/session tokens.
-	redirectURL := fmt.Sprintf("/upload?derive=%s", deriveNumberStr)
+	redirectURL := fmt.Sprintf("/upload?number=%s", deriveNumberStr)
 	// Prefer raw query param (avoids parsing body/multipart)
 	originalToken := c.Request().URL.Query().Get("token")
 	if originalToken == "" && c.Request().Method == "POST" {
@@ -490,14 +495,11 @@ func uploadPostHandler(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, redirectURL)
 }
 
-// uploadDeleteHandler removed per request to eliminate upload/delete functionality
-
-
 func rulesHandler(c echo.Context) error {
 	stats := getFooterStats()
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "spielregeln - 🏠🆔💯",
-		"ContentTemplate": "spielregeln.content",
+		"Title":           "Leitfaden - 🏠🆔💯",
+		"ContentTemplate": "leitfaden.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,

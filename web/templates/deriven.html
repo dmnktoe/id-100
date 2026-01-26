@@ -1,15 +1,15 @@
-{{define "deriven.content"}}
+{{define "ids.content"}}
     <div class="container">
-        <h2 class="page-title">index: 100 dériven</h2>
+        <h2 class="page-title">Index: 1-100</h2>
         
-        <div class="derive-grid">
+        <div class="id-grid">
             {{range .Deriven}}
-            <a href="/derive/{{.Number}}?page={{$.CurrentPage}}" class="derive-card overlay-{{.PointsTier}}">
+            <a href="/id/{{.Number}}?page={{$.CurrentPage}}" class="id-card overlay-{{.PointsTier}}">
                 <div class="card-image-box">
                     {{if .ImageUrl}}
                         <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="{{.Title}}">
                     {{else}}
-                        <div class="no-image">kein bild</div>
+                        <div class="no-image">Kein Bild</div>
                     {{end}}
 
                     <!-- points badge (top-left) -->
@@ -23,7 +23,7 @@
                 </div>
 
                 <div class="card-content">
-                    <h3 class="card-title">🆔 {{printf "%03d" .Number}}</h3>
+                    <h3 class="card-title">🆔 {{.Number}}</h3>
                     <p class="card-desc">{{.Description}}</p>
                 </div>
             </a>
@@ -32,9 +32,9 @@
 
         <nav class="pagination">
             {{if .HasPrev}}
-                <a href="/?page={{.PrevPage}}" class="pagination-btn">←<span class="pagination-label"> zurück</span></a>
+                <a href="/?page={{.PrevPage}}" class="pagination-btn">←<span class="pagination-label"> Zurück</span></a>
             {{else}}
-                <span class="pagination-btn disabled">←<span class="pagination-label"> zurück</span></span>
+                <span class="pagination-btn disabled">←<span class="pagination-label"> Zurück</span></span>
             {{end}}
 
             <div class="page-numbers">
@@ -50,9 +50,9 @@
             </div>
 
             {{if .HasNext}}
-                <a href="/?page={{.NextPage}}" class="pagination-btn"><span class="pagination-label">weiter </span>→</a>
+                <a href="/?page={{.NextPage}}" class="pagination-btn"><span class="pagination-label">Weiter </span>→</a>
             {{else}}
-                <span class="pagination-btn disabled"><span class="pagination-label">weiter </span>→</span>
+                <span class="pagination-btn disabled"><span class="pagination-label">Weiter </span>→</span>
             {{end}}
         </nav>
     </div>
