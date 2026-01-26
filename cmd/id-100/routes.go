@@ -472,10 +472,11 @@ func uploadPostHandler(c echo.Context) error {
 		// Don't fail the request, contribution is already saved
 	}
 
-	// Redirect back to the upload page, preselect the derive so the user stays in flow
+	// Redirect back to the upload page with an uploaded flag so the client can
+	// clear the derive selection and show a success message.
 	// Only propagate a token if the original client request actually provided one
 	// (either via query string or a form-encoded body). Do NOT leak cookie/session tokens.
-	redirectURL := fmt.Sprintf("/upload?number=%s", deriveNumberStr)
+	redirectURL := "/upload?uploaded=1"
 	// Prefer raw query param (avoids parsing body/multipart)
 	originalToken := c.Request().URL.Query().Get("token")
 	if originalToken == "" && c.Request().Method == "POST" {

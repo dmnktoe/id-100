@@ -80,6 +80,54 @@
           const el = document.getElementById('deriveInput');
           if (el) el.value = d;
         }
+
+        // If redirected after successful upload, clear selection and reset form
+        const uploaded = params.get('uploaded');
+        if (uploaded === '1') {
+          const el = document.getElementById('deriveInput');
+          const fileInput = document.getElementById('fileInput');
+          const preview = document.getElementById('preview');
+          const dropText = document.getElementById('drop-text');
+          const submitBtn = document.getElementById('submitBtn');
+          // clear selection
+          if (el) el.value = '';
+          // reset file input & preview
+          if (fileInput) {
+            try { fileInput.value = null; } catch(e) { /* ignore */ }
+          }
+          if (preview) {
+            preview.src = '#';
+            preview.style.display = 'none';
+          }
+          if (dropText) dropText.style.display = 'block';
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'hochladen';
+          }
+          // show temporary success message
+          let result = document.getElementById('uploadResult');
+          if (!result) {
+            result = document.createElement('div');
+            result.id = 'uploadResult';
+            result.style.marginTop = '1rem';
+            result.style.fontWeight = '500';
+            document.querySelector('.container.upload').insertBefore(result, document.querySelector('.session-uploads'));
+          }
+          result.innerText = 'Upload erfolgreich!';
+          result.style.color = '#2e7d32';
+          result.style.display = 'block';
+          setTimeout(() => {
+            if (result) result.style.display = 'none';
+          }, 4000);
+
+          // Remove uploaded param from URL to avoid repeated behavior on refresh
+          try {
+            params.delete('uploaded');
+            const newUrl = location.pathname + (params.toString() ? '?' + params.toString() : '');
+            history.replaceState(null, '', newUrl);
+          } catch(e) { /* ignore */ }
+        }
+
       } catch (e) { /* ignore */ }
     })();
 
