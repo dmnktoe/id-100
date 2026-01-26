@@ -38,8 +38,8 @@ func registerRoutes(e *echo.Echo) {
 
 	e.GET("/leitfaden", rulesHandler)
 	e.GET("/about", aboutHandler)
-
-	// Public bag-request endpoints
+	e.GET("/impressum", impressumHandler)
+	e.GET("/datenschutz", datenschutzHandler)
 	e.GET("/tasche-anfordern", requestBagHandler)
 	e.POST("/tasche-anfordern", requestBagPostHandler)
 
@@ -526,6 +526,28 @@ func aboutHandler(c echo.Context) error {
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "about - 🏠🆔💯",
 		"ContentTemplate": "about.content",
+		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
+	})
+}
+
+func impressumHandler(c echo.Context) error {
+	stats := getFooterStats()
+	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+		"Title":           "Impressum - 🏠🆔💯",
+		"ContentTemplate": "impressum.content",
+		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
+	})
+}
+
+func datenschutzHandler(c echo.Context) error {
+	stats := getFooterStats()
+	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+		"Title":           "Datenschutzerklärung - 🏠🆔💯",
+		"ContentTemplate": "datenschutz.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,

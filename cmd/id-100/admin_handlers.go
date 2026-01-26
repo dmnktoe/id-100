@@ -42,11 +42,11 @@ func setPlayerNameHandler(c echo.Context) error {
 		var bagName string
 		_ = db.QueryRow(context.Background(), "SELECT COALESCE(bag_name,'') FROM upload_tokens WHERE token = $1", token).Scan(&bagName)
 		return c.Render(http.StatusBadRequest, "layout", map[string]interface{}{
-			"Title": "Willkommen bei ID-100!",
+			"Title":           "Willkommen bei ID-100!",
 			"ContentTemplate": "enter_name.content",
-			"Token": token,
-			"BagName": bagName,
-			"FormError": "Bitte bestätige die Datenschutzerklärung und dass du keine erkennbaren Personen ohne Einwilligung hochlädst.",
+			"Token":           token,
+			"BagName":         bagName,
+			"FormError":       "Bitte bestätige die Datenschutzerklärung und dass du keine erkennbaren Personen ohne Einwilligung hochlädst.",
 		})
 	}
 

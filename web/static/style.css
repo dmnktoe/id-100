@@ -378,6 +378,35 @@ main {
   max-width: 580px;
 }
 
+/* Improve list appearance on about / privacy pages */
+.container.about ul,
+.container.about ol {
+  margin: 0 0 var(--gap-md) 1.25rem; /* space below and indent */
+  padding-left: 0.25rem;
+  line-height: 1.7;
+}
+
+.container.about li {
+  margin-bottom: 0.5rem;
+}
+
+.container.about ul {
+  list-style-type: disc;
+  color: var(--gray-900);
+}
+
+.container.about li::marker {
+  color: var(--black);
+  font-weight: 600;
+}
+
+/* Add spacing for section headings on about/privacy pages */
+.container.about h3 {
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
 .container.rules {
   max-width: 680px;
 }
@@ -1335,7 +1364,7 @@ img.blur-up.loaded {
   }
 
   .footer-meta {
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-start;
     gap: 0.75rem;
   }
