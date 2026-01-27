@@ -356,7 +356,11 @@ func uploadPostHandler(c echo.Context) error {
 	// Ensure the token is bound to this session UUID (prevent concurrent use)
 	if tokenStr, _ := c.Get("token").(string); tokenStr != "" {
 		meta, metaErr := getUploadToken(context.Background(), tokenStr)
-		if metaErr == nil && meta.SessionUUID.Valid {
+		if metaErr != nil {
+			log.Printf("Token metadata query error for token %s: %v", tokenStr, metaErr)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "DB error"})
+		}
+		if meta.SessionUUID.Valid {
 			if sid, _ := c.Get("session_uuid").(string); sid == "" || meta.SessionUUID.String != sid {
 				return c.JSON(http.StatusConflict, map[string]interface{}{"error": "Conflict: Resource already in use"})
 			}

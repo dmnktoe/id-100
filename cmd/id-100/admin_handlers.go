@@ -314,9 +314,16 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Ensure a per-browser session UUID exists and is persisted server-side
 		if sid, ok := session.Values["session_uuid"].(string); !ok || sid == "" {
-			if s, err := generateSecureToken(32); err == nil {
-				session.Values["session_uuid"] = s
-				session.Save(c.Request(), c.Response())
+			// generate a secure uuid for server-side session binding
+			s, err := generateSecureToken(32)
+			if err != nil {
+				c.Logger().Errorf("failed to generate session uuid: %v", err)
+				return c.String(http.StatusInternalServerError, "internal server error")
+			}
+			session.Values["session_uuid"] = s
+			if err := session.Save(c.Request(), c.Response()); err != nil {
+				c.Logger().Errorf("failed to save session after setting session_uuid: %v", err)
+				return c.String(http.StatusInternalServerError, "internal server error")
 			}
 		}
 
@@ -482,18 +489,6 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 						"Token":           token,
 					})
 				}
-				if err != nil {
-					log.Printf("Failed to update current_player for token_id=%d with name=%s: %v", tokenID, sessName, err)
-					// Don't fail the request, but keep currentPlayer empty so name form shows again
-					return c.Render(http.StatusOK, "layout", map[string]interface{}{
-						"Title":           "Willkommen",
-						"ContentTemplate": "user/enter_name.content",
-						"CurrentPath":     c.Request().URL.Path,
-						"CurrentYear":     time.Now().Year(),
-						"BagName":         bagName,
-						"Token":           token,
-					})
-				}
 
 				// Only set currentPlayer after successful DB update
 				currentPlayer = sessName
@@ -514,8 +509,6 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			session.Save(c.Request(), c.Response())
 		}
 
-
-
 		// Check upload limit
 		if totalUploads >= maxUploads {
 			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
@@ -531,11 +524,20 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		// For POST requests: Check cooldown (5 seconds)
 		if c.Request().Method == "POST" {
 			var lastUpload *time.Time
+			if db == nil {
+				log.Printf("DB not initialized while checking cooldown for token %d", tokenID)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "DB error"})
+			}
 			err = db.QueryRow(context.Background(),
 				"SELECT MAX(uploaded_at) FROM upload_logs WHERE token_id = $1 AND session_number = $2",
 				tokenID, totalSessions).Scan(&lastUpload)
 
-			if err == nil && lastUpload != nil {
+			if err != nil {
+				log.Printf("Failed to query last upload for token %d: %v", tokenID, err)
+				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "DB error"})
+			}
+
+			if lastUpload != nil {
 				timeSince := time.Since(*lastUpload)
 				cooldownDuration := 5 * time.Second
 
@@ -575,6 +577,7 @@ func adminTokenResetHandler(c echo.Context) error {
 		     total_sessions = total_sessions + 1,
 		     session_started_at = NOW(),
 		     current_player = NULL,
+		     session_uuid = NULL,
 		     is_active = true
 		 WHERE id = $1`,
 		tokenID)
@@ -893,7 +896,7 @@ func adminUpdateQuotaHandler(c echo.Context) error {
 }
 
 // generateSecureToken generates a cryptographically secure token
-func generateSecureToken(length int) (string, error) {
+var generateSecureToken = func(length int) (string, error) {
 	// Calculate bytes needed to get desired length after base64 encoding
 	// base64 encoding produces 4 chars for every 3 bytes
 	bytesNeeded := (length*3 + 3) / 4

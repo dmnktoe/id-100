@@ -301,6 +301,21 @@ func TestPostUploadConflictWhenSessionUUIDMismatch(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/upload?token=goodtoken", nil)
 	e.ServeHTTP(rec, req)
 
+	// New test: session UUID generation error is handled
+	origGen := generateSecureToken
+	generateSecureToken = func(length int) (string, error) {
+		return "", fmt.Errorf("boom")
+	}
+	defer func() { generateSecureToken = origGen }()
+
+	rec2 := httptest.NewRecorder()
+	req2 := httptest.NewRequest(http.MethodGet, "/upload?token=goodtoken", nil)
+	e.ServeHTTP(rec2, req2)
+
+	if rec2.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500 when session uuid generation fails, got %d", rec2.Code)
+	}
+
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200 on initial upload page, got %d", rec.Code)
 	}
@@ -312,16 +327,16 @@ func TestPostUploadConflictWhenSessionUUIDMismatch(t *testing.T) {
 	}
 	defer func() { getUploadToken = orig2 }()
 	// Perform POST to /upload (no need to include multipart - middleware will reject before file handling)
-	rec2 := httptest.NewRecorder()
-	req2 := httptest.NewRequest(http.MethodPost, "/upload?token=goodtoken", nil)
+	rec3 := httptest.NewRecorder()
+	req3 := httptest.NewRequest(http.MethodPost, "/upload?token=goodtoken", nil)
 	// include session cookie from initial GET
 	for _, c := range rec.Result().Cookies() {
-		req2.AddCookie(c)
+		req3.AddCookie(c)
 	}
 
-	e.ServeHTTP(rec2, req2)
+	e.ServeHTTP(rec3, req3)
 
-	if rec2.Code != http.StatusConflict {
-		t.Fatalf("expected 409 Conflict when session UUID mismatch, got %d, body: %s", rec2.Code, rec2.Body.String())
+	if rec3.Code != http.StatusConflict {
+		t.Fatalf("expected 409 Conflict when session UUID mismatch, got %d, body: %s", rec3.Code, rec3.Body.String())
 	}
 }
