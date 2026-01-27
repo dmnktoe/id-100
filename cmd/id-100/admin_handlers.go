@@ -50,15 +50,18 @@ func setPlayerNameHandler(c echo.Context) error {
 		})
 	}
 
-	// Save name in session
+	playerCity := strings.TrimSpace(c.FormValue("player_city"))
+
+	// Save name and city in session
 	session, _ := store.Get(c.Request(), "id-100-session")
 	session.Values["player_name"] = playerName
+	session.Values["player_city"] = playerCity
 	session.Save(c.Request(), c.Response())
 
-	// Update database
+	// Update database with city
 	_, err := db.Exec(context.Background(),
-		"UPDATE upload_tokens SET current_player = $1, session_started_at = NOW() WHERE token = $2",
-		playerName, token)
+		"UPDATE upload_tokens SET current_player = $1, current_player_city = $2, session_started_at = NOW() WHERE token = $3",
+		playerName, playerCity, token)
 
 	if err != nil {
 		log.Printf("Error setting player name: %v", err)
@@ -72,7 +75,7 @@ func setPlayerNameHandler(c echo.Context) error {
 func adminDashboardHandler(c echo.Context) error {
 	// Get all tokens
 	rows, err := db.Query(context.Background(), `
-		SELECT id, token, COALESCE(bag_name, ''), COALESCE(current_player, ''), 
+		SELECT id, token, COALESCE(bag_name, ''), COALESCE(current_player, ''), COALESCE(current_player_city, ''),
 		       is_active, max_uploads, total_uploads, total_sessions,
 		       COALESCE(session_started_at, created_at), created_at
 		FROM upload_tokens
@@ -88,6 +91,7 @@ func adminDashboardHandler(c echo.Context) error {
 		Token            string
 		BagName          string
 		CurrentPlayer    string
+		CurrentPlayerCity string
 		IsActive         bool
 		MaxUploads       int
 		TotalUploads     int
@@ -100,7 +104,7 @@ func adminDashboardHandler(c echo.Context) error {
 	var tokens []TokenInfo
 	for rows.Next() {
 		var t TokenInfo
-		if err := rows.Scan(&t.ID, &t.Token, &t.BagName, &t.CurrentPlayer, &t.IsActive,
+		if err := rows.Scan(&t.ID, &t.Token, &t.BagName, &t.CurrentPlayer, &t.CurrentPlayerCity, &t.IsActive,
 			&t.MaxUploads, &t.TotalUploads, &t.TotalSessions, &t.SessionStartedAt, &t.CreatedAt); err != nil {
 			continue
 		}
@@ -355,14 +359,14 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		var tokenID int
 		var isActive bool
 		var maxUploads, totalUploads, totalSessions int
-		var currentPlayer, bagName string
+		var currentPlayer, currentPlayerCity, bagName string
 		var sessionStartedAt time.Time
 
 		err = db.QueryRow(context.Background(),
 			`SELECT id, is_active, max_uploads, total_uploads, total_sessions,
-			 COALESCE(current_player, ''), COALESCE(bag_name, ''), COALESCE(session_started_at, created_at)
+			 COALESCE(current_player, ''), COALESCE(current_player_city, ''), COALESCE(bag_name, ''), COALESCE(session_started_at, created_at)
 			 FROM upload_tokens WHERE token = $1`,
-			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &bagName, &sessionStartedAt)
+			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &currentPlayerCity, &bagName, &sessionStartedAt)
 
 		if err != nil {
 			log.Printf("Token validation error: %v", err)
@@ -468,10 +472,20 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 				})
 			}
 		} else {
-			// Save player name in session if not already there
+			// Save player name and city in session if not already there
 			session.Values["player_name"] = currentPlayer
+			session.Values["player_city"] = currentPlayerCity
 			session.Save(c.Request(), c.Response())
 		}
+
+		// Store token info in context for handler
+		c.Set("token_id", tokenID)
+		c.Set("token", token)
+		c.Set("current_player", currentPlayer)
+		c.Set("bag_name", bagName)
+		c.Set("session_number", totalSessions)
+		c.Set("uploads_remaining", maxUploads-totalUploads)
+		c.Set("current_player_city", currentPlayerCity)
 
 		// Check if token is active
 		if !isActive {
@@ -628,7 +642,7 @@ func adminTokenAssignHandler(c echo.Context) error {
 // adminTokenListHandler returns JSON list of all tokens
 func adminTokenListHandler(c echo.Context) error {
 	rows, err := db.Query(context.Background(), `
-		SELECT id, token, COALESCE(bag_name, ''), COALESCE(current_player, ''), 
+		SELECT id, token, COALESCE(bag_name, ''), COALESCE(current_player, ''), COALESCE(current_player_city,''),
 		       is_active, max_uploads, total_uploads, total_sessions,
 		       COALESCE(session_started_at, created_at), created_at
 		FROM upload_tokens
@@ -644,6 +658,7 @@ func adminTokenListHandler(c echo.Context) error {
 		Token            string    `json:"token"`
 		BagName          string    `json:"bag_name"`
 		CurrentPlayer    string    `json:"current_player"`
+		CurrentPlayerCity string   `json:"current_player_city"`
 		IsActive         bool      `json:"is_active"`
 		MaxUploads       int       `json:"max_uploads"`
 		TotalUploads     int       `json:"total_uploads"`
@@ -656,7 +671,7 @@ func adminTokenListHandler(c echo.Context) error {
 	var tokens []TokenInfo
 	for rows.Next() {
 		var t TokenInfo
-		if err := rows.Scan(&t.ID, &t.Token, &t.BagName, &t.CurrentPlayer, &t.IsActive,
+		if err := rows.Scan(&t.ID, &t.Token, &t.BagName, &t.CurrentPlayer, &t.CurrentPlayerCity, &t.IsActive,
 			&t.MaxUploads, &t.TotalUploads, &t.TotalSessions, &t.SessionStartedAt, &t.CreatedAt); err != nil {
 			continue
 		}

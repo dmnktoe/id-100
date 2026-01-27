@@ -207,19 +207,20 @@ func deriveHandler(c echo.Context) error {
 	}
 
 	rows, _ := db.Query(context.Background(),
-		"SELECT image_url, COALESCE(image_lqip,''), user_name, created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
+		"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
 	defer rows.Close()
 
 	type Contribution struct {
 		ImageUrl  string
 		ImageLqip string
 		UserName  string
+		UserCity  string
 		CreatedAt time.Time
 	}
 	var contribs []Contribution
 	for rows.Next() {
 		var ct Contribution
-		rows.Scan(&ct.ImageUrl, &ct.ImageLqip, &ct.UserName, &ct.CreatedAt)
+		rows.Scan(&ct.ImageUrl, &ct.ImageLqip, &ct.UserName, &ct.UserCity, &ct.CreatedAt)
 		// Normalize contribution image URL
 		ct.ImageUrl = ensureFullImageURL(ct.ImageUrl)
 		contribs = append(contribs, ct)
@@ -456,9 +457,10 @@ func uploadPostHandler(c echo.Context) error {
 
 	// Insert contribution and get ID
 	var contributionID int
+	currentPlayerCity, _ := c.Get("current_player_city").(string)
 	err = db.QueryRow(context.Background(),
-		"INSERT INTO contributions (derive_id, image_url, image_lqip, user_name) VALUES ($1, $2, $3, $4) RETURNING id",
-		internalID, relativePath, lqip, currentPlayer).Scan(&contributionID)
+		"INSERT INTO contributions (derive_id, image_url, image_lqip, user_name, user_city) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+		internalID, relativePath, lqip, currentPlayer, currentPlayerCity).Scan(&contributionID)
 
 	if err != nil {
 		log.Printf("DB Error inserting contribution: %v", err)

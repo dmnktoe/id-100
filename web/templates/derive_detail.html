@@ -19,7 +19,7 @@
                     </div>
                     <div class="card-content">
                         <span class="card-number">Beitrag</span>
-                        <h3 class="card-title">{{.UserName}}</h3>
+                        <h3 class="card-title">{{.UserName}}{{if .UserCity}} · {{.UserCity}}{{end}}</h3>
                         <p class="card-desc">{{.CreatedAt.Format "02.01.2006"}}</p>
                     </div>
                 </div>

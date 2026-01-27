@@ -37,4 +37,14 @@ func initDatabase() {
 	if err != nil {
 		log.Printf("Failed to add handled column to bag_requests: %v", err)
 	}
+
+	// Ensure contributions have a user_city column and upload_tokens track current_player_city
+	_, err = db.Exec(context.Background(), `ALTER TABLE contributions ADD COLUMN IF NOT EXISTS user_city TEXT DEFAULT ''`)
+	if err != nil {
+		log.Printf("Failed to add user_city column to contributions: %v", err)
+	}
+	_, err = db.Exec(context.Background(), `ALTER TABLE upload_tokens ADD COLUMN IF NOT EXISTS current_player_city TEXT DEFAULT ''`)
+	if err != nil {
+		log.Printf("Failed to add current_player_city column to upload_tokens: %v", err)
+	}
 }
