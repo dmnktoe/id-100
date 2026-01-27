@@ -1,0 +1,22 @@
+{{define "status/conflict_in_use.content"}}
+<div class="container about">
+  <h2>⚠️ Tasche bereits in Benutzung</h2>
+
+  <p>Die Tasche <strong>{{.BagName}}</strong> ist derzeit von einer anderen Session belegt.</p>
+
+  {{if .CurrentPlayer}}
+  <p>Aktueller Spieler: <strong>{{.CurrentPlayer}}</strong></p>
+  {{end}}
+
+  <p style="color:#d32f2f; font-weight:600;">{{.ErrorMessage}}</p>
+
+  <p>Wenn du denkst, dass dies ein Fehler ist, kannst du:</p>
+  <ul>
+    <li>Den aktuellen Spieler um Freigabe bitten (falls du weißt, wer das ist).</li>
+    <li>Eine Anfrage stellen: <a href="/tasche-anfordern" class="btn-black">Tasche anfordern</a></li>
+    <li>Oder einen Admin kontaktieren, damit die Tasche zurückgesetzt wird.</li>
+  </ul>
+
+  <p style="margin-top:1rem;"><a href="/" class="btn-black">Alle Beiträge ansehen</a></p>
+</div>
+{{end}}

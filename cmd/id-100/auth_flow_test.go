@@ -32,6 +32,9 @@ func setupEchoWithMockDB(t *testing.T) (*echo.Echo, func()) {
 	}
 	comps, _ := filepath.Glob("../../web/templates/components/*.html")
 	files = append(files, comps...)
+	// include single-level subdirs under web/templates (e.g., conflict/*.html)
+	subs, _ := filepath.Glob("../../web/templates/*/*.html")
+	files = append(files, subs...)
 	funcMap := template.FuncMap{
 		"eq":        func(a, b string) bool { return a == b },
 		"or":        func(a, b bool) bool { return a || b },

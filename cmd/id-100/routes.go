@@ -253,7 +253,7 @@ func deriveHandler(c echo.Context) error {
 func requestBagHandler(c echo.Context) error {
 	stats := getFooterStats()
 	if c.QueryParam("partial") == "1" {
-		return c.Render(http.StatusOK, "request_bag.content", map[string]interface{}{
+		return c.Render(http.StatusOK, "user/request_bag.content", map[string]interface{}{
 			"CurrentPath": c.Request().URL.Path,
 			"CurrentYear": time.Now().Year(),
 			"FooterStats": stats,
@@ -262,7 +262,7 @@ func requestBagHandler(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Tasche anfordern - 🏠🆔💯",
-		"ContentTemplate": "request_bag.content",
+		"ContentTemplate": "user/request_bag.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
@@ -330,7 +330,7 @@ func uploadGetHandler(c echo.Context) error {
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Beweis hochladen - 🏠🆔💯",
 		"Deriven":         list,
-		"ContentTemplate": "upload.content",
+		"ContentTemplate": "user/upload.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
@@ -354,14 +354,14 @@ func uploadPostHandler(c echo.Context) error {
 	var err error
 
 	// Ensure the token is bound to this session UUID (prevent concurrent use)
-	var dbSessUUID sql.NullString
-	err = db.QueryRow(context.Background(), "SELECT session_uuid FROM upload_tokens WHERE id = $1", tokenID).Scan(&dbSessUUID)
-	if err == nil && dbSessUUID.Valid {
-		if sid, _ := c.Get("session_uuid").(string); sid == "" || dbSessUUID.String != sid {
-			return c.JSON(http.StatusConflict, map[string]interface{}{"error": "Conflict: Resource already in use"})
+	if tokenStr, _ := c.Get("token").(string); tokenStr != "" {
+		meta, metaErr := getUploadToken(context.Background(), tokenStr)
+		if metaErr == nil && meta.SessionUUID.Valid {
+			if sid, _ := c.Get("session_uuid").(string); sid == "" || meta.SessionUUID.String != sid {
+				return c.JSON(http.StatusConflict, map[string]interface{}{"error": "Conflict: Resource already in use"})
+			}
 		}
 	}
-
 	deriveNumberStr := c.FormValue("derive_number")
 	deriveNumber, err := strconv.Atoi(deriveNumberStr)
 	if err != nil {

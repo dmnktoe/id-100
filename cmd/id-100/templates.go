@@ -14,6 +14,9 @@ func LoadTemplates() *Template {
 	}
 	comps, _ := filepath.Glob("web/templates/components/*.html")
 	files = append(files, comps...)
+	// also include single-level subdirectories under web/templates (e.g., conflict/*.html)
+	subs, _ := filepath.Glob("web/templates/*/*.html")
+	files = append(files, subs...)
 
 	funcs := template.FuncMap{
 		"eq":        func(a, b string) bool { return a == b },

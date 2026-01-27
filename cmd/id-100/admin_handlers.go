@@ -43,7 +43,7 @@ func setPlayerNameHandler(c echo.Context) error {
 		_ = db.QueryRow(context.Background(), "SELECT COALESCE(bag_name,'') FROM upload_tokens WHERE token = $1", token).Scan(&bagName)
 		return c.Render(http.StatusBadRequest, "layout", map[string]interface{}{
 			"Title":           "Willkommen bei ID-100!",
-			"ContentTemplate": "enter_name.content",
+			"ContentTemplate": "user/enter_name.content",
 			"Token":           token,
 			"BagName":         bagName,
 			"FormError":       "Bitte bestätige die Datenschutzerklärung und dass du keine erkennbaren Personen ohne Einwilligung hochlädst.",
@@ -122,7 +122,7 @@ func adminDashboardHandler(c echo.Context) error {
 		log.Printf("Failed to fetch recent contributions: %v", err)
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
 			"Title":           "Admin Dashboard",
-			"ContentTemplate": "admin_dashboard.content",
+			"ContentTemplate": "admin/admin_dashboard.content",
 			"CurrentPath":     c.Request().URL.Path,
 			"CurrentYear":     time.Now().Year(),
 			"Tokens":          tokens,
@@ -191,7 +191,7 @@ func adminDashboardHandler(c echo.Context) error {
 
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Admin Dashboard",
-		"ContentTemplate": "admin_dashboard.content",
+		"ContentTemplate": "admin/admin_dashboard.content",
 		"Tokens":          tokens,
 		"RecentContribs":  recentContribs,
 		"BagRequests":     bagRequests,
@@ -349,7 +349,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		if token == "" {
 			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
 				"Title":           "Zugang verweigert",
-				"ContentTemplate": "access_denied.content",
+				"ContentTemplate": "status/access_denied.content",
 				"CurrentPath":     c.Request().URL.Path,
 				"CurrentYear":     time.Now().Year(),
 			})
@@ -369,7 +369,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			log.Printf("Token validation error: %v", err)
 			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
 				"Title":           "Ungültiger Token",
-				"ContentTemplate": "invalid_token.content",
+				"ContentTemplate": "status/invalid_token.content",
 				"CurrentPath":     c.Request().URL.Path,
 				"CurrentYear":     time.Now().Year(),
 			})
@@ -434,13 +434,19 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			// If token is claimed by a different browser session, deny access
 			if sessionUUID != "" {
 				if sessUUID, _ := session.Values["session_uuid"].(string); sessUUID != "" && sessUUID != sessionUUID {
-					return c.Render(http.StatusConflict, "layout", map[string]interface{}{
+					if err := c.Render(http.StatusConflict, "layout", map[string]interface{}{
 						"Title":           "Tasche bereits in Benutzung",
-						"ContentTemplate": "limit_reached.content",
+						"ContentTemplate": "status/conflict_in_use.content",
 						"CurrentPath":     c.Request().URL.Path,
 						"CurrentYear":     time.Now().Year(),
 						"ErrorMessage":    "Conflict: Resource already in use.",
-					})
+						"BagName":         bagName,
+						"CurrentPlayer":   currentPlayer,
+					}); err != nil {
+						log.Printf("failed to render conflict page: %v", err)
+						return err
+					}
+					return nil
 				}
 			}
 		}
@@ -460,7 +466,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 					// Don't fail the request, but keep currentPlayer empty so name form shows again
 					return c.Render(http.StatusOK, "layout", map[string]interface{}{
 						"Title":           "Willkommen",
-						"ContentTemplate": "enter_name.content",
+						"ContentTemplate": "user/enter_name.content",
 						"CurrentPath":     c.Request().URL.Path,
 						"CurrentYear":     time.Now().Year(),
 						"BagName":         bagName,
@@ -472,7 +478,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 					// Don't fail the request, but keep currentPlayer empty so name form shows again
 					return c.Render(http.StatusOK, "layout", map[string]interface{}{
 						"Title":           "Willkommen",
-						"ContentTemplate": "enter_name.content",
+						"ContentTemplate": "user/enter_name.content",
 						"CurrentPath":     c.Request().URL.Path,
 						"CurrentYear":     time.Now().Year(),
 						"BagName":         bagName,
@@ -486,7 +492,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 				// Show name entry form
 				return c.Render(http.StatusOK, "layout", map[string]interface{}{
 					"Title":           "Willkommen",
-					"ContentTemplate": "enter_name.content",
+					"ContentTemplate": "user/enter_name.content",
 					"CurrentPath":     c.Request().URL.Path,
 					"CurrentYear":     time.Now().Year(),
 					"BagName":         bagName,
@@ -503,7 +509,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		if !isActive {
 			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
 				"Title":           "Token deaktiviert",
-				"ContentTemplate": "token_deactivated.content",
+				"ContentTemplate": "status/token_deactivated.content",
 				"CurrentPath":     c.Request().URL.Path,
 				"CurrentYear":     time.Now().Year(),
 			})
@@ -513,7 +519,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		if totalUploads >= maxUploads {
 			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
 				"Title":           "Upload-Limit erreicht",
-				"ContentTemplate": "limit_reached.content",
+				"ContentTemplate": "status/limit_reached.content",
 				"CurrentPath":     c.Request().URL.Path,
 				"CurrentYear":     time.Now().Year(),
 				"TotalUploads":    totalUploads,
