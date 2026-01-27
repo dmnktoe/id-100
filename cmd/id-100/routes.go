@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	_ "image/gif"
 	_ "image/jpeg"
@@ -35,7 +36,7 @@ func registerRoutes(e *echo.Echo) {
 	e.GET("/upload", uploadGetHandler, tokenMiddlewareWithSession)
 	e.POST("/upload", uploadPostHandler, tokenMiddlewareWithSession)
 	e.POST("/upload/set-name", setPlayerNameHandler, tokenMiddlewareWithSession)
-
+	e.POST("/upload/release", releaseBagHandler, tokenMiddlewareWithSession)
 	e.GET("/leitfaden", rulesHandler)
 	e.GET("/about", aboutHandler)
 	e.GET("/impressum", impressumHandler)
@@ -296,59 +297,23 @@ func requestBagPostHandler(c echo.Context) error {
 
 func uploadGetHandler(c echo.Context) error {
 	stats := getFooterStats()
-	rows, err := db.Query(context.Background(), `
-SELECT d.number, d.title, COALESCE((SELECT COUNT(*) FROM contributions WHERE derive_id = d.id),0) as contrib_count
-FROM deriven d
-ORDER BY d.number ASC`)
-	if err != nil {
-		return c.String(http.StatusInternalServerError, "Datenbankfehler")
-	}
-	defer rows.Close()
 
-	var list []Derive
-	for rows.Next() {
-		var d Derive
-		if err := rows.Scan(&d.Number, &d.Title, &d.ContribCount); err != nil {
-			return err
-		}
-		list = append(list, d)
+	// Fetch derive list (extracted for testability)
+	list, err := fetchDerivenList(context.Background())
+	if err != nil {
+		log.Printf("Query Error: %v", err)
+		return c.String(http.StatusInternalServerError, "Datenbankfehler")
 	}
 
 	// Fetch session uploads for this token/session so we can display them under the upload form
 	tokenID, _ := c.Get("token_id").(int)
 	sessionNumber, _ := c.Get("session_number").(int)
-	uRows, err := db.Query(context.Background(), `
-		SELECT c.id, d.number, c.image_url, COALESCE(c.image_lqip, '')
-		FROM contributions c
-		JOIN upload_logs ul ON ul.contribution_id = c.id
-		JOIN deriven d ON d.id = c.derive_id
-		WHERE ul.token_id = $1 AND ul.session_number = $2
-		ORDER BY ul.uploaded_at DESC
-	`, tokenID, sessionNumber)
-	if err != nil {
-		log.Printf("Failed to fetch session uploads: %v", err)
-	}
-	defer func() {
-		if uRows != nil {
-			uRows.Close()
-		}
-	}()
 
-	var sessionContribs []map[string]interface{}
-	for uRows != nil && uRows.Next() {
-		var id int
-		var deriveNumber int
-		var imageUrl string
-		var imageLqip string
-		if err := uRows.Scan(&id, &deriveNumber, &imageUrl, &imageLqip); err != nil {
-			continue
-		}
-		sessionContribs = append(sessionContribs, map[string]interface{}{
-			"id":         id,
-			"number":     deriveNumber,
-			"image_url":  ensureFullImageURL(imageUrl),
-			"image_lqip": imageLqip,
-		})
+	sessionContribs, err := fetchSessionUploads(context.Background(), tokenID, sessionNumber)
+	if err != nil {
+		// log but continue with empty list
+		log.Printf("Failed to fetch session uploads: %v", err)
+		sessionContribs = nil
 	}
 
 	token, _ := c.Get("token").(string)
@@ -386,6 +351,16 @@ func uploadPostHandler(c echo.Context) error {
 
 	currentPlayer, _ := c.Get("current_player").(string)
 	sessionNumber, _ := c.Get("session_number").(int)
+	var err error
+
+	// Ensure the token is bound to this session UUID (prevent concurrent use)
+	var dbSessUUID sql.NullString
+	err = db.QueryRow(context.Background(), "SELECT session_uuid FROM upload_tokens WHERE id = $1", tokenID).Scan(&dbSessUUID)
+	if err == nil && dbSessUUID.Valid {
+		if sid, _ := c.Get("session_uuid").(string); sid == "" || dbSessUUID.String != sid {
+			return c.JSON(http.StatusConflict, map[string]interface{}{"error": "Conflict: Resource already in use"})
+		}
+	}
 
 	deriveNumberStr := c.FormValue("derive_number")
 	deriveNumber, err := strconv.Atoi(deriveNumberStr)
@@ -508,6 +483,56 @@ func uploadPostHandler(c echo.Context) error {
 		redirectURL = fmt.Sprintf("%s&token=%s", redirectURL, url.QueryEscape(originalToken))
 	}
 	return c.Redirect(http.StatusSeeOther, redirectURL)
+}
+
+// releaseBagHandler allows a logged-in session to release the currently-held bag
+func releaseBagHandler(c echo.Context) error {
+	// Ensure token info from middleware
+	tokenID, ok := c.Get("token_id").(int)
+	if !ok {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "Token not found"})
+	}
+	sessUUID, _ := c.Get("session_uuid").(string)
+	if sessUUID == "" {
+		// Recover from gorilla session directly if missing from context
+		session, _ := store.Get(c.Request(), "id-100-session")
+		sessUUID, _ = session.Values["session_uuid"].(string)
+	}
+
+	// Validate DB binding matches this session
+	var dbSessUUID sql.NullString
+	err := db.QueryRow(context.Background(), "SELECT session_uuid FROM upload_tokens WHERE id = $1", tokenID).Scan(&dbSessUUID)
+	if err != nil {
+		log.Printf("Failed to query session_uuid for token %d: %v", tokenID, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "DB error"})
+	}
+	if dbSessUUID.Valid && dbSessUUID.String != sessUUID {
+		return c.JSON(http.StatusConflict, map[string]string{"error": "Conflict: Resource already in use"})
+	}
+
+	// Reset token for next player (similar to admin reset)
+	_, err = db.Exec(context.Background(),
+		`UPDATE upload_tokens 
+		 SET total_uploads = 0, 
+		     total_sessions = total_sessions + 1,
+		     session_started_at = NOW(),
+		     current_player = NULL,
+		     session_uuid = NULL,
+		     is_active = true
+		 WHERE id = $1`,
+		tokenID)
+	if err != nil {
+		log.Printf("Failed to release bag for token %d: %v", tokenID, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "DB error"})
+	}
+
+	// Clear player name in session to force login flow next time
+	session, _ := store.Get(c.Request(), "id-100-session")
+	delete(session.Values, "player_name")
+	delete(session.Values, "session_uuid")
+	session.Save(c.Request(), c.Response())
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "success", "message": "Bag released"})
 }
 
 func rulesHandler(c echo.Context) error {

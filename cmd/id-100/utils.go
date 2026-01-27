@@ -19,7 +19,7 @@ type FooterStats struct {
 }
 
 // getFooterStats fetches creative database statistics
-func getFooterStats() FooterStats {
+var getFooterStats = func() FooterStats {
 	stats := FooterStats{}
 
 	// Count total deriven

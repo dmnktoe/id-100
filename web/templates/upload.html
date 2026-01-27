@@ -1,6 +1,11 @@
 {{define "upload.content"}}
 <div class="container upload">
   <div class="current-player">{{if .CurrentPlayer}}👤 {{.CurrentPlayer}}{{end}}</div>
+  {{if .CurrentPlayer}}
+  <form id="releaseBagForm" style="display:inline-block; margin-left:1rem;">
+    <button type="button" id="releaseBagBtn" class="btn-transparent">Tasche zurückgeben / Spiel fertig</button>
+  </form>
+  {{end}}
   <h2 class="page-title">Beweisfoto hochladen</h2>
 
   <form action="/upload?token={{.Token}}" method="POST" enctype="multipart/form-data" id="uploadForm">

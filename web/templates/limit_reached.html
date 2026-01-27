@@ -3,6 +3,9 @@
   <h2>🎯 upload-limit erreicht</h2>
   <p>Du hast das maximale Upload-Limit von {{.MaxUploads}} Beiträgen erreicht.</p>
   <p>Insgesamt hochgeladen: <strong>{{.TotalUploads}}</strong></p>
+  {{if .ErrorMessage}}
+  <p style="color:#d32f2f; font-weight:600;">{{.ErrorMessage}}</p>
+  {{end}}
   <br>
   <p><a href="/" class="btn-black">alle beiträge ansehen</a></p>
 </div>

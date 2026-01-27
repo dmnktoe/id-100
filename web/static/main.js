@@ -196,6 +196,37 @@
       });
   });
 
+  // Release bag / finish game button
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest('#releaseBagBtn');
+    if (!btn) return;
+    e.preventDefault();
+    btn.disabled = true;
+    btn.innerText = 'sende...';
+
+    fetch('/upload/release', { method: 'POST' })
+      .then(async (r) => {
+        if (r.status === 200) return r.json();
+        const body = await r.json().catch(() => ({}));
+        throw { status: r.status, body };
+      })
+      .then((data) => {
+        // on success, redirect to upload list without token to avoid accidental reuse
+        window.location.href = '/upload';
+      })
+      .catch((err) => {
+        btn.disabled = false;
+        if (err.status === 409) {
+          alert('Tasche bereits in Benutzung (Conflict).');
+        } else if (err.status === 403 || err.status === 401) {
+          alert('Zugriff verweigert. Du bist nicht autorisiert.');
+        } else {
+          alert('Fehler beim Zurückgeben der Tasche. Bitte versuche es erneut.');
+        }
+        btn.innerText = 'Tasche zurückgeben / Spiel fertig';
+      });
+  });
+
   // popstate: close drawer when state removed
   window.addEventListener("popstate", (ev) => {
     if (document.body.classList.contains("drawer-open")) {

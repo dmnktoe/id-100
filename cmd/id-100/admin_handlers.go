@@ -55,12 +55,8 @@ func setPlayerNameHandler(c echo.Context) error {
 	session.Values["player_name"] = playerName
 	session.Save(c.Request(), c.Response())
 
-	// Update database
-	_, err := db.Exec(context.Background(),
-		"UPDATE upload_tokens SET current_player = $1, session_started_at = NOW() WHERE token = $2",
-		playerName, token)
-
-	if err != nil {
+	// Update database via testable helper
+	if err := updateTokenCurrentPlayer(context.Background(), token, playerName, session.Values["session_uuid"]); err != nil {
 		log.Printf("Error setting player name: %v", err)
 	}
 
@@ -316,6 +312,14 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			log.Printf("Session error: %v", err)
 		}
 
+		// Ensure a per-browser session UUID exists and is persisted server-side
+		if sid, ok := session.Values["session_uuid"].(string); !ok || sid == "" {
+			if s, err := generateSecureToken(32); err == nil {
+				session.Values["session_uuid"] = s
+				session.Save(c.Request(), c.Response())
+			}
+		}
+
 		// Get token from query param (QR code), POST form (only for form-encoded or explicit routes), or session
 		token := c.QueryParam("token")
 		// If missing, for POST requests consider parsing form-encoded bodies only. Do NOT parse multipart uploads here.
@@ -357,13 +361,10 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		var maxUploads, totalUploads, totalSessions int
 		var currentPlayer, bagName string
 		var sessionStartedAt time.Time
+		var sessionUUID string
 
-		err = db.QueryRow(context.Background(),
-			`SELECT id, is_active, max_uploads, total_uploads, total_sessions,
-			 COALESCE(current_player, ''), COALESCE(bag_name, ''), COALESCE(session_started_at, created_at)
-			 FROM upload_tokens WHERE token = $1`,
-			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &bagName, &sessionStartedAt)
-
+		// retrieve token metadata using helper (testable via override)
+		meta, err := getUploadToken(context.Background(), token)
 		if err != nil {
 			log.Printf("Token validation error: %v", err)
 			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
@@ -373,6 +374,15 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 				"CurrentYear":     time.Now().Year(),
 			})
 		}
+		tokenID = meta.ID
+		isActive = meta.IsActive
+		maxUploads = meta.MaxUploads
+		totalUploads = meta.TotalUploads
+		totalSessions = meta.TotalSessions
+		currentPlayer = meta.CurrentPlayer
+		bagName = meta.BagName
+		sessionStartedAt = meta.SessionStartedAt
+		sessionUUID = meta.SessionUUID.String
 
 		// Save token in session for subsequent requests
 		session.Values["token"] = token
@@ -420,6 +430,19 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 				// persist session changes
 				session.Save(c.Request(), c.Response())
 			}
+		} else {
+			// If token is claimed by a different browser session, deny access
+			if sessionUUID != "" {
+				if sessUUID, _ := session.Values["session_uuid"].(string); sessUUID != "" && sessUUID != sessionUUID {
+					return c.Render(http.StatusConflict, "layout", map[string]interface{}{
+						"Title":           "Tasche bereits in Benutzung",
+						"ContentTemplate": "limit_reached.content",
+						"CurrentPath":     c.Request().URL.Path,
+						"CurrentYear":     time.Now().Year(),
+						"ErrorMessage":    "Conflict: Resource already in use.",
+					})
+				}
+			}
 		}
 
 		// Check if player name is set (first-time user flow)
@@ -431,12 +454,8 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 			// Check if name is in session
 			if sessName, ok := session.Values["player_name"].(string); ok && sessName != "" {
-				// Update DB with name from session
-				result, err := db.Exec(context.Background(),
-					"UPDATE upload_tokens SET current_player = $1, session_started_at = NOW() WHERE id = $2",
-					sessName, tokenID)
-
-				if err != nil {
+				// Update DB with name from session and bind this server-side session UUID to the token (if empty)
+				if err := updateTokenCurrentPlayer(context.Background(), token, sessName, session.Values["session_uuid"]); err != nil {
 					log.Printf("Failed to update current_player for token_id=%d with name=%s: %v", tokenID, sessName, err)
 					// Don't fail the request, but keep currentPlayer empty so name form shows again
 					return c.Render(http.StatusOK, "layout", map[string]interface{}{
@@ -448,10 +467,17 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 						"Token":           token,
 					})
 				}
-
-				rows := result.RowsAffected()
-				if rows == 0 {
-					log.Printf("No rows updated when setting current_player for token_id=%d", tokenID)
+				if err != nil {
+					log.Printf("Failed to update current_player for token_id=%d with name=%s: %v", tokenID, sessName, err)
+					// Don't fail the request, but keep currentPlayer empty so name form shows again
+					return c.Render(http.StatusOK, "layout", map[string]interface{}{
+						"Title":           "Willkommen",
+						"ContentTemplate": "enter_name.content",
+						"CurrentPath":     c.Request().URL.Path,
+						"CurrentYear":     time.Now().Year(),
+						"BagName":         bagName,
+						"Token":           token,
+					})
 				}
 
 				// Only set currentPlayer after successful DB update
@@ -523,6 +549,10 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		c.Set("bag_name", bagName)
 		c.Set("session_number", totalSessions)
 		c.Set("uploads_remaining", maxUploads-totalUploads)
+		// expose session UUID to handlers for strict session binding checks
+		if sid, ok := session.Values["session_uuid"].(string); ok {
+			c.Set("session_uuid", sid)
+		}
 
 		return next(c)
 	}
