@@ -505,9 +505,10 @@ func releaseBagHandler(c echo.Context) error {
 
 	// Validate DB binding matches this session
 	var dbSessUUID sql.NullString
-	err := db.QueryRow(context.Background(), "SELECT session_uuid FROM upload_tokens WHERE id = $1", tokenID).Scan(&dbSessUUID)
+	var oldPlayer sql.NullString
+	err := db.QueryRow(context.Background(), "SELECT COALESCE(current_player,''), session_uuid FROM upload_tokens WHERE id = $1", tokenID).Scan(&oldPlayer, &dbSessUUID)
 	if err != nil {
-		log.Printf("Failed to query session_uuid for token %d: %v", tokenID, err)
+		log.Printf("Failed to query token state for token %d: %v", tokenID, err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "DB error"})
 	}
 	if dbSessUUID.Valid && dbSessUUID.String != sessUUID {
@@ -534,7 +535,22 @@ func releaseBagHandler(c echo.Context) error {
 	session, _ := store.Get(c.Request(), "id-100-session")
 	delete(session.Values, "player_name")
 	delete(session.Values, "session_uuid")
-	session.Save(c.Request(), c.Response())
+	if err := session.Save(c.Request(), c.Response()); err != nil {
+		log.Printf("Failed to save session after releasing bag for token %d: %v", tokenID, err)
+		// Attempt best-effort rollback of DB changes to restore session UUID and player
+		var sessUUIDVal interface{}
+		if dbSessUUID.Valid {
+			sessUUIDVal = dbSessUUID.String
+		} else {
+			sessUUIDVal = nil
+		}
+		if _, rbErr := db.Exec(context.Background(), "UPDATE upload_tokens SET current_player = $1, session_uuid = $2 WHERE id = $3", oldPlayer.String, sessUUIDVal, tokenID); rbErr != nil {
+			log.Printf("Failed to rollback token state for token %d after session save error: %v", tokenID, rbErr)
+			// Return error to client indicating potential inconsistent state
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "DB error and session save failed"})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Session save failed"})
+	}
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "success", "message": "Bag released"})
 }
