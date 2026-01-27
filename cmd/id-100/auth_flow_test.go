@@ -119,6 +119,49 @@ func TestInvalidTokenReturnsInvalidPage(t *testing.T) {
 	}
 }
 
+func TestDeactivatedTokenIsForbidden(t *testing.T) {
+	e, cleanup := setupEchoWithMockDB(t)
+	defer cleanup()
+
+	// Simulate a deactivated token
+	orig := getUploadToken
+	getUploadToken = func(ctx context.Context, token string) (TokenMeta, error) {
+		now := time.Now().UTC()
+		return TokenMeta{ID: 2, IsActive: false, MaxUploads: 10, TotalUploads: 0, TotalSessions: 1, CurrentPlayer: "", BagName: "DeactivatedBag", SessionStartedAt: now}, nil
+	}
+	defer func() { getUploadToken = orig }()
+
+	// GET should be forbidden and show deactivated page
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/upload?token=deactivated", nil)
+	e.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 for deactivated token, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "Token deaktiviert") {
+		t.Fatalf("expected token deactivated page, got body: %s", rec.Body.String())
+	}
+
+	// POST to set-name should also be forbidden
+	form := url.Values{}
+	form.Set("player_name", "Bob")
+	form.Set("token", "deactivated")
+	form.Set("agree_privacy", "1")
+
+	rec2 := httptest.NewRecorder()
+	req2 := httptest.NewRequest(http.MethodPost, "/upload/set-name", strings.NewReader(form.Encode()))
+	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	e.ServeHTTP(rec2, req2)
+
+	if rec2.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 for set-name on deactivated token, got %d", rec2.Code)
+	}
+	if !strings.Contains(rec2.Body.String(), "Token deaktiviert") {
+		t.Fatalf("expected token deactivated page on set-name, got body: %s", rec2.Body.String())
+	}
+}
+
 func TestEnterNameFlowAndSetNameRedirectsToUpload(t *testing.T) {
 	e, cleanup := setupEchoWithMockDB(t)
 	defer cleanup()

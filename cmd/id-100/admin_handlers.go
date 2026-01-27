@@ -357,8 +357,8 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Validate token
 		var tokenID int
-		var isActive bool
 		var maxUploads, totalUploads, totalSessions int
+
 		var currentPlayer, bagName string
 		var sessionStartedAt time.Time
 		var sessionUUID string
@@ -375,7 +375,6 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			})
 		}
 		tokenID = meta.ID
-		isActive = meta.IsActive
 		maxUploads = meta.MaxUploads
 		totalUploads = meta.TotalUploads
 		totalSessions = meta.TotalSessions
@@ -383,6 +382,16 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		bagName = meta.BagName
 		sessionStartedAt = meta.SessionStartedAt
 		sessionUUID = meta.SessionUUID.String
+
+		// Deny access immediately if token is deactivated
+		if !meta.IsActive {
+			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
+				"Title":           "Token deaktiviert",
+				"ContentTemplate": "status/token_deactivated.content",
+				"CurrentPath":     c.Request().URL.Path,
+				"CurrentYear":     time.Now().Year(),
+			})
+		}
 
 		// Save token in session for subsequent requests
 		session.Values["token"] = token
@@ -505,15 +514,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			session.Save(c.Request(), c.Response())
 		}
 
-		// Check if token is active
-		if !isActive {
-			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
-				"Title":           "Token deaktiviert",
-				"ContentTemplate": "status/token_deactivated.content",
-				"CurrentPath":     c.Request().URL.Path,
-				"CurrentYear":     time.Now().Year(),
-			})
-		}
+
 
 		// Check upload limit
 		if totalUploads >= maxUploads {
