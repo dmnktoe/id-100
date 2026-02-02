@@ -316,4 +316,173 @@
 
   // initialize lazy images on first paint
   initLazyImages();
+
+  // Nominatim City Autocomplete
+  const cityInput = document.getElementById("playerCity");
+  const cityResults = document.getElementById("cityResults");
+  const citySelected = document.getElementById("citySelected");
+  const nameInput = document.getElementById("playerName");
+  const submitBtn = document.getElementById("submitBtn");
+  const nameForm = document.getElementById("nameForm");
+  const agreePrivacy = document.getElementById("agreePrivacy");
+  
+  // Funktion zum Prüfen ob Formular valide ist
+  function validateForm() {
+    if (submitBtn && nameInput && citySelected && agreePrivacy) {
+      const hasName = nameInput.value.trim().length >= 2;
+      const hasCity = citySelected.value === "true";
+      const hasConsent = agreePrivacy.checked;
+      const isValid = hasName && hasCity && hasConsent;
+      
+      submitBtn.disabled = !isValid;
+      console.log("Form validation:", { hasName, hasCity, hasConsent, isValid });
+    }
+  }
+  
+  // Validiere bei Name-Änderung
+  if (nameInput) {
+    nameInput.addEventListener("input", validateForm);
+  }
+  
+  // Validiere bei Checkbox-Änderung
+  if (agreePrivacy) {
+    agreePrivacy.addEventListener("change", validateForm);
+  }
+  
+  // Formular-Submit-Validierung
+  if (nameForm) {
+    nameForm.addEventListener("submit", (e) => {
+      if (citySelected && citySelected.value !== "true") {
+        e.preventDefault();
+        alert("Bitte wähle eine Stadt aus dem Dropdown aus.");
+        return false;
+      }
+    });
+  }
+  
+  if (cityInput && cityResults) {
+    console.log("City autocomplete initialized");
+    let debounceTimer;
+    let currentRequest = null;
+    
+    // Mache Input readonly initial, entferne readonly beim Fokus
+    cityInput.addEventListener("focus", () => {
+      cityInput.removeAttribute("readonly");
+    });
+    
+    cityInput.addEventListener("input", (e) => {
+      const query = e.target.value.trim();
+      console.log("City input:", query);
+      
+      // Setze citySelected auf false bei manueller Eingabe
+      if (citySelected) {
+        citySelected.value = "false";
+        validateForm();
+      }
+      
+      clearTimeout(debounceTimer);
+      
+      if (query.length < 2) {
+        cityResults.classList.remove("visible");
+        cityResults.innerHTML = "";
+        return;
+      }
+      
+      // Zeige Loading-Zustand
+      cityResults.innerHTML = '<div class="autocomplete-loading">Suche Städte...</div>';
+      cityResults.classList.add("visible");
+      
+      debounceTimer = setTimeout(() => {
+        console.log("Fetching cities for:", query);
+        
+        // Abbrechen von vorherigen Requests
+        if (currentRequest) {
+          currentRequest.abort();
+        }
+        
+        const controller = new AbortController();
+        currentRequest = controller;
+        
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=10&countrycodes=de,at,ch`, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'ID-100 City Autocomplete'
+          }
+        })
+          .then(r => r.json())
+          .then(data => {
+            console.log("Nominatim response:", data);
+            
+            if (!Array.isArray(data) || data.length === 0) {
+              cityResults.innerHTML = '<div class="autocomplete-empty">Keine Städte gefunden</div>';
+              return;
+            }
+            
+            // Filter nur Städte/Orte
+            const cities = data.filter(item => 
+              item.type === "city" || 
+              item.type === "town" || 
+              item.type === "village" ||
+              item.type === "municipality" ||
+              item.class === "place" ||
+              item.type === "administrative"
+            );
+            
+            console.log("Filtered cities:", cities);
+            
+            if (cities.length === 0) {
+              cityResults.innerHTML = '<div class="autocomplete-empty">Keine Städte gefunden</div>';
+              return;
+            }
+            
+            cityResults.innerHTML = cities.map(city => {
+              const name = city.address?.city || city.address?.town || city.address?.village || city.address?.municipality || city.name;
+              const state = city.address?.state || "";
+              const country = city.address?.country || "";
+              const displayText = state ? `${name}, ${state}` : `${name}, ${country}`;
+              return `<div class="autocomplete-item" data-name="${name}">${displayText}</div>`;
+            }).join("");
+            
+            console.log("Dropdown shown with", cities.length, "items");
+            
+            // Click-Handler für Ergebnisse
+            cityResults.querySelectorAll(".autocomplete-item").forEach(item => {
+              item.addEventListener("click", () => {
+                const name = item.dataset.name;
+                cityInput.value = name;
+                cityInput.setAttribute("readonly", "readonly");
+                if (citySelected) {
+                  citySelected.value = "true";
+                  validateForm();
+                }
+                cityResults.classList.remove("visible");
+                cityResults.innerHTML = "";
+                console.log("City selected:", name);
+              });
+            });
+          })
+          .catch(err => {
+            if (err.name === 'AbortError') {
+              console.log("Request aborted");
+              return;
+            }
+            console.error("Nominatim API Error:", err);
+            cityResults.innerHTML = '<div class="autocomplete-empty">Fehler beim Laden der Städte</div>';
+          })
+          .finally(() => {
+            currentRequest = null;
+          });
+      }, 400);
+    });
+    
+    // Schließe Dropdown bei Klick außerhalb
+    document.addEventListener("click", (e) => {
+      if (!cityInput.contains(e.target) && !cityResults.contains(e.target)) {
+        cityResults.classList.remove("visible");
+        cityResults.innerHTML = "";
+      }
+    });
+  } else {
+    console.warn("City input or results element not found");
+  }
 })();

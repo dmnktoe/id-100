@@ -386,6 +386,7 @@ func uploadPostHandler(c echo.Context) error {
 	}
 
 	currentPlayer, _ := c.Get("current_player").(string)
+	currentPlayerCity, _ := c.Get("current_player_city").(string)
 	sessionNumber, _ := c.Get("session_number").(int)
 
 	deriveNumberStr := c.FormValue("derive_number")
@@ -457,7 +458,6 @@ func uploadPostHandler(c echo.Context) error {
 
 	// Insert contribution and get ID
 	var contributionID int
-	currentPlayerCity, _ := c.Get("current_player_city").(string)
 	err = db.QueryRow(context.Background(),
 		"INSERT INTO contributions (derive_id, image_url, image_lqip, user_name, user_city) VALUES ($1, $2, $3, $4, $5) RETURNING id",
 		internalID, relativePath, lqip, currentPlayer, currentPlayerCity).Scan(&contributionID)
