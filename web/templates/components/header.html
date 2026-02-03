@@ -14,8 +14,7 @@
     </div>
     <nav class="main-nav">
         <a href="/" {{if or (eq .CurrentPath "/") (hasprefix .CurrentPath "/id")}}class="nav-active"{{end}}>ID 1-100</a>
-        <a href="/leitfaden" {{if eq .CurrentPath "/leitfaden"}}class="nav-active"{{end}}>Leitfaden</a>
-        <a href="/about" {{if eq .CurrentPath "/about"}}class="nav-active"{{end}}>über</a>
+        <a href="/leitfaden" {{if eq .CurrentPath "/leitfaden"}}class="nav-active"{{end}}>🚨</a>
         <a href="/tasche-anfordern" class="drawer-link">Tasche anfordern</a>
     </nav>
 </header>

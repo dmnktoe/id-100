@@ -187,6 +187,5 @@ go test ./cmd/id-100 -v
 | `GET` | `/id/:number` | Detail-Ansicht einer ID |
 | `GET` | `/upload` | Upload-Formular |
 | `POST` | `/upload` | Beitrag hochladen |
-| `GET` | `/leitfaden` | Leitfaden |
-| `GET` | `/about` | Über das Projekt |
+| `GET` | `/leitfaden` | 🚨 |
 | `GET` | `/static/*` | Statische Dateien |

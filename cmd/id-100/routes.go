@@ -37,7 +37,6 @@ func registerRoutes(e *echo.Echo) {
 	e.POST("/upload/set-name", setPlayerNameHandler, tokenMiddlewareWithSession)
 
 	e.GET("/leitfaden", rulesHandler)
-	e.GET("/about", aboutHandler)
 	e.GET("/impressum", impressumHandler)
 	e.GET("/datenschutz", datenschutzHandler)
 	e.GET("/tasche-anfordern", requestBagHandler)
@@ -517,17 +516,6 @@ func rulesHandler(c echo.Context) error {
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Leitfaden - 🏠🆔💯",
 		"ContentTemplate": "leitfaden.content",
-		"CurrentPath":     c.Request().URL.Path,
-		"CurrentYear":     time.Now().Year(),
-		"FooterStats":     stats,
-	})
-}
-
-func aboutHandler(c echo.Context) error {
-	stats := getFooterStats()
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "about - 🏠🆔💯",
-		"ContentTemplate": "about.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,

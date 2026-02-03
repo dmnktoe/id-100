@@ -87,18 +87,18 @@ func adminDashboardHandler(c echo.Context) error {
 	defer rows.Close()
 
 	type TokenInfo struct {
-		ID               int
-		Token            string
-		BagName          string
-		CurrentPlayer    string
+		ID                int
+		Token             string
+		BagName           string
+		CurrentPlayer     string
 		CurrentPlayerCity string
-		IsActive         bool
-		MaxUploads       int
-		TotalUploads     int
-		TotalSessions    int
-		SessionStartedAt time.Time
-		CreatedAt        time.Time
-		Remaining        int
+		IsActive          bool
+		MaxUploads        int
+		TotalUploads      int
+		TotalSessions     int
+		SessionStartedAt  time.Time
+		CreatedAt         time.Time
+		Remaining         int
 	}
 
 	var tokens []TokenInfo
@@ -654,18 +654,18 @@ func adminTokenListHandler(c echo.Context) error {
 	defer rows.Close()
 
 	type TokenInfo struct {
-		ID               int       `json:"id"`
-		Token            string    `json:"token"`
-		BagName          string    `json:"bag_name"`
-		CurrentPlayer    string    `json:"current_player"`
-		CurrentPlayerCity string   `json:"current_player_city"`
-		IsActive         bool      `json:"is_active"`
-		MaxUploads       int       `json:"max_uploads"`
-		TotalUploads     int       `json:"total_uploads"`
-		TotalSessions    int       `json:"total_sessions"`
-		SessionStartedAt time.Time `json:"session_started_at"`
-		CreatedAt        time.Time `json:"created_at"`
-		Remaining        int       `json:"remaining"`
+		ID                int       `json:"id"`
+		Token             string    `json:"token"`
+		BagName           string    `json:"bag_name"`
+		CurrentPlayer     string    `json:"current_player"`
+		CurrentPlayerCity string    `json:"current_player_city"`
+		IsActive          bool      `json:"is_active"`
+		MaxUploads        int       `json:"max_uploads"`
+		TotalUploads      int       `json:"total_uploads"`
+		TotalSessions     int       `json:"total_sessions"`
+		SessionStartedAt  time.Time `json:"session_started_at"`
+		CreatedAt         time.Time `json:"created_at"`
+		Remaining         int       `json:"remaining"`
 	}
 
 	var tokens []TokenInfo
