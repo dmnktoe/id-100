@@ -7,6 +7,7 @@ import { initBrandAnimation } from "./brand-animation";
 import { initDrawer } from "./drawer";
 import { initLazyImages } from "./lazy-images";
 import { initFormHandlers } from "./form-handler";
+import "./favicon-emoji";
 
 // Initialize all modules when DOM is ready
 (() => {
