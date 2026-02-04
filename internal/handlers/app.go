@@ -486,7 +486,7 @@ func RequestBagHandler(c echo.Context) error {
 		})
 	}
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Tasche anfordern - 🏠🆔💯",
+		"Title":           "Werkzeug anfordern - 🏠🆔💯",
 		"ContentTemplate": "request_bag.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),

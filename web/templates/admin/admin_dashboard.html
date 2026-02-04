@@ -7,19 +7,19 @@
   </div>
 
   <div class="admin-tabs">
-    <a href="/admin?tab=tokens" class="admin-tab{{if eq .Tab "tokens"}} active{{end}}">📱 Taschen & Tokens</a>
-    <a href="/admin?tab=requests" class="admin-tab{{if eq .Tab "requests"}} active{{end}}">👜 Taschen-Anfragen</a>
+    <a href="/admin?tab=tokens" class="admin-tab{{if eq .Tab "tokens"}} active{{end}}">📱 Werkzeug & Tokens</a>
+    <a href="/admin?tab=requests" class="admin-tab{{if eq .Tab "requests"}} active{{end}}">👜 Werkzeug-Anfragen</a>
     <a href="/admin?tab=contribs" class="admin-tab{{if eq .Tab "contribs"}} active{{end}}">📸 Neueste Contributions</a>
   </div>
 
   {{if eq .Tab "tokens"}}
   <div id="tab-tokens" class="admin-section">
-    <h2>➕ Neue Tasche erstellen</h2>
+    <h2>➕ Neues Werkzeug erstellen</h2>
     <div class="token-create-form">
       <form id="createTokenForm" class="token-create-grid">
         <div>
-          <label>Taschenname</label>
-          <input type="text" id="bagName" placeholder="z.B. Tasche #6" required>
+          <label>Werkzeugname</label>
+          <input type="text" id="bagName" placeholder="z.B. Werkzeug #6" required>
         </div>
         <div>
           <label>Max. Uploads</label>
@@ -32,7 +32,7 @@
       <div id="createResult" class="create-result"></div>
     </div>
 
-    <h2>📱 Taschen & Tokens</h2>
+    <h2>📱 Werkzeug & Tokens</h2>
     {{range .Tokens}}
     <div class="token-card{{if not .IsActive}} inactive{{end}}">
       <div class="token-header">
@@ -94,7 +94,7 @@
 
   {{if eq .Tab "requests"}}
   <div id="tab-requests" class="admin-section">
-    <h2>👜 Taschen-Anfragen</h2>
+    <h2>👜 Werkzeug-Anfragen</h2>
     <div class="filter-controls">
       <a href="/admin?tab=requests&bag_status=all" class="filter-btn {{if or (not .BagStatus) (eq .BagStatus "all")}}active{{end}}">Alle ({{len .BagRequests}})</a>
       <a href="/admin?tab=requests&bag_status=open" class="filter-btn {{if eq .BagStatus "open"}}active{{end}}">Offen ({{.OpenCount}})</a>

@@ -20,8 +20,8 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 	e.GET("/leitfaden", RulesHandler)
 	e.GET("/impressum", ImpressumHandler)
 	e.GET("/datenschutz", DatenschutzHandler)
-	e.GET("/tasche-anfordern", RequestBagHandler)
-	e.POST("/tasche-anfordern", RequestBagPostHandler)
+	e.GET("/werkzeug-anfordern", RequestBagHandler)
+	e.POST("/werkzeug-anfordern", RequestBagPostHandler)
 
 	// Admin routes for token management
 	adminGroup := e.Group("/admin", middleware.BasicAuth)
@@ -38,6 +38,6 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 		return AdminDownloadQRHandler(c, baseURL)
 	})
 
-	// Bag request management
-	adminGroup.POST("/taschen-anfragen/:id/complete", AdminBagRequestCompleteHandler)
+	// Werkzeug request management
+	adminGroup.POST("/werkzeug-anfragen/:id/complete", AdminBagRequestCompleteHandler)
 }
