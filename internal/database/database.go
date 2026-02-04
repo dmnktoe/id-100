@@ -58,6 +58,13 @@ func runMigrations() {
 	if err != nil {
 		log.Printf("Failed to add user_city column to contributions: %v", err)
 	}
+
+	// Ensure contributions have a user_comment column
+	_, err = DB.Exec(context.Background(), `ALTER TABLE contributions ADD COLUMN IF NOT EXISTS user_comment TEXT DEFAULT ''`)
+	if err != nil {
+		log.Printf("Failed to add user_comment column to contributions: %v", err)
+	}
+
 	_, err = DB.Exec(context.Background(), `ALTER TABLE upload_tokens ADD COLUMN IF NOT EXISTS current_player_city TEXT DEFAULT ''`)
 	if err != nil {
 		log.Printf("Failed to add current_player_city column to upload_tokens: %v", err)

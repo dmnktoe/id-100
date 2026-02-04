@@ -19,11 +19,12 @@ type Derive struct {
 
 // Contribution represents a user contribution
 type Contribution struct {
-	ImageUrl  string
-	ImageLqip string
-	UserName  string
-	UserCity  string
-	CreatedAt time.Time
+	ImageUrl    string
+	ImageLqip   string
+	UserName    string
+	UserCity    string
+	UserComment string
+	CreatedAt   time.Time
 }
 
 // FooterStats holds database statistics for the footer
