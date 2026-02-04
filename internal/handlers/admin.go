@@ -56,6 +56,7 @@ func AdminDashboardHandler(c echo.Context) error {
 		return c.Render(http.StatusOK, "layout", map[string]interface{}{
 			"Title":           "Admin Dashboard",
 			"ContentTemplate": "admin_dashboard.content",
+			"AdditionalCSS":   "admin.styles.css",
 			"CurrentPath":     c.Request().URL.Path,
 			"CurrentYear":     time.Now().Year(),
 			"Tokens":          tokens,
@@ -118,6 +119,7 @@ func AdminDashboardHandler(c echo.Context) error {
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Admin Dashboard",
 		"ContentTemplate": "admin_dashboard.content",
+		"AdditionalCSS":   "admin.styles.css",
 		"Tokens":          tokens,
 		"RecentContribs":  recentContribs,
 		"BagRequests":     bagRequests,

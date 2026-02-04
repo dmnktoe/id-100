@@ -13,7 +13,7 @@
           <option value="{{.Number}}" {{if index $.UploadedNumbers (printf "%d" .Number)}}disabled class="uploaded" title="Du hast bereits hochgeladen"{{end}} {{if eq $.SelectedNumber (printf "%d" .Number)}}selected{{end}}>🆔 {{.Number}}{{if index $.UploadedNumbers (printf "%d" .Number)}} (hast du schon bearbeitet){{end}}</option>
           {{end}}
         </select>
-        <small style="display:block; margin-top:0.5rem; color:#666;">Für ausgegraute IDs existiert bereits ein Beweisfoto von dir.</small>
+        <small class="form-note">Für ausgegraute IDs existiert bereits ein Beweisfoto von dir.</small>
       </div>
 
       <div class="form-group">
@@ -29,8 +29,8 @@
     </form>
 
   <!-- Punktzahl -->
-  <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(33, 150, 243, 0.08); border-radius: var(--radius-lg); text-align: center;">
-    <p style="margin: 0; font-size: 0.95rem; color: var(--gray-800);">Deine Punktzahl: <strong style="font-size: 1.2rem; color: #2196F3;">{{.TotalPoints}}</strong></p>
+  <div class="score-display">
+    <p class="score-text">Deine Punktzahl: <strong class="score-value">{{.TotalPoints}}</strong></p>
   </div>
 
   <script>
@@ -148,7 +148,7 @@
 
   <!-- Session uploads -->
   {{if .SessionContribs}}
-  <div class="session-uploads" style="margin-top:1.5rem;">
+  <div class="session-uploads">
     <h3>Deine Uploads in dieser Session</h3>
     <div class="session-grid">
       {{range .SessionContribs}}
