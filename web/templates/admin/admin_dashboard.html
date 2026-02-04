@@ -1,157 +1,4 @@
 {{define "admin_dashboard.content"}}
-<style>
-  /* stylelint-disable */
-  .admin-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-  }
-
-  .admin-header {
-    margin-bottom: 2rem;
-  }
-
-  .admin-section {
-    margin-bottom: 3rem;
-  }
-
-  .token-card {
-    background: #f5f5f5;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    border-radius: 8px;
-  }
-
-  .token-card.inactive {
-    opacity: 0.6;
-  }
-
-  .token-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .token-meta {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .token-meta-item {
-    font-size: 0.9rem;
-  }
-
-  .token-meta-item strong {
-    display: block;
-    color: #666;
-  }
-
-  .token-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .btn-admin {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-
-  .btn-reset {
-    background: #4CAF50;
-    color: white;
-  }
-
-  .btn-deactivate {
-    background: #f44336;
-    color: white;
-  }
-
-  .btn-activate {
-    background: #2196F3;
-    color: white;
-  }
-
-  .btn-admin:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .contrib-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-  }
-
-  .contrib-card {
-    aspect-ratio: 1;
-    border-radius: 8px;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .contrib-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .contrib-meta {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .filter-btn {
-    background: #fafafa;
-    border: 1px solid #eee;
-    padding: 0.35rem 0.6rem;
-    border-radius: 6px;
-    text-decoration: none;
-    color: #333;
-    font-size: 0.9rem;
-  }
-
-  .filter-btn.active {
-    background: #2196F3;
-    color: #fff;
-    border-color: #2196F3;
-  }
-
-  /* Tabs for admin dashboard */
-  .admin-tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .admin-tab {
-    padding: 0.45rem 0.8rem;
-    border: 1px solid #eee;
-    border-radius: 6px;
-    background: #fafafa;
-    text-decoration: none;
-    color: #333;
-    font-size: 0.95rem;
-  }
-
-  .admin-tab.active {
-    background: #2196F3;
-    color: #fff;
-    border-color: #2196F3;
-  }
-</style>
 
 <div class="admin-container">
   <div class="admin-header">
@@ -168,24 +15,21 @@
   {{if eq .Tab "tokens"}}
   <div id="tab-tokens" class="admin-section">
     <h2>➕ Neue Tasche erstellen</h2>
-    <div style="background: #f5f5f5; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-      <form id="createTokenForm"
-        style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+    <div class="token-create-form">
+      <form id="createTokenForm" class="token-create-grid">
         <div>
-          <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Taschenname</label>
-          <input type="text" id="bagName" placeholder="z.B. Tasche #6" required
-            style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+          <label>Taschenname</label>
+          <input type="text" id="bagName" placeholder="z.B. Tasche #6" required>
         </div>
         <div>
-          <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Max. Uploads</label>
-          <input type="number" id="maxUploads" value="100" min="1" required
-            style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+          <label>Max. Uploads</label>
+          <input type="number" id="maxUploads" value="100" min="1" required>
         </div>
-        <button type="submit" class="btn-admin" style="background: #2196F3; color: white; padding: 0.6rem 1.5rem;">
+        <button type="submit" class="btn-admin btn-activate">
           ✨ Erstellen
         </button>
       </form>
-      <div id="createResult" style="margin-top: 1rem; display: none;"></div>
+      <div id="createResult" class="create-result"></div>
     </div>
 
     <h2>📱 Taschen & Tokens</h2>
@@ -193,7 +37,7 @@
     <div class="token-card{{if not .IsActive}} inactive{{end}}">
       <div class="token-header">
         <h3>{{.BagName}}{{if .CurrentPlayer}} - {{.CurrentPlayer}}{{end}}</h3>
-        <span style="font-size: 0.9rem; color: {{if .IsActive}}#4CAF50{{else}}#f44336{{end}};">
+        <span class="token-status{{if .IsActive}} active{{else}} inactive{{end}}">
           {{if .IsActive}}● aktiv{{else}}○ inaktiv{{end}}
         </span>
       </div>
@@ -201,9 +45,8 @@
       <div class="token-meta">
         <div class="token-meta-item">
           <strong>Uploads</strong>
-          <input type="number" id="quota-{{.ID}}" value="{{.MaxUploads}}" min="1"
-            style="width: 80px; padding: 0.3rem; border: 1px solid #ddd; border-radius: 4px; margin-top: 0.3rem;">
-          <span style="font-size: 0.9rem; color: #666;">/ {{.TotalUploads}} genutzt</span>
+          <input type="number" id="quota-{{.ID}}" value="{{.MaxUploads}}" min="1" class="token-quota-input">
+          <span class="token-quota-remaining">/ {{.TotalUploads}} genutzt</span>
         </div>
         <div class="token-meta-item">
           <strong>Verbleibend</strong>
@@ -223,18 +66,18 @@
         <button class="btn-admin btn-reset" onclick="resetToken({{.ID}}, '{{.BagName}}')">
           🔄 Zurücksetzen
         </button>
-        <button class="btn-admin" style="background: #FF9800; color: white;" onclick="updateQuota({{.ID}})">
+        <button class="btn-admin btn-update" onclick="updateQuota({{.ID}})">
           💾 Kontingent speichern
         </button>
-        <button class="btn-admin" style="background: #9C27B0; color: white;"
+        <button class="btn-admin btn-qr-svg"
           onclick="downloadQR({{.ID}}, '{{.BagName}}', 'svg')">
           📥 QR (SVG)
         </button>
-        <button class="btn-admin" style="background: #673AB7; color: white;"
+        <button class="btn-admin btn-qr-png"
           onclick="downloadQR({{.ID}}, '{{.BagName}}', 'png')">
           📥 QR (PNG)
         </button>
-        <button class="btn-admin" style="background: #00BCD4; color: white;"
+        <button class="btn-admin btn-copy-url"
           onclick="copyUploadURL('{{.Token}}', '{{.BagName}}')">
           🔗 URL kopieren
         </button>
@@ -252,37 +95,33 @@
   {{if eq .Tab "requests"}}
   <div id="tab-requests" class="admin-section">
     <h2>👜 Taschen-Anfragen</h2>
-    <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:0.75rem;">
+    <div class="filter-controls">
       <a href="/admin?tab=requests&bag_status=all" class="filter-btn {{if or (not .BagStatus) (eq .BagStatus "all")}}active{{end}}">Alle ({{len .BagRequests}})</a>
       <a href="/admin?tab=requests&bag_status=open" class="filter-btn {{if eq .BagStatus "open"}}active{{end}}">Offen ({{.OpenCount}})</a>
       <a href="/admin?tab=requests&bag_status=handled" class="filter-btn {{if eq .BagStatus "handled"}}active{{end}}">Erledigt ({{.HandledCount}})</a>
     </div>
 
-    <div id="bagRequestsContainer" style="background:#fff; padding:1rem; border-radius:8px; border:1px solid #eee; margin-bottom: 2rem;">
+    <div id="bagRequestsContainer" class="bag-requests-container">
       {{if .BagRequests}}
-      <ul style="list-style:none; padding:0; margin:0;">
+      <ul class="bag-requests-list">
         {{range .BagRequests}}
-        <li
-          style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid #f5f5f5;">
+        <li class="bag-request-item">
           <div>
-            <strong style="display:inline-block; margin-right:0.5rem;">{{.Email}}</strong>
-            <div style="font-size:0.85rem; color:#666; display:inline-block;">{{.CreatedAt.Format "02.01.2006 15:04"}}
-            </div>
+            <strong class="bag-request-email">{{.Email}}</strong>
+            <div class="bag-request-date">{{.CreatedAt.Format "02.01.2006 15:04"}}</div>
           </div>
           <div>
             {{if .Handled}}
-            <span style="color:#4CAF50; font-weight:600;">✅ Erledigt</span>
+            <span class="bag-request-handled">✅ Erledigt</span>
             {{else}}
-            <button class="btn-admin"
-              style="background:#4CAF50; color:white; padding:0.35rem 0.6rem; border-radius:6px;"
-              onclick="markBagRequestDone({{.ID}}, this)">✅ Erledigt</button>
+            <button class="btn-admin btn-reset" onclick="markBagRequestDone({{.ID}}, this)">✅ Erledigt</button>
             {{end}}
           </div>
         </li>
         {{end}}
       </ul>
       {{else}}
-      <div style="color:#666; padding:1rem;">Noch keine Anfragen.</div>
+      <div class="bag-requests-empty">Noch keine Anfragen.</div>
       {{end}}
     </div>
   </div>
