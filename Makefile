@@ -1,13 +1,18 @@
 # Simple Makefile for id-100 development
 # Usage: make run | build | test | docker-db | docker-stop | clean
 
-.PHONY: run build test fmt vet docker-db docker-stop clean
+.PHONY: run build build-all build-frontend test fmt vet docker-db docker-stop clean
 
 run:
 	go run ./cmd/id-100
 
 build:
 	go build -o bin/id-100 ./cmd/id-100
+
+build-frontend:
+	npm run build
+
+build-all: build-frontend build
 
 test:
 	go test ./...
