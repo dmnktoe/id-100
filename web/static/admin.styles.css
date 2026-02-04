@@ -91,6 +91,26 @@
   color: var(--white);
 }
 
+.btn-update {
+  background: #FF9800;
+  color: var(--white);
+}
+
+.btn-qr-svg {
+  background: #9C27B0;
+  color: var(--white);
+}
+
+.btn-qr-png {
+  background: #673AB7;
+  color: var(--white);
+}
+
+.btn-copy-url {
+  background: #00BCD4;
+  color: var(--white);
+}
+
 /* Contribution Grid */
 .contrib-grid {
   display: grid;
@@ -207,6 +227,10 @@
   font-size: 0.95rem;
 }
 
+.token-create-grid button {
+  padding: 0.6rem 1.5rem;
+}
+
 .token-create-grid input:focus {
   outline: none;
   border-color: rgba(0, 0, 0, 0.3);
@@ -255,6 +279,10 @@
   align-items: center;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--gray-100);
+}
+
+.bag-request-item button {
+  padding: 0.35rem 0.6rem;
 }
 
 .bag-request-email {

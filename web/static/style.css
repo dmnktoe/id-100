@@ -1086,6 +1086,25 @@ input[type="text"]:focus {
   cursor: not-allowed;
 }
 
+.btn-black {
+  background: var(--black);
+  color: var(--white);
+  display: inline-block;
+  padding: 0.75rem var(--pad-lg);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-weight: 400;
+  transition: all var(--transition-fast);
+  letter-spacing: var(--letter-spacing-tighter);
+  cursor: pointer;
+  border: none;
+}
+
+.btn-black:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
 /* ========================================
    UPLOAD & NAME ENTRY FORMS
    ======================================== */

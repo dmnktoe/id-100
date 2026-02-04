@@ -25,7 +25,7 @@
           <label>Max. Uploads</label>
           <input type="number" id="maxUploads" value="100" min="1" required>
         </div>
-        <button type="submit" class="btn-admin btn-activate" style="padding: 0.6rem 1.5rem;">
+        <button type="submit" class="btn-admin btn-activate">
           ✨ Erstellen
         </button>
       </form>
@@ -66,18 +66,18 @@
         <button class="btn-admin btn-reset" onclick="resetToken({{.ID}}, '{{.BagName}}')">
           🔄 Zurücksetzen
         </button>
-        <button class="btn-admin" style="background: #FF9800; color: white;" onclick="updateQuota({{.ID}})">
+        <button class="btn-admin btn-update" onclick="updateQuota({{.ID}})">
           💾 Kontingent speichern
         </button>
-        <button class="btn-admin" style="background: #9C27B0; color: white;"
+        <button class="btn-admin btn-qr-svg"
           onclick="downloadQR({{.ID}}, '{{.BagName}}', 'svg')">
           📥 QR (SVG)
         </button>
-        <button class="btn-admin" style="background: #673AB7; color: white;"
+        <button class="btn-admin btn-qr-png"
           onclick="downloadQR({{.ID}}, '{{.BagName}}', 'png')">
           📥 QR (PNG)
         </button>
-        <button class="btn-admin" style="background: #00BCD4; color: white;"
+        <button class="btn-admin btn-copy-url"
           onclick="copyUploadURL('{{.Token}}', '{{.BagName}}')">
           🔗 URL kopieren
         </button>
@@ -114,8 +114,7 @@
             {{if .Handled}}
             <span class="bag-request-handled">✅ Erledigt</span>
             {{else}}
-            <button class="btn-admin btn-reset" style="padding: 0.35rem 0.6rem;"
-              onclick="markBagRequestDone({{.ID}}, this)">✅ Erledigt</button>
+            <button class="btn-admin btn-reset" onclick="markBagRequestDone({{.ID}}, this)">✅ Erledigt</button>
             {{end}}
           </div>
         </li>
