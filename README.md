@@ -124,20 +124,39 @@ make clean       # Build-Artefakte entfernen
 ```
 id-100/
 ├── cmd/
-│   └── id-100/           # Hauptanwendung
-│       ├── main.go       # Entry Point
-│       ├── routes.go     # HTTP-Routen & Handler
-│       ├── database.go   # DB-Verbindung
-│       ├── lqip.go       # Bildplatzhalter-Generierung
-│       ├── templates.go  # Template-Rendering
-│       └── utils.go      # Hilfsfunktionen
+│   └── id-100/
+│       └── main.go           # Entry Point
+├── internal/
+│   ├── config/               # Konfigurationsverwaltung
+│   ├── database/             # Datenbank-Verbindung & Migrations
+│   ├── handlers/             # HTTP-Handler
+│   │   ├── app.go           # Hauptanwendungs-Handler
+│   │   ├── admin.go         # Admin-Handler
+│   │   └── routes.go        # Routen-Registrierung
+│   ├── middleware/           # Middleware-Funktionen
+│   │   ├── auth.go          # Authentifizierung
+│   │   ├── token.go         # Token-Validierung
+│   │   └── session_helpers.go # Session-Hilfsfunktionen
+│   ├── models/               # Datenmodelle
+│   ├── templates/            # Template-Rendering
+│   ├── utils/                # Hilfsfunktionen
+│   │   ├── lqip.go          # Bildplatzhalter-Generierung
+│   │   ├── qr.go            # QR-Code-Generierung
+│   │   ├── token.go         # Token-Generierung
+│   │   └── utils.go         # Allgemeine Utilities
+│   └── imgutil/              # Bildverarbeitung
 ├── web/
-│   ├── static/           # CSS, JS, Assets
-│   └── templates/        # HTML-Templates
-├── tools/                # Build-Tools
-├── .air.toml            # Hot-Reload Konfiguration
-├── go.mod               # Go Dependencies
-└── Makefile             # Build-Automatisierung
+│   ├── static/               # CSS, JS, Assets
+│   └── templates/
+│       ├── admin/           # Admin-Templates
+│       ├── app/             # Hauptanwendungs-Templates
+│       ├── errors/          # Fehlerseiten
+│       ├── components/      # Wiederverwendbare Komponenten
+│       └── layout.html      # Basis-Layout
+├── tools/                    # Build-Tools
+├── .air.toml                # Hot-Reload Konfiguration
+├── go.mod                   # Go Dependencies
+└── Makefile                 # Build-Automatisierung
 ```
 
 ## 🏗️ Technologie-Stack
@@ -166,8 +185,10 @@ Die Konfiguration befindet sich in [`.air.toml`](.air.toml). Wichtige Einstellun
 Templates nutzen Go's `html/template` und befinden sich in `web/templates/`:
 
 - `layout.html` - Basis-Layout
-- `components/` - Wiederverwendbare Komponenten
-- Weitere Seiten-Templates
+- `admin/` - Admin-Dashboard und Verwaltung
+- `app/` - Hauptanwendungs-Seiten (Upload, Deriven, etc.)
+- `errors/` - Fehlerseiten (Zugriff verweigert, ungültiger Token, etc.)
+- `components/` - Wiederverwendbare Komponenten (Header, Footer)
 
 ## 🧪 Testing
 

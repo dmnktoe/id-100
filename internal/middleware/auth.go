@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/labstack/echo/v4"
 	"github.com/gorilla/sessions"
+	"github.com/labstack/echo/v4"
 )
 
 // Store is the session store

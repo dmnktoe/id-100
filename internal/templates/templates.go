@@ -43,13 +43,13 @@ func Load() *Renderer {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	// Load templates from subdirectories
 	adminFiles, _ := filepath.Glob("web/templates/admin/*.html")
 	errorFiles, _ := filepath.Glob("web/templates/errors/*.html")
 	appFiles, _ := filepath.Glob("web/templates/app/*.html")
 	compFiles, _ := filepath.Glob("web/templates/components/*.html")
-	
+
 	files = append(files, adminFiles...)
 	files = append(files, errorFiles...)
 	files = append(files, appFiles...)
