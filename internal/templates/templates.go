@@ -31,6 +31,11 @@ func (t *Renderer) Render(w io.Writer, name string, data interface{}, c echo.Con
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
+// New loads all templates and returns a new Renderer
+func New() *Renderer {
+	return Load()
+}
+
 // Load loads all templates from the web/templates directory
 func Load() *Renderer {
 	// Load all template files from various directories

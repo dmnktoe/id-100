@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"os"
@@ -19,7 +19,7 @@ func TestEnsureFullImageURL(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got := ensureFullImageURL(tc.raw)
+		got := EnsureFullImageURL(tc.raw)
 		if got != tc.want {
 			t.Fatalf("raw=%q want=%q got=%q", tc.raw, tc.want, got)
 		}
