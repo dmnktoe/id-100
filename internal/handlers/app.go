@@ -175,13 +175,13 @@ func DeriveHandler(c echo.Context) error {
 	}
 
 	rows, _ := database.DB.Query(context.Background(),
-		"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
+		"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), COALESCE(user_comment,''), created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
 	defer rows.Close()
 
 	var contribs []models.Contribution
 	for rows.Next() {
 		var ct models.Contribution
-		rows.Scan(&ct.ImageUrl, &ct.ImageLqip, &ct.UserName, &ct.UserCity, &ct.CreatedAt)
+		rows.Scan(&ct.ImageUrl, &ct.ImageLqip, &ct.UserName, &ct.UserCity, &ct.UserComment, &ct.CreatedAt)
 		// Normalize contribution image URL
 		ct.ImageUrl = utils.EnsureFullImageURL(ct.ImageUrl)
 		contribs = append(contribs, ct)
@@ -381,12 +381,18 @@ func UploadPostHandler(c echo.Context) error {
 		return c.String(http.StatusNotFound, "Aufgabe nicht gefunden")
 	}
 
+	// Get optional user comment (max 100 chars)
+	userComment := c.FormValue("comment")
+	if len(userComment) > 100 {
+		userComment = userComment[:100]
+	}
+
 	// Insert contribution and get ID
 	var contributionID int
 	currentPlayerCity, _ := c.Get("current_player_city").(string)
 	err = database.DB.QueryRow(context.Background(),
-		"INSERT INTO contributions (derive_id, image_url, image_lqip, user_name, user_city) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-		internalID, relativePath, lqip, currentPlayer, currentPlayerCity).Scan(&contributionID)
+		"INSERT INTO contributions (derive_id, image_url, image_lqip, user_name, user_city, user_comment) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+		internalID, relativePath, lqip, currentPlayer, currentPlayerCity, userComment).Scan(&contributionID)
 
 	if err != nil {
 		log.Printf("DB Error inserting contribution: %v", err)
