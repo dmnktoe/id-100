@@ -577,3 +577,88 @@ func SetPlayerNameHandler(c echo.Context) error {
 	// Redirect to upload page
 	return c.Redirect(http.StatusSeeOther, "/upload?token="+token)
 }
+
+// UserDeleteContributionHandler allows users to delete their own contributions from the current session
+func UserDeleteContributionHandler(c echo.Context) error {
+	contributionIDStr := c.Param("id")
+	contributionID, err := strconv.Atoi(contributionIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid contribution ID"})
+	}
+
+	// Get token info from middleware context
+	tokenID, ok := c.Get("token_id").(int)
+	if !ok {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "Token not found"})
+	}
+
+	sessionNumber, _ := c.Get("session_number").(int)
+
+	// Verify that this contribution belongs to the current user's session
+	var imageURL string
+	var uploadLogTokenID, uploadLogSessionNumber int
+	err = database.DB.QueryRow(context.Background(), `
+		SELECT c.image_url, ul.token_id, ul.session_number
+		FROM contributions c
+		JOIN upload_logs ul ON ul.contribution_id = c.id
+		WHERE c.id = $1
+	`, contributionID).Scan(&imageURL, &uploadLogTokenID, &uploadLogSessionNumber)
+
+	if err != nil {
+		log.Printf("Failed to fetch contribution: %v", err)
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Contribution not found"})
+	}
+
+	// Check if the contribution belongs to the current session
+	if uploadLogTokenID != tokenID || uploadLogSessionNumber != sessionNumber {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "You can only delete your own uploads from this session"})
+	}
+
+	// Delete from upload_logs first
+	_, err = database.DB.Exec(context.Background(),
+		"DELETE FROM upload_logs WHERE contribution_id = $1",
+		contributionID)
+
+	if err != nil {
+		log.Printf("Failed to delete from upload_logs: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete upload log"})
+	}
+
+	// Delete from contributions table
+	result, err := database.DB.Exec(context.Background(),
+		"DELETE FROM contributions WHERE id = $1",
+		contributionID)
+
+	if err != nil {
+		log.Printf("Failed to delete contribution: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete contribution"})
+	}
+
+	if result.RowsAffected() == 0 {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Contribution not found"})
+	}
+
+	// Decrement the total_uploads counter for the token
+	_, err = database.DB.Exec(context.Background(),
+		"UPDATE upload_tokens SET total_uploads = total_uploads - 1 WHERE id = $1 AND total_uploads > 0",
+		tokenID)
+
+	if err != nil {
+		log.Printf("Failed to decrement upload counter: %v", err)
+		// Don't fail the request
+	}
+
+	// Delete from S3 storage if the image exists
+	if imageURL != "" {
+		err := utils.DeleteFromS3(imageURL)
+		if err != nil {
+			log.Printf("Failed to delete from S3 (continuing anyway): %v", err)
+			// Don't fail the request if S3 deletion fails
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"status":  "success",
+		"message": "Upload deleted successfully",
+	})
+}

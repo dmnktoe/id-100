@@ -45,7 +45,7 @@ func AdminDashboardHandler(c echo.Context) error {
 
 	// Get recent contributions
 	contribRows, err := database.DB.Query(context.Background(), `
-		SELECT c.image_url, COALESCE(ul.player_name, 'Anonym'), ul.derive_number
+		SELECT c.id, c.image_url, COALESCE(ul.player_name, 'Anonym'), ul.derive_number
 		FROM contributions c
 		JOIN upload_logs ul ON ul.contribution_id = c.id
 		ORDER BY c.created_at DESC
@@ -68,7 +68,7 @@ func AdminDashboardHandler(c echo.Context) error {
 	var recentContribs []models.RecentContrib
 	for contribRows.Next() {
 		var rc models.RecentContrib
-		if err := contribRows.Scan(&rc.ImageUrl, &rc.PlayerName, &rc.DeriveNumber); err != nil {
+		if err := contribRows.Scan(&rc.ID, &rc.ImageUrl, &rc.PlayerName, &rc.DeriveNumber); err != nil {
 			continue
 		}
 		rc.ImageUrl = utils.EnsureFullImageURL(rc.ImageUrl)
@@ -434,5 +434,63 @@ func AdminUpdateQuotaHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status":      "success",
 		"max_uploads": req.MaxUploads,
+	})
+}
+
+// AdminDeleteContributionHandler deletes a contribution from the admin panel
+func AdminDeleteContributionHandler(c echo.Context) error {
+	contributionIDStr := c.Param("id")
+	contributionID, err := strconv.Atoi(contributionIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid contribution ID"})
+	}
+
+	// Get the image URL before deletion to delete from S3
+	var imageURL string
+	err = database.DB.QueryRow(context.Background(),
+		"SELECT image_url FROM contributions WHERE id = $1",
+		contributionID).Scan(&imageURL)
+
+	if err != nil {
+		log.Printf("Failed to fetch contribution: %v", err)
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Contribution not found"})
+	}
+
+	// Delete from upload_logs first (foreign key reference)
+	_, err = database.DB.Exec(context.Background(),
+		"DELETE FROM upload_logs WHERE contribution_id = $1",
+		contributionID)
+
+	if err != nil {
+		log.Printf("Failed to delete from upload_logs: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete upload log"})
+	}
+
+	// Delete from contributions table
+	result, err := database.DB.Exec(context.Background(),
+		"DELETE FROM contributions WHERE id = $1",
+		contributionID)
+
+	if err != nil {
+		log.Printf("Failed to delete contribution: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete contribution"})
+	}
+
+	if result.RowsAffected() == 0 {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Contribution not found"})
+	}
+
+	// Delete from S3 storage if the image exists
+	if imageURL != "" {
+		err := utils.DeleteFromS3(imageURL)
+		if err != nil {
+			log.Printf("Failed to delete from S3 (continuing anyway): %v", err)
+			// Don't fail the request if S3 deletion fails
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"status":  "success",
+		"message": "Contribution deleted successfully",
 	})
 }

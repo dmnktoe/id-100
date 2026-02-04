@@ -16,6 +16,7 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 	e.GET("/upload", UploadGetHandler, middleware.TokenWithSession)
 	e.POST("/upload", UploadPostHandler, middleware.TokenWithSession)
 	e.POST("/upload/set-name", SetPlayerNameHandler, middleware.TokenWithSession)
+	e.POST("/upload/contributions/:id/delete", UserDeleteContributionHandler, middleware.TokenWithSession)
 
 	e.GET("/leitfaden", RulesHandler)
 	e.GET("/impressum", ImpressumHandler)
@@ -40,4 +41,7 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 
 	// Werkzeug request management
 	adminGroup.POST("/werkzeug-anfragen/:id/complete", AdminBagRequestCompleteHandler)
+
+	// Contribution deletion
+	adminGroup.POST("/contributions/:id/delete", AdminDeleteContributionHandler)
 }
