@@ -22,7 +22,7 @@ import (
 	"github.com/chai2010/webp"
 	"github.com/labstack/echo/v4"
 
-	"id-100/cmd/id-100/imgutil"
+	"id-100/internal/imgutil"
 	"id-100/internal/database"
 	"id-100/internal/middleware"
 	"id-100/internal/models"
