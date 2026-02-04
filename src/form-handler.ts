@@ -1,0 +1,56 @@
+/**
+ * Form handler module
+ * Handles form submissions (e.g., request bag form)
+ */
+
+export function initFormHandlers(): void {
+  // Formular "tasche anfordern" submission handler
+  document.addEventListener("submit", (e) => {
+    const form = e.target as HTMLFormElement;
+    if (!form || form.id !== "requestBagForm") return;
+    e.preventDefault();
+    
+    const emailInput = form.querySelector<HTMLInputElement>('input[name="email"]');
+    const btn = form.querySelector<HTMLButtonElement>("button[type=submit]");
+    const resultDiv = form.querySelector<HTMLDivElement>("#requestResult");
+    
+    if (!emailInput || !btn || !resultDiv) return;
+    
+    const email = emailInput.value.trim();
+    
+    if (!email || !email.includes("@")) {
+      resultDiv.style.display = "block";
+      resultDiv.style.color = "#d32f2f";
+      resultDiv.innerText = "Bitte gib eine gültige E‑Mail an.";
+      return;
+    }
+    
+    btn.disabled = true;
+    btn.innerText = "sende...";
+    
+    fetch("/tasche-anfordern", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    })
+      .then((r) => r.json())
+      .then((data: { status: string; error?: string }) => {
+        if (data.status === "ok") {
+          form.innerHTML = `<p style="font-weight:500;">Danke! Wir benachrichtigen dich per E‑Mail, sobald eine Tasche verfügbar ist.</p>`;
+        } else {
+          resultDiv.style.display = "block";
+          resultDiv.style.color = "#d32f2f";
+          resultDiv.innerText = data.error || "Etwas ging schief.";
+          btn.disabled = false;
+          btn.innerText = "anfragen";
+        }
+      })
+      .catch((_err) => {
+        resultDiv.style.display = "block";
+        resultDiv.style.color = "#d32f2f";
+        resultDiv.innerText = "Netzwerkfehler. Bitte versuche es erneut.";
+        btn.disabled = false;
+        btn.innerText = "anfragen";
+      });
+  });
+}

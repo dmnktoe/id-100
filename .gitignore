@@ -37,3 +37,11 @@ tmp/
 
 # Binary
 /id-100
+
+# Node modules
+node_modules/
+
+# Package lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

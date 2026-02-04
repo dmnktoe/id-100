@@ -106,11 +106,45 @@ make build
 
 Die Anwendung läuft standardmäßig auf `http://localhost:8080`
 
+## 🎨 Frontend-Entwicklung
+
+Das Frontend verwendet TypeScript für type-sichere, modulare Client-seitige Code.
+
+### Frontend Build
+
+```bash
+# Dependencies installieren
+npm install
+
+# TypeScript kompilieren und bundlen
+npm run build
+
+# Entwicklungsmodus (ohne Minifizierung)
+npm run build:dev
+
+# Watch-Modus (automatischer Build bei Änderungen)
+npm run watch
+```
+
+### Frontend-Struktur
+
+```
+src/
+├── main.ts              # Haupteinstiegspunkt
+├── brand-animation.ts   # Markenanimationen
+├── drawer.ts            # Drawer/Modal-Funktionalität
+├── lazy-images.ts       # Lazy-Loading für Bilder
+└── form-handler.ts      # Formular-Handler
+```
+
+Der TypeScript-Code wird mit **esbuild** gebündelt und minifiziert in `web/static/main.js` ausgegeben.
+
 ## 🛠️ Verfügbare Makefile-Befehle
 
 ```bash
 make run         # Anwendung starten
-make build       # Binary erstellen
+make build       # Backend-Binary erstellen
+make build-all   # Backend und Frontend bauen
 make test        # Tests ausführen
 make fmt         # Code formatieren
 make vet         # Code analysieren
@@ -167,7 +201,7 @@ id-100/
 | **Datenbank** | Supabase PostgreSQL, pgx/v5 |
 | **Storage** | Supabase Storage (S3-kompatibel) |
 | **Image Processing** | go-webp, LQIP |
-| **Frontend** | HTML5, CSS3, Vanilla JavaScript |
+| **Frontend** | HTML5, CSS3, TypeScript, esbuild |
 | **Dev Tools** | Air (Hot-Reload), Make |
 
 ## 🔧 Konfiguration
