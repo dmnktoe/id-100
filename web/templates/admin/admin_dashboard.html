@@ -265,7 +265,7 @@
   async function markBagRequestDone(id, btn) {
     if (!confirm('Als erledigt markieren?')) return;
     try {
-      const res = await fetch(`/admin/bag-requests/${id}/complete`, { method: 'POST' });
+      const res = await fetch(`/admin/werkzeug-anfragen/${id}/complete`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
         const li = btn.closest('li');
