@@ -63,13 +63,6 @@ export function initDrawer(): void {
       );
     }
 
-    // intercept back/links inside panel
-    panel.querySelectorAll<HTMLAnchorElement>("a").forEach((a) => {
-      a.addEventListener("click", (_e) => {
-        // let normal navigation happen if link to full page
-      });
-    });
-
     // Initialize lazy images inside the newly-inserted panel and force immediate load
     try {
       initLazyImages(panel);
