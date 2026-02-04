@@ -383,8 +383,9 @@ func UploadPostHandler(c echo.Context) error {
 
 	// Get optional user comment (max 100 chars)
 	userComment := c.FormValue("comment")
-	if len(userComment) > 100 {
-		userComment = userComment[:100]
+	runes := []rune(userComment)
+	if len(runes) > 100 {
+		userComment = string(runes[:100])
 	}
 
 	// Insert contribution and get ID
