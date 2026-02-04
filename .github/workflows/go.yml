@@ -31,8 +31,11 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Test TypeScript
+        run: npm test
+
       - name: Build backend
         run: go build -v ./...
 
-      - name: Test
+      - name: Test Go
         run: go test -v ./...
