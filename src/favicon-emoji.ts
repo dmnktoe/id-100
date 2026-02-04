@@ -20,7 +20,7 @@ function createEmojiSvg(emoji: string): string {
       <text y="80" font-size="80">${emoji}</text>
     </svg>
   `;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
 /**
@@ -34,11 +34,16 @@ function getRandomEmoji(): string {
  * Sets the favicon to a random emoji
  */
 export function setRandomEmojiFavicon(): void {
+  // Guard against non-DOM environments (SSR, tests)
+  if (typeof document === 'undefined' || !document.head) {
+    return;
+  }
+
   const emoji = getRandomEmoji();
   const faviconUrl = createEmojiSvg(emoji);
 
   // Find existing favicon or create new one
-  let link = document.querySelector<HTMLLinkElement>("link[rel*='icon']");
+  let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
   
   if (!link) {
     link = document.createElement('link');
