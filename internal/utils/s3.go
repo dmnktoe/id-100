@@ -13,26 +13,34 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+// extractFileNameFromURL extracts the filename from a Supabase storage URL
+func extractFileNameFromURL(imageURL string) (string, error) {
+	if !strings.Contains(imageURL, "/storage/v1/object/public/") {
+		return "", fmt.Errorf("URL does not contain storage path: %s", imageURL)
+	}
+
+	parts := strings.Split(imageURL, "/storage/v1/object/public/")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid storage URL format: %s", imageURL)
+	}
+
+	// Extract bucket and file path
+	pathParts := strings.SplitN(parts[1], "/", 2)
+	if len(pathParts) != 2 {
+		return "", fmt.Errorf("invalid storage path format: %s", parts[1])
+	}
+
+	return pathParts[1], nil
+}
+
 // DeleteFromS3 extracts the file key from the image URL and deletes it from S3
 func DeleteFromS3(imageURL string) error {
 	// Extract the filename from the URL path
 	// Example: /storage/v1/object/public/id100-images/derive_1_1234567890.webp
 	// or: https://xxx.supabase.co/storage/v1/object/public/id100-images/derive_1_1234567890.webp
-	var fileName string
-
-	if strings.Contains(imageURL, "/storage/v1/object/public/") {
-		parts := strings.Split(imageURL, "/storage/v1/object/public/")
-		if len(parts) == 2 {
-			// Extract bucket and file path
-			pathParts := strings.SplitN(parts[1], "/", 2)
-			if len(pathParts) == 2 {
-				fileName = pathParts[1]
-			}
-		}
-	}
-
-	if fileName == "" {
-		return fmt.Errorf("could not extract filename from URL: %s", imageURL)
+	fileName, err := extractFileNameFromURL(imageURL)
+	if err != nil {
+		return err
 	}
 
 	// Create S3 client

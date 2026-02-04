@@ -175,23 +175,8 @@
         const data = await response.json();
         
         if (response.ok) {
-          // Remove the card from the DOM
-          const card = document.getElementById(`session-upload-${id}`);
-          if (card) {
-            card.style.opacity = '0';
-            card.style.transition = 'opacity 0.3s';
-            setTimeout(() => {
-              card.remove();
-              // If no more uploads, hide the entire section
-              const sessionGrid = document.querySelector('.session-grid');
-              if (sessionGrid && sessionGrid.children.length === 0) {
-                const sessionUploads = document.querySelector('.session-uploads');
-                if (sessionUploads) sessionUploads.remove();
-              }
-              // Reload page to update uploaded numbers and points
-              location.reload();
-            }, 300);
-          }
+          // Reload page to update uploaded numbers and points
+          location.reload();
         } else {
           alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
         }

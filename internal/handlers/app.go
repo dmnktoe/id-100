@@ -650,9 +650,9 @@ func UserDeleteContributionHandler(c echo.Context) error {
 
 	// Delete from S3 storage if the image exists
 	if imageURL != "" {
-		err := utils.DeleteFromS3(imageURL)
-		if err != nil {
-			log.Printf("Failed to delete from S3 (continuing anyway): %v", err)
+		s3Err := utils.DeleteFromS3(imageURL)
+		if s3Err != nil {
+			log.Printf("Failed to delete from S3 (continuing anyway): %v", s3Err)
 			// Don't fail the request if S3 deletion fails
 		}
 	}
