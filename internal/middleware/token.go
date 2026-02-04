@@ -230,14 +230,6 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 		}
 
-		// Store token info in context for handler
-		c.Set("token_id", tokenID)
-		c.Set("token", token)
-		c.Set("current_player", currentPlayer)
-		c.Set("bag_name", bagName)
-		c.Set("session_number", totalSessions)
-		c.Set("uploads_remaining", maxUploads-totalUploads)
-
 		return next(c)
 	}
 }
