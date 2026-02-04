@@ -59,8 +59,10 @@ make docker-db
 
 ```bash
 createdb id100
-psql id100 < schema.sql  # Falls vorhanden
+# Migrationen werden automatisch beim App-Start ausgeführt
 ```
+
+**Hinweis**: Die Datenbank-Migrationen werden automatisch beim Anwendungsstart ausgeführt. Alle SQL-Schema-Definitionen befinden sich in `internal/database/migrations/`.
 
 ### 5. Umgebungsvariablen konfigurieren
 
@@ -129,6 +131,9 @@ id-100/
 ├── internal/
 │   ├── config/               # Konfigurationsverwaltung
 │   ├── database/             # Datenbank-Verbindung & Migrations
+│   │   ├── database.go      # Datenbankverbindung
+│   │   ├── migrations.go    # Migrations-Runner
+│   │   └── migrations/      # SQL-Migrationsdateien
 │   ├── handlers/             # HTTP-Handler
 │   │   ├── app.go           # Hauptanwendungs-Handler
 │   │   ├── admin.go         # Admin-Handler

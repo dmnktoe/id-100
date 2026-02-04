@@ -55,7 +55,7 @@ func runMigrationsFromFiles() error {
 		}
 
 		log.Printf("Applying migration %d: %s", migration.Version, migration.Description)
-		
+
 		// Execute the migration SQL
 		_, err := DB.Exec(ctx, migration.SQL)
 		if err != nil {
