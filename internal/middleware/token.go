@@ -11,6 +11,11 @@ import (
 	"id-100/internal/database"
 )
 
+const (
+	// UploadCooldownDuration is the minimum time between uploads for the same token
+	UploadCooldownDuration = 5 * time.Second
+)
+
 // TokenWithSession is a middleware with session support for token validation
 func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -209,7 +214,7 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			})
 		}
 
-		// For POST requests: Check cooldown (5 seconds)
+		// For POST requests: Check cooldown
 		if c.Request().Method == "POST" {
 			var lastUpload *time.Time
 			err = database.DB.QueryRow(context.Background(),
@@ -218,10 +223,9 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 			if err == nil && lastUpload != nil {
 				timeSince := time.Since(*lastUpload)
-				cooldownDuration := 5 * time.Second
 
-				if timeSince < cooldownDuration {
-					remainingSeconds := int(cooldownDuration.Seconds() - timeSince.Seconds())
+				if timeSince < UploadCooldownDuration {
+					remainingSeconds := int(UploadCooldownDuration.Seconds() - timeSince.Seconds())
 					return c.JSON(http.StatusTooManyRequests, map[string]interface{}{
 						"error":             "Bitte warte zwischen Uploads",
 						"remaining_seconds": remainingSeconds,
