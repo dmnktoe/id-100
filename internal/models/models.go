@@ -53,6 +53,7 @@ type TokenInfo struct {
 
 // RecentContrib represents a recent contribution for the admin dashboard
 type RecentContrib struct {
+	ID           int
 	ImageUrl     string
 	PlayerName   string
 	DeriveNumber int

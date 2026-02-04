@@ -159,6 +159,32 @@
       } catch (e) { /* ignore */ }
     })();
 
+    // Delete session upload
+    async function deleteSessionUpload(id, btn) {
+      if (!confirm('Upload wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
+      
+      try {
+        const params = new URLSearchParams(location.search);
+        const token = params.get('token') || '';
+        const response = await fetch(`/upload/contributions/${id}/delete?token=${encodeURIComponent(token)}`, { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Reload page to update uploaded numbers and points
+          location.reload();
+        } else {
+          alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+        }
+      } catch (err) {
+        alert('Fehler: ' + err.message);
+      }
+    }
+
   </script>
 
   <!-- Session uploads -->
@@ -171,7 +197,10 @@
         <div class="session-img-wrapper">
           <img class="lazy blur-up" data-src="{{index . "image_url"}}" data-lqip="{{index . "image_lqip"}}" src="{{if index . "image_lqip"}}{{index . "image_lqip"}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="upload">
         </div>
-        <div class="session-meta">🆔 {{index . "number"}}</div>
+        <div class="session-meta">
+          🆔 {{index . "number"}}
+          <button class="session-delete-btn" onclick="deleteSessionUpload({{index . "id"}}, this)" title="Löschen">🗑️</button>
+        </div>
       </div>
       {{end}}
     </div>

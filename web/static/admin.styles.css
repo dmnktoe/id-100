@@ -111,6 +111,11 @@
   color: var(--white);
 }
 
+.btn-delete {
+  background: #f44336;
+  color: var(--white);
+}
+
 /* Contribution Grid */
 .contrib-grid {
   display: grid;
@@ -145,6 +150,15 @@
   color: var(--white);
   padding: 0.5rem;
   font-size: 0.8rem;
+}
+
+.contrib-card .btn-delete {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.75rem;
+  z-index: 10;
 }
 
 /* Filter & Tab Buttons */

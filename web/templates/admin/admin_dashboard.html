@@ -132,12 +132,15 @@
     <h2>📸 Neueste Contributions</h2>
     <div class="contrib-grid">
       {{range .RecentContribs}}
-      <div class="contrib-card">
+      <div class="contrib-card" id="contrib-{{.ID}}">
         <img src="{{.ImageUrl}}" alt="Contribution" loading="lazy">
         <div class="contrib-meta">
           <div>{{.PlayerName}}</div>
           <div>ID #{{.DeriveNumber}}</div>
         </div>
+        <button class="btn-admin btn-delete" onclick="deleteContribution({{.ID}}, this)" title="Löschen">
+          🗑️ Löschen
+        </button>
       </div>
       {{end}}
     </div>
@@ -317,6 +320,31 @@
         window.location.href = href;
       });
   });
+
+  // Delete contribution (admin)
+  async function deleteContribution(id, btn) {
+    if (!confirm('Contribution wirklich löschen? Dies wird das Bild aus der Datenbank und dem Storage entfernen.')) return;
+    
+    try {
+      const response = await fetch(`/admin/contributions/${id}/delete`, { method: 'POST' });
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Remove the card from the DOM
+        const card = document.getElementById(`contrib-${id}`);
+        if (card) {
+          card.style.opacity = '0';
+          card.style.transition = 'opacity 0.3s';
+          setTimeout(() => card.remove(), 300);
+        }
+        alert('Contribution erfolgreich gelöscht');
+      } else {
+        alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+      }
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    }
+  }
 
 
 </script>
