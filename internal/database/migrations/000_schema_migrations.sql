@@ -1,4 +1,4 @@
--- Migration 003: Add Schema Version Tracking
+-- Migration 000: Add Schema Version Tracking
 -- Creates a table to track which migrations have been applied
 
 CREATE TABLE IF NOT EXISTS schema_migrations (
