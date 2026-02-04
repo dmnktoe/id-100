@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"bytes"
@@ -22,43 +22,16 @@ import (
 	"github.com/chai2010/webp"
 	"github.com/labstack/echo/v4"
 
-	"id-100/cmd/id-100/imgutil"
+	"id-100/internal/database"
+	"id-100/internal/imgutil"
+	"id-100/internal/middleware"
+	"id-100/internal/models"
+	"id-100/internal/utils"
 )
 
-func registerRoutes(e *echo.Echo) {
-	e.Static("/static", "web/static")
-
-	e.GET("/", derivenHandler)
-	e.GET("/id/:number", deriveHandler)
-
-	// Upload routes - protected by token middleware with session support
-	e.GET("/upload", uploadGetHandler, tokenMiddlewareWithSession)
-	e.POST("/upload", uploadPostHandler, tokenMiddlewareWithSession)
-	e.POST("/upload/set-name", setPlayerNameHandler, tokenMiddlewareWithSession)
-
-	e.GET("/leitfaden", rulesHandler)
-	e.GET("/impressum", impressumHandler)
-	e.GET("/datenschutz", datenschutzHandler)
-	e.GET("/tasche-anfordern", requestBagHandler)
-	e.POST("/tasche-anfordern", requestBagPostHandler)
-
-	// Admin routes for token management
-	adminGroup := e.Group("/admin", basicAuthMiddleware)
-	adminGroup.GET("", adminDashboardHandler)
-	adminGroup.GET("/tokens", adminTokenListHandler)
-	adminGroup.POST("/tokens", adminCreateTokenHandler)
-	adminGroup.POST("/tokens/:id/deactivate", adminTokenDeactivateHandler)
-	adminGroup.POST("/tokens/:id/reset", adminTokenResetHandler)
-	adminGroup.POST("/tokens/:id/assign", adminTokenAssignHandler)
-	adminGroup.POST("/tokens/:id/quota", adminUpdateQuotaHandler)
-	adminGroup.GET("/tokens/:id/qr", adminDownloadQRHandler)
-
-	// Bag request management
-	adminGroup.POST("/taschen-anfragen/:id/complete", adminBagRequestCompleteHandler)
-}
-
-func derivenHandler(c echo.Context) error {
-	stats := getFooterStats()
+// DerivenHandler displays the list of deriven with pagination
+func DerivenHandler(c echo.Context) error {
+	stats := utils.GetFooterStats()
 
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	if page < 1 {
@@ -69,7 +42,7 @@ func derivenHandler(c echo.Context) error {
 
 	// Get total count for pagination
 	var totalCount int
-	err := db.QueryRow(context.Background(), "SELECT COUNT(*) FROM deriven").Scan(&totalCount)
+	err := database.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM deriven").Scan(&totalCount)
 	if err != nil {
 		log.Printf("Count Error: %v", err)
 		totalCount = 100 // fallback
@@ -91,22 +64,22 @@ func derivenHandler(c echo.Context) error {
             ORDER BY d.number ASC 
             LIMIT $1 OFFSET $2`
 
-	rows, err := db.Query(context.Background(), query, limit, offset)
+	rows, err := database.DB.Query(context.Background(), query, limit, offset)
 	if err != nil {
 		log.Printf("Query Error: %v", err)
 		return c.String(http.StatusInternalServerError, "Datenbankfehler")
 	}
 	defer rows.Close()
 
-	var deriven []Derive
+	var deriven []models.Derive
 	for rows.Next() {
-		var d Derive
+		var d models.Derive
 		if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.ImageLqip, &d.ContribCount, &d.Points); err != nil {
 			log.Printf("Scan Error: %v", err)
 			return err
 		}
 		// Normalize image URL
-		d.ImageUrl = ensureFullImageURL(d.ImageUrl)
+		d.ImageUrl = utils.EnsureFullImageURL(d.ImageUrl)
 		// map points to a simple tier (1..3) for badge + overlay selection
 		if d.Points <= 1 {
 			d.PointsTier = 1
@@ -119,44 +92,39 @@ func derivenHandler(c echo.Context) error {
 	}
 
 	// Build pagination pages for template
-	type PageNumber struct {
-		Number    int
-		IsCurrent bool
-		IsDots    bool
-	}
-	var pages []PageNumber
+	var pages []models.PageNumber
 
 	// Always show first page
-	pages = append(pages, PageNumber{Number: 1, IsCurrent: page == 1})
+	pages = append(pages, models.PageNumber{Number: 1, IsCurrent: page == 1})
 
 	// Show dots if current page > 3
 	if page > 3 {
-		pages = append(pages, PageNumber{IsDots: true})
+		pages = append(pages, models.PageNumber{IsDots: true})
 	}
 
 	// Show page before current (if exists and not page 1 or 2)
 	if page > 2 {
-		pages = append(pages, PageNumber{Number: page - 1, IsCurrent: false})
+		pages = append(pages, models.PageNumber{Number: page - 1, IsCurrent: false})
 	}
 
 	// Show current page (if not first or last)
 	if page > 1 && page < totalPages {
-		pages = append(pages, PageNumber{Number: page, IsCurrent: true})
+		pages = append(pages, models.PageNumber{Number: page, IsCurrent: true})
 	}
 
 	// Show page after current (if exists and not last page or second to last)
 	if page < totalPages-1 {
-		pages = append(pages, PageNumber{Number: page + 1, IsCurrent: false})
+		pages = append(pages, models.PageNumber{Number: page + 1, IsCurrent: false})
 	}
 
 	// Show dots if there's a gap to last page
 	if page < totalPages-2 {
-		pages = append(pages, PageNumber{IsDots: true})
+		pages = append(pages, models.PageNumber{IsDots: true})
 	}
 
 	// Always show last page (if more than 1 page)
 	if totalPages > 1 {
-		pages = append(pages, PageNumber{Number: totalPages, IsCurrent: page == totalPages})
+		pages = append(pages, models.PageNumber{Number: totalPages, IsCurrent: page == totalPages})
 	}
 
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
@@ -176,12 +144,13 @@ func derivenHandler(c echo.Context) error {
 	})
 }
 
-func deriveHandler(c echo.Context) error {
-	stats := getFooterStats()
+// DeriveHandler displays a single derive with its contributions
+func DeriveHandler(c echo.Context) error {
+	stats := utils.GetFooterStats()
 	num := c.Param("number")
 	pageParam := c.QueryParam("page") // Capture page parameter for back navigation
 
-	var d Derive
+	var d models.Derive
 	query := `
             SELECT d.id, d.number, d.title, d.description, COALESCE(c.image_url, ''), d.points
             FROM deriven d
@@ -190,12 +159,12 @@ func deriveHandler(c echo.Context) error {
             ) c ON true
             WHERE d.number = $1`
 
-	err := db.QueryRow(context.Background(), query, num).Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.Points)
+	err := database.DB.QueryRow(context.Background(), query, num).Scan(&d.ID, &d.Number, &d.Title, &d.Description, &d.ImageUrl, &d.Points)
 	if err != nil {
 		return c.Redirect(http.StatusSeeOther, "/")
 	}
 	// Normalize derive image URL
-	d.ImageUrl = ensureFullImageURL(d.ImageUrl)
+	d.ImageUrl = utils.EnsureFullImageURL(d.ImageUrl)
 	// compute PointsTier for styling
 	if d.Points <= 1 {
 		d.PointsTier = 1
@@ -205,23 +174,16 @@ func deriveHandler(c echo.Context) error {
 		d.PointsTier = 3
 	}
 
-	rows, _ := db.Query(context.Background(),
+	rows, _ := database.DB.Query(context.Background(),
 		"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
 	defer rows.Close()
 
-	type Contribution struct {
-		ImageUrl  string
-		ImageLqip string
-		UserName  string
-		UserCity  string
-		CreatedAt time.Time
-	}
-	var contribs []Contribution
+	var contribs []models.Contribution
 	for rows.Next() {
-		var ct Contribution
+		var ct models.Contribution
 		rows.Scan(&ct.ImageUrl, &ct.ImageLqip, &ct.UserName, &ct.UserCity, &ct.CreatedAt)
 		// Normalize contribution image URL
-		ct.ImageUrl = ensureFullImageURL(ct.ImageUrl)
+		ct.ImageUrl = utils.EnsureFullImageURL(ct.ImageUrl)
 		contribs = append(contribs, ct)
 	}
 
@@ -248,55 +210,10 @@ func deriveHandler(c echo.Context) error {
 	})
 }
 
-// GET /tasche-anfordern
-func requestBagHandler(c echo.Context) error {
-	stats := getFooterStats()
-	if c.QueryParam("partial") == "1" {
-		return c.Render(http.StatusOK, "request_bag.content", map[string]interface{}{
-			"CurrentPath": c.Request().URL.Path,
-			"CurrentYear": time.Now().Year(),
-			"FooterStats": stats,
-			"IsPartial":   true,
-		})
-	}
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
-		"Title":           "Tasche anfordern - 🏠🆔💯",
-		"ContentTemplate": "request_bag.content",
-		"CurrentPath":     c.Request().URL.Path,
-		"CurrentYear":     time.Now().Year(),
-		"FooterStats":     stats,
-	})
-}
-
-// POST /tasche-anfordern
-func requestBagPostHandler(c echo.Context) error {
-	type payload struct {
-		Email string `json:"email"`
-	}
-	var p payload
-	if strings.Contains(c.Request().Header.Get("Content-Type"), "application/json") {
-		if err := c.Bind(&p); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Ungültiger Request"})
-		}
-	} else {
-		p.Email = c.FormValue("email")
-	}
-	email := strings.TrimSpace(p.Email)
-	if email == "" || !strings.Contains(email, "@") {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Ungültige E-Mail"})
-	}
-
-	_, err := db.Exec(context.Background(), "INSERT INTO bag_requests (email) VALUES ($1)", email)
-	if err != nil {
-		log.Printf("Failed to insert bag request: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Serverfehler"})
-	}
-	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-}
-
-func uploadGetHandler(c echo.Context) error {
-	stats := getFooterStats()
-	rows, err := db.Query(context.Background(), `
+// UploadGetHandler displays the upload form
+func UploadGetHandler(c echo.Context) error {
+	stats := utils.GetFooterStats()
+	rows, err := database.DB.Query(context.Background(), `
 SELECT d.number, d.title, COALESCE((SELECT COUNT(*) FROM contributions WHERE derive_id = d.id),0) as contrib_count
 FROM deriven d
 ORDER BY d.number ASC`)
@@ -305,9 +222,9 @@ ORDER BY d.number ASC`)
 	}
 	defer rows.Close()
 
-	var list []Derive
+	var list []models.Derive
 	for rows.Next() {
-		var d Derive
+		var d models.Derive
 		if err := rows.Scan(&d.Number, &d.Title, &d.ContribCount); err != nil {
 			return err
 		}
@@ -317,7 +234,7 @@ ORDER BY d.number ASC`)
 	// Fetch session uploads for this token/session so we can display them under the upload form
 	tokenID, _ := c.Get("token_id").(int)
 	sessionNumber, _ := c.Get("session_number").(int)
-	uRows, err := db.Query(context.Background(), `
+	uRows, err := database.DB.Query(context.Background(), `
 		SELECT c.id, d.number, c.image_url, COALESCE(c.image_lqip, '')
 		FROM contributions c
 		JOIN upload_logs ul ON ul.contribution_id = c.id
@@ -346,7 +263,7 @@ ORDER BY d.number ASC`)
 		sessionContribs = append(sessionContribs, map[string]interface{}{
 			"id":         id,
 			"number":     deriveNumber,
-			"image_url":  ensureFullImageURL(imageUrl),
+			"image_url":  utils.EnsureFullImageURL(imageUrl),
 			"image_lqip": imageLqip,
 		})
 	}
@@ -377,7 +294,8 @@ ORDER BY d.number ASC`)
 	})
 }
 
-func uploadPostHandler(c echo.Context) error {
+// UploadPostHandler handles image upload
+func UploadPostHandler(c echo.Context) error {
 	// Get token info from middleware context
 	tokenID, ok := c.Get("token_id").(int)
 	if !ok {
@@ -437,18 +355,18 @@ func uploadPostHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "S3 Fehler: "+err.Error())
 	}
 
-	// Store relative path in DB, ensureFullImageURL will add the base URL when reading
+	// Store relative path in DB, EnsureFullImageURL will add the base URL when reading
 	relativePath := fmt.Sprintf("/storage/v1/object/public/%s/%s", os.Getenv("S3_BUCKET"), fileName)
 
 	// generate tiny LQIP (data-uri) and store it
-	lqip, lqipErr := generateLQIP(img, 24)
+	lqip, lqipErr := utils.GenerateLQIP(img, 24)
 	if lqipErr != nil {
 		log.Printf("LQIP generation failed: %v", lqipErr)
 		lqip = ""
 	}
 
 	var internalID int
-	err = db.QueryRow(context.Background(),
+	err = database.DB.QueryRow(context.Background(),
 		"SELECT id FROM deriven WHERE number = $1", deriveNumberStr).Scan(&internalID)
 	if err != nil {
 		return c.String(http.StatusNotFound, "Aufgabe nicht gefunden")
@@ -457,7 +375,7 @@ func uploadPostHandler(c echo.Context) error {
 	// Insert contribution and get ID
 	var contributionID int
 	currentPlayerCity, _ := c.Get("current_player_city").(string)
-	err = db.QueryRow(context.Background(),
+	err = database.DB.QueryRow(context.Background(),
 		"INSERT INTO contributions (derive_id, image_url, image_lqip, user_name, user_city) VALUES ($1, $2, $3, $4, $5) RETURNING id",
 		internalID, relativePath, lqip, currentPlayer, currentPlayerCity).Scan(&contributionID)
 
@@ -467,7 +385,7 @@ func uploadPostHandler(c echo.Context) error {
 	}
 
 	// Log upload in upload_logs table
-	_, err = db.Exec(context.Background(),
+	_, err = database.DB.Exec(context.Background(),
 		`INSERT INTO upload_logs (token_id, derive_number, player_name, session_number, contribution_id)
 		 VALUES ($1, $2, $3, $4, $5)`,
 		tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID)
@@ -478,7 +396,7 @@ func uploadPostHandler(c echo.Context) error {
 	}
 
 	// Increment total_uploads counter for token
-	_, err = db.Exec(context.Background(),
+	_, err = database.DB.Exec(context.Background(),
 		"UPDATE upload_tokens SET total_uploads = total_uploads + 1 WHERE id = $1",
 		tokenID)
 
@@ -511,8 +429,9 @@ func uploadPostHandler(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, redirectURL)
 }
 
-func rulesHandler(c echo.Context) error {
-	stats := getFooterStats()
+// RulesHandler displays the rules page
+func RulesHandler(c echo.Context) error {
+	stats := utils.GetFooterStats()
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Leitfaden - 🏠🆔💯",
 		"ContentTemplate": "leitfaden.content",
@@ -522,8 +441,9 @@ func rulesHandler(c echo.Context) error {
 	})
 }
 
-func impressumHandler(c echo.Context) error {
-	stats := getFooterStats()
+// ImpressumHandler displays the impressum page
+func ImpressumHandler(c echo.Context) error {
+	stats := utils.GetFooterStats()
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Impressum - 🏠🆔💯",
 		"ContentTemplate": "impressum.content",
@@ -533,8 +453,9 @@ func impressumHandler(c echo.Context) error {
 	})
 }
 
-func datenschutzHandler(c echo.Context) error {
-	stats := getFooterStats()
+// DatenschutzHandler displays the privacy policy page
+func DatenschutzHandler(c echo.Context) error {
+	stats := utils.GetFooterStats()
 	return c.Render(http.StatusOK, "layout", map[string]interface{}{
 		"Title":           "Datenschutzerklärung - 🏠🆔💯",
 		"ContentTemplate": "datenschutz.content",
@@ -542,4 +463,101 @@ func datenschutzHandler(c echo.Context) error {
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
 	})
+}
+
+// RequestBagHandler displays the bag request form
+func RequestBagHandler(c echo.Context) error {
+	stats := utils.GetFooterStats()
+	if c.QueryParam("partial") == "1" {
+		return c.Render(http.StatusOK, "request_bag.content", map[string]interface{}{
+			"CurrentPath": c.Request().URL.Path,
+			"CurrentYear": time.Now().Year(),
+			"FooterStats": stats,
+			"IsPartial":   true,
+		})
+	}
+	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+		"Title":           "Tasche anfordern - 🏠🆔💯",
+		"ContentTemplate": "request_bag.content",
+		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
+	})
+}
+
+// RequestBagPostHandler handles bag request submissions
+func RequestBagPostHandler(c echo.Context) error {
+	type payload struct {
+		Email string `json:"email"`
+	}
+	var p payload
+	if strings.Contains(c.Request().Header.Get("Content-Type"), "application/json") {
+		if err := c.Bind(&p); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Ungültiger Request"})
+		}
+	} else {
+		p.Email = c.FormValue("email")
+	}
+	email := strings.TrimSpace(p.Email)
+	if email == "" || !strings.Contains(email, "@") {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Ungültige E-Mail"})
+	}
+
+	_, err := database.DB.Exec(context.Background(), "INSERT INTO bag_requests (email) VALUES ($1)", email)
+	if err != nil {
+		log.Printf("Failed to insert bag request: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Serverfehler"})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// SetPlayerNameHandler handles the name entry form submission
+func SetPlayerNameHandler(c echo.Context) error {
+	// Protect against large request bodies before parsing form values
+	const maxFormSize = int64(2 * 1024 * 1024) // 2 MiB
+	if strings.Contains(c.Request().Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
+		c.Request().Body = http.MaxBytesReader(c.Response().Writer, c.Request().Body, maxFormSize)
+	}
+
+	playerName := c.FormValue("player_name")
+	token := c.FormValue("token")
+
+	if playerName == "" || token == "" {
+		return c.String(http.StatusBadRequest, "Name und Token erforderlich")
+	}
+
+	// Consent checkbox (required)
+	consent := c.FormValue("agree_privacy")
+	if consent == "" {
+		// try to fetch bag name for nicer rendering
+		var bagName string
+		_ = database.DB.QueryRow(context.Background(), "SELECT COALESCE(bag_name,'') FROM upload_tokens WHERE token = $1", token).Scan(&bagName)
+		return c.Render(http.StatusBadRequest, "layout", map[string]interface{}{
+			"Title":           "Willkommen bei ID-100!",
+			"ContentTemplate": "enter_name.content",
+			"Token":           token,
+			"BagName":         bagName,
+			"FormError":       "Bitte bestätige die Datenschutzerklärung und dass du keine erkennbaren Personen ohne Einwilligung hochlädst.",
+		})
+	}
+
+	playerCity := strings.TrimSpace(c.FormValue("player_city"))
+
+	// Save name and city in session
+	session, _ := middleware.Store.Get(c.Request(), "id-100-session")
+	session.Values["player_name"] = playerName
+	session.Values["player_city"] = playerCity
+	session.Save(c.Request(), c.Response())
+
+	// Update database with city
+	_, err := database.DB.Exec(context.Background(),
+		"UPDATE upload_tokens SET current_player = $1, current_player_city = $2, session_started_at = NOW() WHERE token = $3",
+		playerName, playerCity, token)
+
+	if err != nil {
+		log.Printf("Error setting player name: %v", err)
+	}
+
+	// Redirect to upload page
+	return c.Redirect(http.StatusSeeOther, "/upload?token="+token)
 }

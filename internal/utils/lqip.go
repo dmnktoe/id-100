@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"bytes"
@@ -12,8 +12,8 @@ import (
 	xdraw "golang.org/x/image/draw"
 )
 
-// generateLQIP creates a small low-quality WebP thumbnail and returns a data URI.
-func generateLQIP(src image.Image, maxWidth int) (string, error) {
+// GenerateLQIP creates a small low-quality WebP thumbnail and returns a data URI.
+func GenerateLQIP(src image.Image, maxWidth int) (string, error) {
 	if src == nil {
 		return "", nil
 	}

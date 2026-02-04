@@ -1,54 +1,17 @@
-package main
+package utils
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
+
+	"id-100/internal/database"
+	"id-100/internal/models"
 )
 
-// FooterStats holds database statistics for the footer
-type FooterStats struct {
-	TotalDeriven       int
-	TotalContributions int
-	ActiveUsers        int
-	LastActivity       time.Time
-}
-
-// getFooterStats fetches creative database statistics
-func getFooterStats() FooterStats {
-	stats := FooterStats{}
-
-	// Count total deriven
-	db.QueryRow(context.Background(), "SELECT COUNT(*) FROM deriven").Scan(&stats.TotalDeriven)
-
-	// Count total contributions
-	db.QueryRow(context.Background(), "SELECT COUNT(*) FROM contributions").Scan(&stats.TotalContributions)
-
-	// Count active users (users who contributed)
-	db.QueryRow(context.Background(), "SELECT COUNT(DISTINCT user_name) FROM contributions WHERE user_name != ''").Scan(&stats.ActiveUsers)
-
-	// Get last activity timestamp
-	var last sql.NullTime
-	err := db.QueryRow(context.Background(), "SELECT MAX(created_at) FROM contributions").Scan(&last)
-	if err != nil {
-		log.Printf("Error fetching last activity: %v", err)
-		stats.LastActivity = time.Now()
-	} else if last.Valid {
-		stats.LastActivity = last.Time
-	} else {
-		stats.LastActivity = time.Now()
-	}
-
-	return stats
-}
-
-// ensureFullImageURL makes sure stored image URLs are usable in templates.
-// Moved to utils.go to keep main.go small.
-func ensureFullImageURL(raw string) string {
+// EnsureFullImageURL makes sure stored image URLs are usable in templates
+func EnsureFullImageURL(raw string) string {
 	if raw == "" {
 		return ""
 	}
@@ -92,4 +55,32 @@ func ensureFullImageURL(raw string) string {
 
 	// Fallback: prefix base
 	return base + "/" + raw
+}
+
+// GetFooterStats wraps the database function and returns a FooterStats model
+func GetFooterStats() models.FooterStats {
+	stats := models.FooterStats{}
+	totalDeriven, totalContribs, activeUsers, lastActivity := database.GetFooterStats()
+
+	stats.TotalDeriven = totalDeriven
+	stats.TotalContributions = totalContribs
+	stats.ActiveUsers = activeUsers
+
+	if lastActivity.Valid {
+		stats.LastActivity = lastActivity.Time
+	} else {
+		stats.LastActivity = time.Now()
+	}
+
+	return stats
+}
+
+// SanitizeFilename removes characters that could cause header injection
+func SanitizeFilename(name string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\n' || r == '\r' || r == '"' || r == '\\' {
+			return '_'
+		}
+		return r
+	}, name)
 }
