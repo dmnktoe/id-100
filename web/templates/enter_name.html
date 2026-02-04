@@ -2,7 +2,7 @@
 <div class="container upload">
   <h2 class="page-title">Willkommen bei ID-100!</h2>
   
-  <p style="text-align: center; margin-bottom: 2rem;">
+  <p style="margin-bottom: 2rem;">
     Du hast <strong>{{.BagName}}</strong> gescannt.<br>
     Bitte gib deinen Namen ein, um fortzufahren.
   </p>
@@ -16,10 +16,13 @@
              placeholder="z.B. Max Mustermann" required minlength="2" maxlength="100">
     </div>
 
-    <div class="form-group">
+    <div class="form-group city-input-wrapper">
       <label for="playerCity">Stadt</label>
-      <input type="text" name="player_city" id="playerCity" class="autocomplete-input"
-             placeholder="z.B. Wittenberg" maxlength="100">
+      <input type="text" name="player_city" id="playerCity" class="autocomplete-input city-autocomplete" 
+             placeholder="z.B. Hamburg" autocomplete="off" maxlength="100" readonly>
+      <input type="hidden" id="citySelected" value="false">
+      <div id="cityResults" class="autocomplete-results"></div>
+      <small style="color: var(--gray-600); font-size: 0.85rem; margin-top: 0.25rem; display: block;">Bitte wähle eine Stadt aus dem Dropdown aus</small>
     </div>
 
     <div class="form-group checkbox-row">
@@ -28,7 +31,7 @@
     </div>
     {{if .FormError}}<div class="form-error">{{.FormError}}</div>{{end}}
 
-    <button type="submit" class="btn-black submit-btn">Weiter zum Upload</button>
+    <button type="submit" class="btn-black submit-btn" id="submitBtn" disabled>Weiter zum Upload</button>
   </form> 
 </div>
 {{end}}

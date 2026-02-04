@@ -29,6 +29,7 @@ func setPlayerNameHandler(c echo.Context) error {
 	}
 
 	playerName := c.FormValue("player_name")
+	playerCity := strings.TrimSpace(c.FormValue("player_city"))
 	token := c.FormValue("token")
 
 	if playerName == "" || token == "" {
@@ -50,16 +51,17 @@ func setPlayerNameHandler(c echo.Context) error {
 		})
 	}
 
-	playerCity := strings.TrimSpace(c.FormValue("player_city"))
-
 	// Save name and city in session
-	session, _ := store.Get(c.Request(), "id-100-session")
+	session, err := store.Get(c.Request(), "id-100-session")
+	if err != nil {
+		log.Printf("Session error: %v", err)
+	}
 	session.Values["player_name"] = playerName
 	session.Values["player_city"] = playerCity
 	session.Save(c.Request(), c.Response())
 
 	// Update database with city
-	_, err := db.Exec(context.Background(),
+	_, err = db.Exec(context.Background(),
 		"UPDATE upload_tokens SET current_player = $1, current_player_city = $2, session_started_at = NOW() WHERE token = $3",
 		playerName, playerCity, token)
 
@@ -406,9 +408,11 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			if !existingStart.Equal(sessionStartedAt) {
 				// session is stale: clear player_name and update stored session meta
 				delete(session.Values, "player_name")
+				delete(session.Values, "player_city")
 				session.Values["session_started_at"] = sessionStartedAt
 				session.Values["session_number"] = totalSessions
 				currentPlayer = ""
+				currentPlayerCity = ""
 			}
 		} else {
 			// ensure the session has the start time
@@ -421,6 +425,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		if currentPlayer == "" {
 			if _, ok := session.Values["player_name"].(string); ok {
 				delete(session.Values, "player_name")
+				delete(session.Values, "player_city")
 				// persist session changes
 				session.Save(c.Request(), c.Response())
 			}
@@ -433,12 +438,13 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 				return next(c)
 			}
 
-			// Check if name is in session
+			// Check if name and city are in session
 			if sessName, ok := session.Values["player_name"].(string); ok && sessName != "" {
-				// Update DB with name from session
+				sessCity, _ := session.Values["player_city"].(string)
+				// Update DB with name and city from session
 				result, err := db.Exec(context.Background(),
-					"UPDATE upload_tokens SET current_player = $1, session_started_at = NOW() WHERE id = $2",
-					sessName, tokenID)
+					"UPDATE upload_tokens SET current_player = $1, current_player_city = $2, session_started_at = NOW() WHERE id = $3",
+					sessName, sessCity, tokenID)
 
 				if err != nil {
 					log.Printf("Failed to update current_player for token_id=%d with name=%s: %v", tokenID, sessName, err)
@@ -458,8 +464,9 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 					log.Printf("No rows updated when setting current_player for token_id=%d", tokenID)
 				}
 
-				// Only set currentPlayer after successful DB update
+				// Only set currentPlayer and currentPlayerCity after successful DB update
 				currentPlayer = sessName
+				currentPlayerCity = sessCity
 			} else {
 				// Show name entry form
 				return c.Render(http.StatusOK, "layout", map[string]interface{}{
