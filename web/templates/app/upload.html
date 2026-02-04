@@ -28,6 +28,11 @@
       <button type="submit" class="btn-black submit-btn" id="submitBtn">hochladen</button>
     </form>
 
+  <!-- Punktzahl -->
+  <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(33, 150, 243, 0.08); border-radius: var(--radius-lg); text-align: center;">
+    <p style="margin: 0; font-size: 0.95rem; color: var(--gray-800);">Deine Punktzahl: <strong style="font-size: 1.2rem; color: #2196F3;">{{.TotalPoints}}</strong></p>
+  </div>
+
   <script>
     const dz = document.getElementById('drop-zone');
     const fi = document.getElementById('fileInput');

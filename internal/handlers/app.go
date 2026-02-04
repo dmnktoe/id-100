@@ -214,7 +214,7 @@ func DeriveHandler(c echo.Context) error {
 func UploadGetHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	rows, err := database.DB.Query(context.Background(), `
-SELECT d.number, d.title, COALESCE((SELECT COUNT(*) FROM contributions WHERE derive_id = d.id),0) as contrib_count
+SELECT d.number, d.title, COALESCE(d.points, 0) as points, COALESCE((SELECT COUNT(*) FROM contributions WHERE derive_id = d.id),0) as contrib_count
 FROM deriven d
 ORDER BY d.number ASC`)
 	if err != nil {
@@ -225,7 +225,7 @@ ORDER BY d.number ASC`)
 	var list []models.Derive
 	for rows.Next() {
 		var d models.Derive
-		if err := rows.Scan(&d.Number, &d.Title, &d.ContribCount); err != nil {
+		if err := rows.Scan(&d.Number, &d.Title, &d.Points, &d.ContribCount); err != nil {
 			return err
 		}
 		list = append(list, d)
@@ -273,9 +273,17 @@ ORDER BY d.number ASC`)
 
 	// Build a map[string]bool of derive numbers that were uploaded in THIS session/token
 	uploadedNumbers := make(map[string]bool)
+	totalPoints := 0
 	for _, sc := range sessionContribs {
 		if num, ok := sc["number"].(int); ok {
 			uploadedNumbers[strconv.Itoa(num)] = true
+			// Find the points for this derive number
+			for _, d := range list {
+				if d.Number == num {
+					totalPoints += d.Points
+					break
+				}
+			}
 		}
 	}
 
@@ -291,6 +299,7 @@ ORDER BY d.number ASC`)
 		"Token":           token,
 		"CurrentPlayer":   currentPlayer,
 		"UploadedNumbers": uploadedNumbers,
+		"TotalPoints":     totalPoints,
 	})
 }
 
