@@ -179,7 +179,7 @@ func AdminTokenResetHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"status":  "success",
-		"message": "Tasche wurde zurückgesetzt und kann an den nächsten Spieler weitergegeben werden",
+		"message": "Werkzeug wurde zurückgesetzt und kann an den nächsten Spieler weitergegeben werden",
 	})
 }
 
@@ -246,7 +246,7 @@ func AdminTokenAssignHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"status":  "success",
-		"message": fmt.Sprintf("Tasche wurde an %s vergeben", req.PlayerName),
+		"message": fmt.Sprintf("Werkzeug wurde an %s vergeben", req.PlayerName),
 	})
 }
 

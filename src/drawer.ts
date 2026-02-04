@@ -127,7 +127,7 @@ export function initDrawer(): void {
       });
   });
 
-  // Click delegation for simple drawer links (e.g., "tasche anfordern")
+  // Click delegation for simple drawer links (e.g., "werkzeug anfordern")
   document.addEventListener("click", (e) => {
     const link = (e.target as HTMLElement).closest<HTMLAnchorElement>(".drawer-link");
     if (!link) return;

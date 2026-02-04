@@ -4,7 +4,7 @@
  */
 
 export function initFormHandlers(): void {
-  // Formular "tasche anfordern" submission handler
+  // Formular "werkzeug anfordern" submission handler
   document.addEventListener("submit", (e) => {
     const form = e.target as HTMLFormElement;
     if (!form || form.id !== "requestBagForm") return;
@@ -28,7 +28,7 @@ export function initFormHandlers(): void {
     btn.disabled = true;
     btn.innerText = "sende...";
     
-    fetch("/tasche-anfordern", {
+    fetch("/werkzeug-anfordern", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
@@ -36,7 +36,7 @@ export function initFormHandlers(): void {
       .then((r) => r.json())
       .then((data: { status: string; error?: string }) => {
         if (data.status === "ok") {
-          form.innerHTML = `<p style="font-weight:500;">Danke! Wir benachrichtigen dich per E‑Mail, sobald eine Tasche verfügbar ist.</p>`;
+          form.innerHTML = `<p style="font-weight:500;">Danke! Wir benachrichtigen dich per E‑Mail, sobald ein Werkzeug verfügbar ist.</p>`;
         } else {
           resultDiv.style.display = "block";
           resultDiv.style.color = "#d32f2f";
