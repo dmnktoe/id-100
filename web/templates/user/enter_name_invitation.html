@@ -1,0 +1,36 @@
+{{define "user/enter_name_invitation.content"}}
+<div class="container upload">
+  <h2 class="page-title">Willkommen bei ID-100!</h2>
+  
+  {{if .BagName}}
+  <p>Du wurdest eingeladen, an der Tasche <strong>{{.BagName}}</strong> teilzunehmen.</p>
+  {{else}}
+  <p>Du wurdest eingeladen, an dieser Session teilzunehmen.</p>
+  {{end}}
+
+  <p>Bitte gib deinen Namen ein, um fortzufahren:</p>
+
+  {{if .FormError}}
+  <div class="form-error">{{.FormError}}</div>
+  {{end}}
+
+  <form action="/upload/invite/set-name" method="POST">
+    <input type="hidden" name="invitation_code" value="{{.InvitationCode}}">
+    
+    <div class="form-group">
+      <label for="player_name">Dein Name</label>
+      <input type="text" id="player_name" name="player_name" required 
+             placeholder="z.B. Max Mustermann" maxlength="100" autocomplete="name">
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" name="agree_privacy" value="1" required>
+        <span>Ich habe die <a href="/datenschutz" target="_blank">Datenschutzerklärung</a> gelesen und bestätige, dass ich keine erkennbaren Personen ohne deren Einwilligung hochlade.</span>
+      </label>
+    </div>
+
+    <button type="submit" class="btn-black">Weiter</button>
+  </form>
+</div>
+{{end}}

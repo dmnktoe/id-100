@@ -2,9 +2,11 @@
 <div class="container upload">
   <div class="current-player">{{if .CurrentPlayer}}👤 {{.CurrentPlayer}}{{end}}</div>
   {{if .CurrentPlayer}}
-  <form id="releaseBagForm" style="display:inline-block; margin-left:1rem;">
+  <div style="display:inline-block; margin-left:1rem;">
     <button type="button" id="releaseBagBtn" class="btn-transparent">Tasche zurückgeben / Spiel fertig</button>
-  </form>
+    <button type="button" id="invitePlayerBtn" class="btn-transparent" style="margin-left:0.5rem;">👥 Spieler einladen</button>
+    <button type="button" id="manageSessionsBtn" class="btn-transparent" style="margin-left:0.5rem;">🔧 Sessions verwalten</button>
+  </div>
   {{end}}
   <h2 class="page-title">Beweisfoto hochladen</h2>
 
@@ -144,6 +146,145 @@
       } catch (e) { /* ignore */ }
     })();
 
+  </script>
+
+  <!-- Invitation Modal -->
+  <div id="inviteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:2rem; border-radius:8px; max-width:500px; width:90%; position:relative;">
+      <button onclick="document.getElementById('inviteModal').style.display='none'" aria-label="Schließen" style="position:absolute; top:1rem; right:1rem; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">&times;</button>
+      <h3 style="margin-top:0;">Spieler einladen</h3>
+      <p>Generiere einen Einladungslink, damit andere Spieler mit dir zusammen spielen können.</p>
+      <div id="inviteResult"></div>
+      <button onclick="generateInvitation()" class="btn-black" id="generateInviteBtn">Einladungslink erstellen</button>
+    </div>
+  </div>
+
+  <!-- Sessions Modal -->
+  <div id="sessionsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:2rem; border-radius:8px; max-width:600px; width:90%; position:relative; max-height:80vh; overflow-y:auto;">
+      <button onclick="document.getElementById('sessionsModal').style.display='none'" aria-label="Schließen" style="position:absolute; top:1rem; right:1rem; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">&times;</button>
+      <h3 style="margin-top:0;">Aktive Sessions</h3>
+      <div id="sessionsResult"></div>
+    </div>
+  </div>
+
+  <script>
+    // Invitation functionality
+    document.getElementById('invitePlayerBtn')?.addEventListener('click', () => {
+      document.getElementById('inviteModal').style.display = 'flex';
+    });
+
+    document.getElementById('manageSessionsBtn')?.addEventListener('click', async () => {
+      document.getElementById('sessionsModal').style.display = 'flex';
+      await loadSessions();
+    });
+
+    async function generateInvitation() {
+      const btn = document.getElementById('generateInviteBtn');
+      btn.disabled = true;
+      btn.innerText = 'Erstelle...';
+
+      try {
+        const response = await fetch('/upload/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          const resultDiv = document.getElementById('inviteResult');
+          resultDiv.innerHTML = `
+            <div style="background:#e8f5e9; padding:1rem; border-radius:4px; margin:1rem 0;">
+              <p style="margin:0 0 0.5rem 0;"><strong>Einladung erstellt!</strong></p>
+              <p style="margin:0.5rem 0; word-break:break-all;"><strong>Link:</strong> <a href="${data.invitation_url}" target="_blank">${data.invitation_url}</a></p>
+              <p style="margin:0.5rem 0; font-size:0.9rem; color:#666;">Gültig bis: ${new Date(data.expires_at).toLocaleString('de-DE')}</p>
+              <button onclick="copyInviteLink('${data.invitation_url}')" class="btn-black" style="margin-top:0.5rem;">Link kopieren</button>
+            </div>
+          `;
+        } else {
+          alert('Fehler beim Erstellen der Einladung: ' + data.error);
+        }
+      } catch (error) {
+        alert('Fehler: ' + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Neuen Link erstellen';
+      }
+    }
+
+    function copyInviteLink(url) {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link in Zwischenablage kopiert!');
+      }).catch(() => {
+        // Fallback
+        const input = document.createElement('input');
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        alert('Link in Zwischenablage kopiert!');
+      });
+    }
+
+    async function loadSessions() {
+      const resultDiv = document.getElementById('sessionsResult');
+      resultDiv.innerHTML = '<p>Lade...</p>';
+
+      try {
+        const response = await fetch('/upload/sessions');
+        const data = await response.json();
+
+        if (response.ok) {
+          if (data.sessions && data.sessions.length > 0) {
+            let html = '<ul style="list-style:none; padding:0;">';
+            data.sessions.forEach(session => {
+              const lastActive = new Date(session.last_activity_at).toLocaleString('de-DE');
+              html += `
+                <li style="padding:1rem; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <strong>${session.player_name}</strong> ${session.is_current ? '<span style="color:#2e7d32;">(Du)</span>' : ''}
+                    <br>
+                    <small style="color:#666;">Zuletzt aktiv: ${lastActive}</small>
+                  </div>
+                  ${!session.is_current ? `<button onclick="revokeSession('${session.session_uuid}')" class="btn-transparent" style="color:#d32f2f;">Entfernen</button>` : ''}
+                </li>
+              `;
+            });
+            html += '</ul>';
+            resultDiv.innerHTML = html;
+          } else {
+            resultDiv.innerHTML = '<p>Keine aktiven Sessions gefunden.</p>';
+          }
+        } else {
+          resultDiv.innerHTML = '<p style="color:#d32f2f;">Fehler beim Laden der Sessions.</p>';
+        }
+      } catch (error) {
+        resultDiv.innerHTML = '<p style="color:#d32f2f;">Fehler: ' + error.message + '</p>';
+      }
+    }
+
+    async function revokeSession(sessionUuid) {
+      if (!confirm('Möchtest du diese Session wirklich entfernen?')) return;
+
+      try {
+        const response = await fetch(`/upload/sessions/${sessionUuid}/revoke`, {
+          method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alert('Session wurde entfernt');
+          await loadSessions();
+        } else {
+          alert('Fehler: ' + data.error);
+        }
+      } catch (error) {
+        alert('Fehler: ' + error.message);
+      }
+    }
   </script>
 
   <!-- Session uploads -->
