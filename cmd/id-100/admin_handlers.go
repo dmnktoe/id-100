@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
+	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"html"
@@ -439,31 +440,66 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		session.Save(c.Request(), c.Response())
 
+		// Get current browser's session UUID
+		browserSessionUUID, _ := session.Values["session_uuid"].(string)
+
+		// Check if this session is authorized (either primary or invited)
+		var isAuthorized bool
+		var authorizedPlayerName string
+		
+		// First check if this is the primary session
+		if sessionUUID != "" && browserSessionUUID == sessionUUID {
+			isAuthorized = true
+			authorizedPlayerName = currentPlayer
+		} else if db != nil {
+			// Check if this session is in authorized_sessions
+			err = db.QueryRow(context.Background(), `
+				SELECT player_name FROM authorized_sessions
+				WHERE token_id = $1 AND session_uuid = $2 AND is_active = true
+			`, tokenID, browserSessionUUID).Scan(&authorizedPlayerName)
+			
+			if err == nil {
+				isAuthorized = true
+				// Update last activity
+				db.Exec(context.Background(), `
+					UPDATE authorized_sessions 
+					SET last_activity_at = NOW()
+					WHERE token_id = $1 AND session_uuid = $2
+				`, tokenID, browserSessionUUID)
+			} else if err == sql.ErrNoRows {
+				// Not authorized yet
+				isAuthorized = false
+			} else {
+				log.Printf("Error checking authorized sessions: %v", err)
+			}
+		}
+
+		// If not authorized and there's a primary session, show conflict
+		if !isAuthorized && sessionUUID != "" && browserSessionUUID != sessionUUID {
+			return c.Render(http.StatusConflict, "layout", map[string]interface{}{
+				"Title":           "Tasche bereits in Benutzung",
+				"ContentTemplate": "status/conflict_in_use.content",
+				"CurrentPath":     c.Request().URL.Path,
+				"CurrentYear":     time.Now().Year(),
+				"ErrorMessage":    "Dieser Token wird bereits von einer anderen Session verwendet. Frage nach einer Einladung oder warte bis die Session freigegeben wird.",
+				"BagName":         bagName,
+				"CurrentPlayer":   currentPlayer,
+			})
+		}
+
+		// Use authorized player name if available
+		if isAuthorized && authorizedPlayerName != "" {
+			currentPlayer = authorizedPlayerName
+			session.Values["player_name"] = authorizedPlayerName
+			session.Save(c.Request(), c.Response())
+		}
+
 		// If DB currently has no current_player (e.g. after an admin reset), remove any stored player_name from the session
 		if currentPlayer == "" {
 			if _, ok := session.Values["player_name"].(string); ok {
 				delete(session.Values, "player_name")
 				// persist session changes
 				session.Save(c.Request(), c.Response())
-			}
-		} else {
-			// If token is claimed by a different browser session, deny access
-			if sessionUUID != "" {
-				if sessUUID, _ := session.Values["session_uuid"].(string); sessUUID != "" && sessUUID != sessionUUID {
-					if err := c.Render(http.StatusConflict, "layout", map[string]interface{}{
-						"Title":           "Tasche bereits in Benutzung",
-						"ContentTemplate": "status/conflict_in_use.content",
-						"CurrentPath":     c.Request().URL.Path,
-						"CurrentYear":     time.Now().Year(),
-						"ErrorMessage":    "Conflict: Resource already in use.",
-						"BagName":         bagName,
-						"CurrentPlayer":   currentPlayer,
-					}); err != nil {
-						log.Printf("failed to render conflict page: %v", err)
-						return err
-					}
-					return nil
-				}
 			}
 		}
 

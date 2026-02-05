@@ -1,0 +1,23 @@
+{{define "status/invalid_invitation.content"}}
+<div class="container about">
+  <h2>⚠️ Ungültige Einladung</h2>
+
+  {{if .ErrorMessage}}
+  <p style="color:#d32f2f; font-weight:600;">{{.ErrorMessage}}</p>
+  {{else}}
+  <p>Diese Einladung ist nicht gültig oder konnte nicht gefunden werden.</p>
+  {{end}}
+
+  <p>Mögliche Gründe:</p>
+  <ul>
+    <li>Der Einladungscode ist falsch oder abgelaufen</li>
+    <li>Die Einladung wurde bereits widerrufen</li>
+    <li>Die Einladung wurde bereits verwendet</li>
+  </ul>
+
+  <p style="margin-top:1rem;">
+    <a href="/" class="btn-black">Zur Startseite</a>
+    <a href="/tasche-anfordern" class="btn-black">Tasche anfordern</a>
+  </p>
+</div>
+{{end}}

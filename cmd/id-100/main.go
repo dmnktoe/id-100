@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gorilla/sessions"
@@ -70,14 +71,14 @@ func main() {
 		sessionSecret = "id-100-secret-key-change-in-production"
 	}
 
-	// Initialize session store
+	// Initialize session store with secure settings
 	store = sessions.NewCookieStore([]byte(sessionSecret))
 	store.Options = &sessions.Options{
 		Path:     "/",
-		MaxAge:   86400 * 30, // 30 days
-		HttpOnly: true,
-		Secure:   isProduction, // Enable in production with HTTPS
-		SameSite: 0,
+		MaxAge:   86400 * 30,  // 30 days
+		HttpOnly: true,        // Prevent JavaScript access
+		Secure:   isProduction, // HTTPS only in production
+		SameSite: http.SameSiteLaxMode, // CSRF protection
 	}
 
 	e := echo.New()
