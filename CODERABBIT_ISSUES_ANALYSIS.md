@@ -174,11 +174,14 @@ func cleanupExpiredInvitations() {
 ## Recommendations for Moving Forward
 
 ### Option 1: Adapt to New Structure (Recommended)
-1. Rebase/merge with main branch
+1. Rebase/merge with main branch (will require resolving conflicts in ~20 files)
 2. Port invitation system to `internal/` package structure
 3. Convert any JS additions to TypeScript
 4. Implement missing pieces (session timeout, cleanup jobs)
 5. Run full test suite
+
+**Pros**: Aligns with project direction, gets TypeScript benefits
+**Cons**: Significant merge conflicts, time-consuming
 
 ### Option 2: Fix Issues in Current Branch
 1. Add session timeout middleware
@@ -186,10 +189,26 @@ func cleanupExpiredInvitations() {
 3. Review and fix potential race conditions
 4. Keep current structure
 
+**Pros**: Quick fixes, no conflicts
+**Cons**: Will need to be migrated to new structure eventually
+
 ### Option 3: Close and Reimplement
 1. Close this PR
 2. Implement invitation system from scratch in new structure
 3. Include all security fixes from the start
+
+**Pros**: Clean slate, best practices from start
+**Cons**: Duplicate work, takes longer
+
+## Decision Required
+
+The main branch has diverged significantly with a refactoring to `internal/` packages and TypeScript setup. Please decide which approach to take:
+
+1. **Merge/rebase this PR** into the new structure (complex but preserves work)
+2. **Continue with current structure** and fix remaining issues
+3. **Reimplement** in new structure from scratch
+
+Once a decision is made, I can proceed with the appropriate implementation.
 
 ## Summary
 
