@@ -75,9 +75,9 @@ func main() {
 	store = sessions.NewCookieStore([]byte(sessionSecret))
 	store.Options = &sessions.Options{
 		Path:     "/",
-		MaxAge:   86400 * 30,  // 30 days
-		HttpOnly: true,        // Prevent JavaScript access
-		Secure:   isProduction, // HTTPS only in production
+		MaxAge:   86400 * 30,           // 30 days
+		HttpOnly: true,                 // Prevent JavaScript access
+		Secure:   isProduction,         // HTTPS only in production
 		SameSite: http.SameSiteLaxMode, // CSRF protection
 	}
 

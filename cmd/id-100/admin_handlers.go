@@ -446,7 +446,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		// Check if this session is authorized (either primary or invited)
 		var isAuthorized bool
 		var authorizedPlayerName string
-		
+
 		// First check if this is the primary session
 		if sessionUUID != "" && browserSessionUUID == sessionUUID {
 			isAuthorized = true
@@ -457,7 +457,7 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 				SELECT player_name FROM authorized_sessions
 				WHERE token_id = $1 AND session_uuid = $2 AND is_active = true
 			`, tokenID, browserSessionUUID).Scan(&authorizedPlayerName)
-			
+
 			if err == nil {
 				isAuthorized = true
 				// Update last activity

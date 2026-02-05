@@ -37,7 +37,7 @@ func registerRoutes(e *echo.Echo) {
 	e.POST("/upload", uploadPostHandler, tokenMiddlewareWithSession)
 	e.POST("/upload/set-name", setPlayerNameHandler, tokenMiddlewareWithSession)
 	e.POST("/upload/release", releaseBagHandler, tokenMiddlewareWithSession)
-	
+
 	// Invitation routes
 	e.POST("/upload/invite", generateInvitationHandler, tokenMiddlewareWithSession)
 	e.GET("/upload/accept-invite", acceptInvitationHandler)

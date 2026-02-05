@@ -13,18 +13,18 @@ import (
 
 // SessionInvitation represents an invitation to join a token session
 type SessionInvitation struct {
-	ID                  int
-	TokenID             int
-	InvitationCode      string
+	ID                   int
+	TokenID              int
+	InvitationCode       string
 	InvitedBySessionUUID string
-	InvitedSessionUUID  sql.NullString
-	CreatedAt           time.Time
-	ExpiresAt           time.Time
-	AcceptedAt          sql.NullTime
-	RevokedAt           sql.NullTime
-	IsActive            bool
-	MaxUses             int
-	UseCount            int
+	InvitedSessionUUID   sql.NullString
+	CreatedAt            time.Time
+	ExpiresAt            time.Time
+	AcceptedAt           sql.NullTime
+	RevokedAt            sql.NullTime
+	IsActive             bool
+	MaxUses              int
+	UseCount             int
 }
 
 // AuthorizedSession represents a session authorized to use a token
@@ -55,6 +55,21 @@ func generateInvitationHandler(c echo.Context) error {
 
 	if sessionUUID == "" {
 		return c.JSON(http.StatusForbidden, map[string]string{"error": "Session not found"})
+	}
+
+	// Check if database is available
+	if db == nil {
+		log.Printf("Database not available in generateInvitationHandler")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database error"})
+	}
+
+	// Apply rate limiting: max 10 invitations per hour per session
+	rateLimitKey := fmt.Sprintf("invite:%d:%s", tokenID, sessionUUID)
+	if err := checkRateLimit(context.Background(), rateLimitKey, RateLimitConfig{
+		MaxRequests: 10,
+		Window:      time.Hour,
+	}); err != nil {
+		return c.JSON(http.StatusTooManyRequests, map[string]string{"error": err.Error()})
 	}
 
 	// Check if user is authorized for this token
@@ -128,6 +143,12 @@ func acceptInvitationHandler(c echo.Context) error {
 			"CurrentYear":     time.Now().Year(),
 			"ErrorMessage":    "Kein Einladungscode angegeben",
 		})
+	}
+
+	// Check if database is available
+	if db == nil {
+		log.Printf("Database not available in acceptInvitationHandler")
+		return c.String(http.StatusInternalServerError, "Database error")
 	}
 
 	// Get or create session UUID for this browser
@@ -333,6 +354,12 @@ func listSessionsHandler(c echo.Context) error {
 	sessionUUID, _ := c.Get("session_uuid").(string)
 	currentPlayer, _ := c.Get("current_player").(string)
 
+	// Check if database is available
+	if db == nil {
+		log.Printf("Database not available in listSessionsHandler")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database error"})
+	}
+
 	// Check if user is authorized (either primary or invited session)
 	var isAuthorized bool
 	err := db.QueryRow(context.Background(), `
@@ -396,6 +423,12 @@ func revokeSessionHandler(c echo.Context) error {
 
 	sessionUUID, _ := c.Get("session_uuid").(string)
 	targetSessionUUID := c.Param("uuid")
+
+	// Check if database is available
+	if db == nil {
+		log.Printf("Database not available in revokeSessionHandler")
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database error"})
+	}
 
 	// Only the primary session (in upload_tokens.session_uuid) can revoke
 	var isPrimary bool
