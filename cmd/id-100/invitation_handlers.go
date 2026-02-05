@@ -309,7 +309,10 @@ func acceptInvitationHandler(c echo.Context) error {
 	session.Values["token"] = token
 	session.Values["token_id"] = invitation.TokenID
 	session.Values["bag_name"] = bagName
-	session.Save(c.Request(), c.Response())
+	if err := session.Save(c.Request(), c.Response()); err != nil {
+		log.Printf("Failed to save session after authorization: %v", err)
+		return c.String(http.StatusInternalServerError, "Session save failed")
+	}
 
 	// Redirect to upload page
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/upload?token=%s", token))
@@ -338,7 +341,10 @@ func setPlayerNameInvitationHandler(c echo.Context) error {
 	// Save name in session
 	session, _ := store.Get(c.Request(), "id-100-session")
 	session.Values["player_name"] = playerName
-	session.Save(c.Request(), c.Response())
+	if err := session.Save(c.Request(), c.Response()); err != nil {
+		log.Printf("Failed to save player name to session: %v", err)
+		return c.String(http.StatusInternalServerError, "Session save failed")
+	}
 
 	// Redirect back to accept-invite with the name now set
 	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/upload/accept-invite?code=%s", invitationCode))

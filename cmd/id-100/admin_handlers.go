@@ -491,7 +491,9 @@ func tokenMiddlewareWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		if isAuthorized && authorizedPlayerName != "" {
 			currentPlayer = authorizedPlayerName
 			session.Values["player_name"] = authorizedPlayerName
-			session.Save(c.Request(), c.Response())
+			if err := session.Save(c.Request(), c.Response()); err != nil {
+				log.Printf("Failed to save authorized player name to session: %v", err)
+			}
 		}
 
 		// If DB currently has no current_player (e.g. after an admin reset), remove any stored player_name from the session
