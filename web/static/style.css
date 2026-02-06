@@ -160,6 +160,7 @@ main {
 
 .brand-full .brand-emoji {
   font-size: 1.8rem;
+  display: inline-block;
   vertical-align: middle;
   opacity: 0.9;
   filter: blur(2px);
@@ -219,9 +220,7 @@ main {
 }
 
 .brand-compact.animated .brand-emoji {
-  filter: blur(4px);
-  opacity: 0.8;
-  animation: unblurEmoji 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+  animation: unblurEmoji 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }
 
 .sr-only {

@@ -2,5 +2,5 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
       <text y="80" font-size="80">${a}</text>
     </svg>
-  `;return`data:image/svg+xml,${encodeURIComponent(i)}`}function w(){return b[Math.floor(Math.random()*b.length)]}function E(){let a=w(),i=L(a),s=document.querySelector("link[rel*='icon']");s||(s=document.createElement("link"),s.rel="icon",document.head.appendChild(s)),s.href=i}E();h(),p(),g(),m();})();
+  `;return`data:image/svg+xml;charset=utf-8,${encodeURIComponent(i)}`}function w(){return b[Math.floor(Math.random()*b.length)]}function E(){if(typeof document>"u"||!document.head)return;let a=w(),i=L(a),s=document.querySelector("link[rel~='icon']");s||(s=document.createElement("link"),s.rel="icon",document.head.appendChild(s)),s.href=i}E();h(),p(),g(),m();})();
 //# sourceMappingURL=main.js.map
