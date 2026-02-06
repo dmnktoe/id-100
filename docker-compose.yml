@@ -70,7 +70,7 @@ services:
 
   # GeoNames data loader for Meilisearch
   geonames-loader:
-    image: curlimages/curl:latest
+    image: alpine:latest
     container_name: id100-geonames-loader
     depends_on:
       meilisearch:
@@ -81,12 +81,14 @@ services:
     command:
       - -c
       - |
+        echo "Installing required tools..."
+        apk add --no-cache curl unzip awk
         echo "Downloading GeoNames data for Germany..."
         cd /tmp
         curl -O https://download.geonames.org/export/dump/DE.zip
         unzip -o DE.zip
         echo "Converting to JSON and importing to Meilisearch..."
-        /scripts/import-geonames.sh
+        sh /scripts/import-geonames.sh
         echo "GeoNames import complete"
 
   # ID-100 Web Application

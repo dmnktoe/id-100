@@ -41,7 +41,7 @@ func Load() *Renderer {
 	// Load all template files from various directories
 	files, err := filepath.Glob("web/templates/*.html")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to glob web/templates/*.html: %v", err)
 	}
 
 	// Load templates from subdirectories
@@ -55,6 +55,13 @@ func Load() *Renderer {
 	files = append(files, appFiles...)
 	files = append(files, compFiles...)
 
+	// Check if we found any template files
+	if len(files) == 0 {
+		log.Fatalf("no template files found. Current directory might be wrong. Looking for: web/templates/*.html")
+	}
+
+	log.Printf("Found %d template files to load", len(files))
+
 	funcs := template.FuncMap{
 		"eq":        func(a, b string) bool { return a == b },
 		"or":        func(a, b bool) bool { return a || b },
@@ -65,5 +72,7 @@ func Load() *Renderer {
 	if err != nil {
 		log.Fatalf("failed to parse templates %v: %v", files, err)
 	}
+	
+	log.Printf("Successfully loaded templates")
 	return &Renderer{templates: tmpls}
 }
