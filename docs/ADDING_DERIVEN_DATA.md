@@ -4,35 +4,52 @@ This guide explains how to populate the database with initial deriven (challenge
 
 ## Overview
 
-The application uses a migration system that automatically runs SQL files in the `internal/database/migrations/` directory on startup. To add initial deriven data, you need to populate the migration file `002_insert_initial_deriven.sql`.
+The application uses a migration system that automatically runs SQL files in the `internal/database/migrations/` directory on startup. **As of the latest update, the conversion happens automatically** - you just need to replace the placeholder file before starting Docker.
 
-## Method 1: Using the Conversion Script (Recommended)
+## Quick Method (Automatic - Recommended)
 
-A placeholder file `deriven_rows.sql` already exists at `internal/database/migrations/`. Simply replace it with your Supabase export:
-
-1. Replace the placeholder with your Supabase export:
+1. **Replace the placeholder with your Supabase export:**
    ```bash
    # Copy your export over the placeholder
    cp /path/to/your/supabase-export.sql internal/database/migrations/deriven_rows.sql
    ```
 
-2. Run the conversion script:
+2. **Start Docker (conversion happens automatically):**
    ```bash
-   # The script will automatically use the default location
+   docker-compose up -d --build
+   ```
+
+**That's it!** The startup script (`scripts/startup.sh`) will automatically:
+- ✅ Detect your `deriven_rows.sql` file
+- ✅ Check if it contains actual data (not just placeholder)
+- ✅ Convert it to `002_insert_initial_deriven.sql` format
+- ✅ The migration system will then apply it
+
+3. **Verify:**
+   ```bash
+   # Check that all 100 deriven were inserted
+   docker exec -it id100-db psql -U dev -d id100 -c "SELECT COUNT(*) FROM deriven;"
+   ```
+
+## Manual Method (Advanced)
+
+If you need to run the conversion manually:
+
+1. Replace the placeholder with your Supabase export:
+   ```bash
+   cp /path/to/your/supabase-export.sql internal/database/migrations/deriven_rows.sql
+   ```
+
+2. Run the conversion script manually:
+   ```bash
    ./scripts/convert-deriven-export.sh
    ```
 
-3. The script will automatically update `internal/database/migrations/002_insert_initial_deriven.sql`
-
-4. Restart Docker containers to apply the migration:
+3. Restart Docker containers:
    ```bash
    docker-compose down -v  # -v removes old data
    docker-compose up -d --build
    ```
-
-**Note:** The placeholder file includes helpful comments showing the expected format and instructions.
-
-## Method 2: Manual Copy-Paste
 
 If you prefer to manually add the data:
 

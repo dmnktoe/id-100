@@ -19,37 +19,42 @@ docker-compose up -d
 
 ---
 
-## ✅ Issue 2: Deriven Data Ready to Load
+## ✅ Issue 2: Deriven Data Auto-Converts on Startup
 
 **What was added:**
-1. Migration file: `internal/database/migrations/002_insert_initial_deriven.sql`
-2. Conversion script: `scripts/convert-deriven-export.sh`
-3. Documentation: `docs/ADDING_DERIVEN_DATA.md`
+1. Automatic conversion script in Docker startup (`scripts/startup.sh`)
+2. Migration file: `internal/database/migrations/002_insert_initial_deriven.sql`
+3. Placeholder file: `internal/database/migrations/deriven_rows.sql`
+4. Documentation: `docs/ADDING_DERIVEN_DATA.md`
 
-**Important:** The deriven data is NOT automatically populated. You must add your 100 deriven challenges using the conversion script.
-
-**Action required:** Add your deriven data
+**Important:** Replace the placeholder file with your 100 deriven before starting Docker. The conversion happens automatically!
 
 ### Quick Steps:
 
 1. **Replace the placeholder file** with your Supabase export:
    ```bash
-   # A placeholder deriven_rows.sql already exists at internal/database/migrations/
-   # Simply replace it with your Supabase export containing the 100 deriven:
+   # Replace the placeholder with your 100 deriven export:
    cp /path/to/your/supabase-export.sql internal/database/migrations/deriven_rows.sql
    ```
 
-2. **Run the conversion script:**
+2. **Start Docker (conversion happens automatically):**
    ```bash
-   # The script will automatically use the default location
-   ./scripts/convert-deriven-export.sh
-   ```
-
-3. **Restart Docker:**
-   ```bash
-   docker-compose down -v  # -v removes old data
    docker-compose up -d --build
    ```
+
+   The startup script will:
+   - ✅ Detect your deriven_rows.sql file
+   - ✅ Automatically convert it to 002_insert_initial_deriven.sql
+   - ✅ Run migrations (including your deriven data)
+   - ✅ Start the application
+
+3. **Verify:**
+   ```bash
+   docker exec -it id100-db psql -U dev -d id100 -c "SELECT COUNT(*) FROM deriven;"
+   # Should show: 100
+   ```
+
+**That's it!** No manual script execution needed. Just replace the file and start Docker.
 
 4. **Verify the data:**
    ```bash
