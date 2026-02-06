@@ -119,7 +119,7 @@ services:
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: change_me_in_production
       SESSION_SECRET: change_this_in_production_to_random_string
-      GEOCODING_API_URL: http://meilisearch:7700
+      GEOCODING_API_URL: http://localhost:8081
     ports:
       - "8080:8080"
     volumes:
