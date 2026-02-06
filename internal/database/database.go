@@ -69,6 +69,58 @@ func runMigrations() {
 	if err != nil {
 		log.Printf("Failed to add current_player_city column to upload_tokens: %v", err)
 	}
+
+	// Add session_uuid column to upload_tokens for session binding
+	_, err = DB.Exec(context.Background(), `ALTER TABLE upload_tokens ADD COLUMN IF NOT EXISTS session_uuid TEXT DEFAULT ''`)
+	if err != nil {
+		log.Printf("Failed to add session_uuid column to upload_tokens: %v", err)
+	}
+
+	// Create session_bindings table for multi-session support (invitations)
+	_, err = DB.Exec(context.Background(), `
+	CREATE TABLE IF NOT EXISTS session_bindings (
+		id SERIAL PRIMARY KEY,
+		token_id INTEGER NOT NULL REFERENCES upload_tokens(id) ON DELETE CASCADE,
+		session_uuid TEXT NOT NULL,
+		player_name TEXT NOT NULL,
+		player_city TEXT DEFAULT '',
+		is_owner BOOLEAN DEFAULT FALSE,
+		created_at TIMESTAMPTZ DEFAULT NOW(),
+		last_active_at TIMESTAMPTZ DEFAULT NOW(),
+		UNIQUE(token_id, session_uuid)
+	)`)
+	if err != nil {
+		log.Printf("Failed to create session_bindings table: %v", err)
+	}
+
+	// Create index on session_bindings for faster lookups
+	_, err = DB.Exec(context.Background(), `CREATE INDEX IF NOT EXISTS idx_session_bindings_token_session ON session_bindings(token_id, session_uuid)`)
+	if err != nil {
+		log.Printf("Failed to create index on session_bindings: %v", err)
+	}
+
+	// Create invitation_codes table for invitation system
+	_, err = DB.Exec(context.Background(), `
+	CREATE TABLE IF NOT EXISTS invitation_codes (
+		id SERIAL PRIMARY KEY,
+		token_id INTEGER NOT NULL REFERENCES upload_tokens(id) ON DELETE CASCADE,
+		code TEXT NOT NULL UNIQUE,
+		created_by_session_uuid TEXT NOT NULL,
+		expires_at TIMESTAMPTZ NOT NULL,
+		used BOOLEAN DEFAULT FALSE,
+		used_by_session_uuid TEXT DEFAULT '',
+		used_at TIMESTAMPTZ,
+		created_at TIMESTAMPTZ DEFAULT NOW()
+	)`)
+	if err != nil {
+		log.Printf("Failed to create invitation_codes table: %v", err)
+	}
+
+	// Create index on invitation_codes for faster lookups
+	_, err = DB.Exec(context.Background(), `CREATE INDEX IF NOT EXISTS idx_invitation_codes_code ON invitation_codes(code) WHERE used = FALSE`)
+	if err != nil {
+		log.Printf("Failed to create index on invitation_codes: %v", err)
+	}
 }
 
 // GetFooterStats fetches creative database statistics

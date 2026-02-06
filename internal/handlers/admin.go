@@ -157,12 +157,23 @@ func AdminBagRequestCompleteHandler(c echo.Context) error {
 func AdminTokenResetHandler(c echo.Context) error {
 	tokenID := c.Param("id")
 
+	// Clear session bindings for this token
+	_, err := database.DB.Exec(context.Background(),
+		"DELETE FROM session_bindings WHERE token_id = $1",
+		tokenID)
+
+	if err != nil {
+		log.Printf("Failed to clear session bindings: %v", err)
+		// Continue with reset even if this fails
+	}
+
 	result, err := database.DB.Exec(context.Background(),
 		`UPDATE upload_tokens 
 		 SET total_uploads = 0, 
 		     total_sessions = total_sessions + 1,
 		     session_started_at = NOW(),
 		     current_player = NULL,
+		     session_uuid = '',
 		     is_active = true
 		 WHERE id = $1`,
 		tokenID)

@@ -73,3 +73,28 @@ type PageNumber struct {
 	IsCurrent bool
 	IsDots    bool
 }
+
+// SessionBinding represents a bound session to a token
+type SessionBinding struct {
+	ID           int       `json:"id"`
+	TokenID      int       `json:"token_id"`
+	SessionUUID  string    `json:"session_uuid"`
+	PlayerName   string    `json:"player_name"`
+	PlayerCity   string    `json:"player_city"`
+	IsOwner      bool      `json:"is_owner"`
+	CreatedAt    time.Time `json:"created_at"`
+	LastActiveAt time.Time `json:"last_active_at"`
+}
+
+// InvitationCode represents an invitation code for multi-session access
+type InvitationCode struct {
+	ID                   int       `json:"id"`
+	TokenID              int       `json:"token_id"`
+	Code                 string    `json:"code"`
+	CreatedBySessionUUID string    `json:"created_by_session_uuid"`
+	ExpiresAt            time.Time `json:"expires_at"`
+	Used                 bool      `json:"used"`
+	UsedBySessionUUID    string    `json:"used_by_session_uuid"`
+	UsedAt               time.Time `json:"used_at"`
+	CreatedAt            time.Time `json:"created_at"`
+}

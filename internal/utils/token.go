@@ -21,3 +21,21 @@ func GenerateSecureToken(length int) (string, error) {
 	}
 	return encoded, nil
 }
+
+// GenerateSessionUUID generates a 44-character secure session UUID
+func GenerateSessionUUID() (string, error) {
+	return GenerateSecureToken(44)
+}
+
+// GenerateInvitationCode generates a 12-character secure invitation code
+func GenerateInvitationCode() (string, error) {
+	return GenerateSecureToken(12)
+}
+
+// MaskToken masks a token for logging, showing only first 6 and last 4 characters
+func MaskToken(token string) string {
+	if len(token) <= 10 {
+		return "***"
+	}
+	return token[:6] + "..." + token[len(token)-4:]
+}

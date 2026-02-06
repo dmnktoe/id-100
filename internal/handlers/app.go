@@ -542,6 +542,10 @@ func SetPlayerNameHandler(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Name und Token erforderlich")
 	}
 
+	// Sanitize player name to prevent XSS
+	playerName = utils.SanitizePlayerName(playerName)
+	playerCity := utils.SanitizePlayerName(strings.TrimSpace(c.FormValue("player_city")))
+
 	// Consent checkbox (required)
 	consent := c.FormValue("agree_privacy")
 	if consent == "" {
@@ -557,7 +561,15 @@ func SetPlayerNameHandler(c echo.Context) error {
 		})
 	}
 
-	playerCity := strings.TrimSpace(c.FormValue("player_city"))
+	// Get session_uuid from context (set by middleware)
+	sessionUUID, _ := c.Get("session_uuid").(string)
+	if sessionUUID == "" {
+		log.Printf("Error: session_uuid not found in context")
+		return c.String(http.StatusInternalServerError, "Server error")
+	}
+
+	// Get token_id from context
+	tokenID, _ := c.Get("token_id").(int)
 
 	// Save name and city in session
 	session, _ := middleware.Store.Get(c.Request(), "id-100-session")
@@ -565,17 +577,33 @@ func SetPlayerNameHandler(c echo.Context) error {
 	session.Values["player_city"] = playerCity
 	session.Save(c.Request(), c.Response())
 
-	// Update database with city
+	// Update database with name, city, and bind session_uuid
 	_, err := database.DB.Exec(context.Background(),
-		"UPDATE upload_tokens SET current_player = $1, current_player_city = $2, session_started_at = NOW() WHERE token = $3",
-		playerName, playerCity, token)
+		"UPDATE upload_tokens SET current_player = $1, current_player_city = $2, session_started_at = NOW(), session_uuid = $3 WHERE token = $4",
+		playerName, playerCity, sessionUUID, token)
 
 	if err != nil {
-		log.Printf("Error setting player name: %v", err)
+		log.Printf("Error setting player name for token %s: %v", utils.MaskToken(token), err)
+	} else {
+		log.Printf("Bound token %s to session UUID %s for player %s", 
+			utils.MaskToken(token), utils.MaskToken(sessionUUID), playerName)
+		
+		// Also create entry in session_bindings for multi-session support
+		_, err = database.DB.Exec(context.Background(),
+			`INSERT INTO session_bindings (token_id, session_uuid, player_name, player_city, is_owner)
+			 VALUES ($1, $2, $3, $4, true)
+			 ON CONFLICT (token_id, session_uuid) DO UPDATE SET 
+			 player_name = EXCLUDED.player_name, 
+			 player_city = EXCLUDED.player_city,
+			 last_active_at = NOW()`,
+			tokenID, sessionUUID, playerName, playerCity)
+		if err != nil {
+			log.Printf("Failed to create session binding: %v", err)
+		}
 	}
 
 	// Redirect to upload page
-	return c.Redirect(http.StatusSeeOther, "/upload?token="+token)
+	return c.Redirect(http.StatusSeeOther, "/upload?token="+url.QueryEscape(token))
 }
 
 // UserDeleteContributionHandler allows users to delete their own contributions from the current session

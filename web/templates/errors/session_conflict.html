@@ -1,0 +1,124 @@
+{{define "session_conflict.content"}}
+<main class="error-page">
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <h1>Werkzeug wird bereits verwendet</h1>
+        <p class="error-message">
+            Das Werkzeug <strong>{{.BagName}}</strong> wird gerade von <strong>{{.CurrentPlayer}}</strong> in einer anderen Browser-Sitzung verwendet.
+        </p>
+        <p class="error-description">
+            Aus Sicherheitsgründen kann das Werkzeug nur von einem Browser gleichzeitig verwendet werden.
+        </p>
+        <div class="error-actions">
+            <p><strong>Mögliche Lösungen:</strong></p>
+            <ul class="solution-list">
+                <li>Verwende das Werkzeug auf dem ursprünglichen Gerät weiter</li>
+                <li>Lass den aktuellen Benutzer das Werkzeug freigeben (Werkzeug zurückgeben)</li>
+                <li>Bitte den aktuellen Benutzer, dir eine Einladung zu senden</li>
+            </ul>
+        </div>
+        <div class="button-group">
+            <a href="/" class="btn btn-primary">Zur Startseite</a>
+        </div>
+    </div>
+</main>
+
+<style>
+.error-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.error-container {
+    max-width: 600px;
+    text-align: center;
+    background: #fff;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.error-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+}
+
+.error-page h1 {
+    color: #d63031;
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+
+.error-message {
+    font-size: 1.1rem;
+    color: #2d3436;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.error-description {
+    color: #636e72;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.error-actions {
+    text-align: left;
+    margin: 2rem auto;
+    max-width: 500px;
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.solution-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+.solution-list li {
+    padding: 0.5rem 0 0.5rem 1.5rem;
+    position: relative;
+    color: #2d3436;
+}
+
+.solution-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #00b894;
+    font-weight: bold;
+}
+
+.button-group {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #0984e3;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0770c7;
+    transform: translateY(-1px);
+}
+</style>
+{{end}}
