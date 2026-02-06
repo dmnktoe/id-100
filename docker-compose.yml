@@ -51,29 +51,21 @@ services:
       exit 0;
       "
 
-  # Nominatim City API
-  nominatim:
-    image: mediagis/nominatim:4.4
-    container_name: id100-nominatim
-    environment:
-      PBF_URL: https://download.geofabrik.de/europe/germany-latest.osm.pbf
-      REPLICATION_URL: https://download.geofabrik.de/europe/germany-updates/
-      NOMINATIM_PASSWORD: nominatim_pass
-      IMPORT_WIKIPEDIA: "false"
-      IMPORT_US_POSTCODES: "false"
-      IMPORT_GB_POSTCODES: "false"
-      FREEZE: "true"
+  # Photon Geocoding API for city autocomplete
+  photon:
+    image: komoot/photon:latest
+    container_name: id100-photon
+    command: java -jar photon.jar -country de -languages de
     volumes:
-      - nominatim_data:/var/lib/postgresql/14/main
+      - photon_data:/photon/photon_data
     ports:
-      - "8081:8080"
-    shm_size: 1gb
+      - "8081:2322"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/search?q=Berlin&format=json&limit=1"]
+      test: ["CMD", "curl", "-f", "http://localhost:2322/api?q=Berlin&limit=1"]
       interval: 30s
       timeout: 10s
-      retries: 10
-      start_period: 300s
+      retries: 5
+      start_period: 60s
 
   # ID-100 Web Application
   webapp:
@@ -86,7 +78,7 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-      nominatim:
+      photon:
         condition: service_started
     environment:
       DATABASE_URL: postgres://dev:pass@db:5432/id100?sslmode=disable
@@ -103,7 +95,7 @@ services:
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: change_me_in_production
       SESSION_SECRET: change_this_in_production_to_random_string
-      NOMINATIM_URL: http://nominatim:8080
+      NOMINATIM_URL: http://photon:2322
     ports:
       - "8080:8080"
     volumes:
@@ -114,4 +106,4 @@ services:
 volumes:
   postgres_data:
   minio_data:
-  nominatim_data:
+  photon_data:

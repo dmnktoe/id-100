@@ -64,14 +64,20 @@ describe("city-autocomplete", () => {
   it("should fetch cities when input has 2 or more characters", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => [
-        {
-          place_id: 1,
-          display_name: "Berlin, Germany",
-          name: "Berlin",
-          address: { city: "Berlin" },
-        },
-      ],
+      json: async () => ({
+        features: [
+          {
+            properties: {
+              name: "Berlin",
+              osm_key: "place",
+              osm_value: "city",
+            },
+            geometry: {
+              coordinates: [13.405, 52.52],
+            },
+          },
+        ],
+      }),
     });
     global.fetch = mockFetch;
 

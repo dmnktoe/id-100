@@ -3,15 +3,16 @@ package config
 import "os"
 
 const (
-	// DefaultNominatimURL is the default Nominatim API URL if not configured
-	DefaultNominatimURL = "http://localhost:8081"
+	// DefaultPhotonURL is the default Photon API URL if not configured
+	DefaultPhotonURL = "http://localhost:8081"
 )
 
-// GetNominatimURL returns the Nominatim URL from environment or default
+// GetNominatimURL returns the Photon/Nominatim URL from environment or default
+// Note: Variable name kept as GetNominatimURL for backwards compatibility
 func GetNominatimURL() string {
-	nominatimURL := os.Getenv("NOMINATIM_URL")
-	if nominatimURL == "" {
-		nominatimURL = DefaultNominatimURL
+	photonURL := os.Getenv("NOMINATIM_URL")
+	if photonURL == "" {
+		photonURL = DefaultPhotonURL
 	}
-	return nominatimURL
+	return photonURL
 }

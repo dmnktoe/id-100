@@ -1,18 +1,26 @@
 /**
- * City autocomplete module using Nominatim API
+ * City autocomplete module using Photon geocoding API
  * Provides autocomplete functionality for city selection
  */
 
-interface NominatimResult {
-  place_id: number;
-  display_name: string;
+interface PhotonProperties {
   name: string;
-  address: {
-    city?: string;
-    town?: string;
-    village?: string;
-    municipality?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  osm_key?: string;
+  osm_value?: string;
+}
+
+interface PhotonFeature {
+  properties: PhotonProperties;
+  geometry: {
+    coordinates: [number, number];
   };
+}
+
+interface PhotonResponse {
+  features: PhotonFeature[];
 }
 
 let debounceTimer: number | undefined;
@@ -54,57 +62,51 @@ export function initCityAutocomplete(): void {
 }
 
 /**
- * Fetch cities from Nominatim API
+ * Fetch cities from Photon API
  */
 async function fetchCities(
   query: string,
   datalist: HTMLDataListElement
 ): Promise<void> {
   try {
-    // Get Nominatim URL from window (set by template)
-    const nominatimUrl = window.NOMINATIM_URL || "http://localhost:8081";
+    // Get Photon URL from window (set by template)
+    const photonUrl = window.NOMINATIM_URL || "http://localhost:8081";
 
-    // Search for cities in Germany
+    // Search for cities using Photon API
     const params = new URLSearchParams({
       q: query,
-      format: "json",
       limit: "10",
-      countrycodes: "de",
-      addressdetails: "1",
-      "accept-language": "de",
+      lang: "de",
+      osm_tag: "place:city",
     });
 
-    // Filter to only cities/towns/villages
-    params.append("featuretype", "city");
-
-    const response = await fetch(
-      `${nominatimUrl}/search?${params.toString()}`
-    );
+    // Also search for towns
+    const response = await fetch(`${photonUrl}/api?${params.toString()}`);
 
     if (!response.ok) {
-      console.error("Nominatim API error:", response.statusText);
+      console.error("Photon API error:", response.statusText);
       return;
     }
 
-    const results: NominatimResult[] = await response.json();
+    const data: PhotonResponse = await response.json();
 
     // Clear existing options
     datalist.innerHTML = "";
 
-    // Add new options
-    results.forEach((result) => {
-      const option = document.createElement("option");
-      
-      // Extract city name from address
-      const cityName =
-        result.address.city ||
-        result.address.town ||
-        result.address.village ||
-        result.address.municipality ||
-        result.name;
+    // Track unique city names to avoid duplicates
+    const uniqueCities = new Set<string>();
 
-      option.value = cityName;
-      datalist.appendChild(option);
+    // Add new options from features
+    data.features.forEach((feature) => {
+      const cityName = feature.properties.name;
+
+      // Only add if not already in the list
+      if (cityName && !uniqueCities.has(cityName)) {
+        uniqueCities.add(cityName);
+        const option = document.createElement("option");
+        option.value = cityName;
+        datalist.appendChild(option);
+      }
     });
   } catch (error) {
     console.error("Error fetching cities:", error);
