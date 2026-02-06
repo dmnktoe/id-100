@@ -25,6 +25,9 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 	e.GET("/session/active", ListActiveSessionsHandler, middleware.TokenWithSession)
 	e.POST("/session/revoke/:session_id", RevokeSessionHandler, middleware.TokenWithSession)
 
+	// Invitation acceptance page
+	e.GET("/einladung-annehmen", AcceptInvitationPageHandler)
+
 	e.GET("/leitfaden", RulesHandler)
 	e.GET("/impressum", ImpressumHandler)
 	e.GET("/datenschutz", DatenschutzHandler)

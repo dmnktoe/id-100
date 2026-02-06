@@ -527,6 +527,18 @@ func RequestBagPostHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
 
+// AcceptInvitationPageHandler displays the invitation acceptance page
+func AcceptInvitationPageHandler(c echo.Context) error {
+	stats := utils.GetFooterStats()
+	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+		"Title":           "Einladung annehmen - 🏠🆔💯",
+		"ContentTemplate": "accept_invitation.content",
+		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
+	})
+}
+
 // SetPlayerNameHandler handles the name entry form submission
 func SetPlayerNameHandler(c echo.Context) error {
 	// Protect against large request bodies before parsing form values
