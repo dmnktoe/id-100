@@ -122,8 +122,8 @@ SUPABASE_URL=http://localhost:9000
 # Session Security
 SESSION_SECRET=change_this_in_production_to_random_string
 
-# Meilisearch API
-NOMINATIM_URL=http://localhost:8081
+# Geocoding API (Meilisearch mit GeoNames-Daten)
+GEOCODING_API_URL=http://localhost:8081
 ```
 
 **Für Supabase (Produktion):**
@@ -139,8 +139,8 @@ SUPABASE_SERVICE_ROLE_KEY=dein_service_role_key
 S3_BUCKET_NAME=id100-images
 S3_ENDPOINT=https://[DEIN-PROJEKT-REF].supabase.co/storage/v1
 
-# Meilisearch API (selbst gehostet mit GeoNames-Daten)
-NOMINATIM_URL=https://your-meilisearch-instance.com
+# Geocoding API (selbst gehostete Meilisearch-Instanz mit GeoNames-Daten)
+GEOCODING_API_URL=https://your-meilisearch-instance.com
 ```
 
 ## 🎯 Verwendung

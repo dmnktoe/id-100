@@ -19,8 +19,8 @@ describe("city-autocomplete", () => {
     cityInput = document.getElementById("playerCity") as HTMLInputElement;
     datalist = document.getElementById("cityOptions") as HTMLDataListElement;
 
-    // Mock window.NOMINATIM_URL
-    (window as any).NOMINATIM_URL = "http://localhost:8081";
+    // Mock window.GEOCODING_API_URL
+    (window as any).GEOCODING_API_URL = "http://localhost:8081";
 
     // Mock fetch
     global.fetch = vi.fn();

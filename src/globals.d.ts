@@ -3,5 +3,5 @@
  */
 
 interface Window {
-  NOMINATIM_URL: string;
+  GEOCODING_API_URL: string;
 }

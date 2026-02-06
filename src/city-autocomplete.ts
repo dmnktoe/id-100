@@ -68,7 +68,7 @@ async function fetchCities(
 ): Promise<void> {
   try {
     // Get Meilisearch URL from window (set by template)
-    const meilisearchUrl = window.NOMINATIM_URL || "http://localhost:8081";
+    const meilisearchUrl = window.GEOCODING_API_URL || "http://localhost:8081";
 
     // Search for cities using Meilisearch API
     const response = await fetch(
