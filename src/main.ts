@@ -7,6 +7,7 @@ import { initBrandAnimation } from "./brand-animation";
 import { initDrawer } from "./drawer";
 import { initLazyImages } from "./lazy-images";
 import { initFormHandlers } from "./form-handler";
+import { initCityAutocomplete } from "./city-autocomplete";
 import "./favicon-emoji";
 
 // Initialize all modules when DOM is ready
@@ -19,6 +20,9 @@ import "./favicon-emoji";
 
   // Form handlers
   initFormHandlers();
+
+  // City autocomplete
+  initCityAutocomplete();
 
   // Initialize lazy images on first paint
   initLazyImages();

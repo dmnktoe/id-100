@@ -127,7 +127,7 @@ func DerivenHandler(c echo.Context) error {
 		pages = append(pages, models.PageNumber{Number: totalPages, IsCurrent: page == totalPages})
 	}
 
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Innenstadt (🏠) ID (🆔) - 100 (💯)",
 		"Deriven":         deriven,
 		"CurrentPage":     page,
@@ -141,7 +141,7 @@ func DerivenHandler(c echo.Context) error {
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // DeriveHandler displays a single derive with its contributions
@@ -197,7 +197,7 @@ func DeriveHandler(c echo.Context) error {
 		})
 	}
 
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           fmt.Sprintf("#%d %s", d.Number, d.Title),
 		"Derive":          d,
 		"Contributions":   contribs,
@@ -207,7 +207,7 @@ func DeriveHandler(c echo.Context) error {
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // UploadGetHandler displays the upload form
@@ -287,7 +287,7 @@ ORDER BY d.number ASC`)
 		}
 	}
 
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Beweis hochladen - 🏠🆔💯",
 		"Deriven":         list,
 		"ContentTemplate": "upload.content",
@@ -300,7 +300,7 @@ ORDER BY d.number ASC`)
 		"CurrentPlayer":   currentPlayer,
 		"UploadedNumbers": uploadedNumbers,
 		"TotalPoints":     totalPoints,
-	})
+	}))
 }
 
 // UploadPostHandler handles image upload
@@ -448,37 +448,37 @@ func UploadPostHandler(c echo.Context) error {
 // RulesHandler displays the rules page
 func RulesHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Leitfaden - 🏠🆔💯",
 		"ContentTemplate": "leitfaden.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // ImpressumHandler displays the impressum page
 func ImpressumHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Impressum - 🏠🆔💯",
 		"ContentTemplate": "impressum.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // DatenschutzHandler displays the privacy policy page
 func DatenschutzHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Datenschutzerklärung - 🏠🆔💯",
 		"ContentTemplate": "datenschutz.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // RequestBagHandler displays the bag request form
@@ -492,13 +492,13 @@ func RequestBagHandler(c echo.Context) error {
 			"IsPartial":   true,
 		})
 	}
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Werkzeug anfordern - 🏠🆔💯",
 		"ContentTemplate": "request_bag.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // RequestBagPostHandler handles bag request submissions
@@ -548,13 +548,13 @@ func SetPlayerNameHandler(c echo.Context) error {
 		// try to fetch bag name for nicer rendering
 		var bagName string
 		_ = database.DB.QueryRow(context.Background(), "SELECT COALESCE(bag_name,'') FROM upload_tokens WHERE token = $1", token).Scan(&bagName)
-		return c.Render(http.StatusBadRequest, "layout", map[string]interface{}{
+		return c.Render(http.StatusBadRequest, "layout", MergeTemplateData(map[string]interface{}{
 			"Title":           "Willkommen bei ID-100!",
 			"ContentTemplate": "enter_name.content",
 			"Token":           token,
 			"BagName":         bagName,
 			"FormError":       "Bitte bestätige die Datenschutzerklärung und dass du keine erkennbaren Personen ohne Einwilligung hochlädst.",
-		})
+		}))
 	}
 
 	playerCity := strings.TrimSpace(c.FormValue("player_city"))

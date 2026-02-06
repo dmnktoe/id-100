@@ -52,12 +52,12 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		if token == "" {
-			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
+			return c.Render(http.StatusForbidden, "layout", mergeTemplateData(map[string]interface{}{
 				"Title":           "Zugang verweigert",
 				"ContentTemplate": "access_denied.content",
 				"CurrentPath":     c.Request().URL.Path,
 				"CurrentYear":     time.Now().Year(),
-			})
+			}))
 		}
 
 		// Validate token
@@ -75,12 +75,12 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		if err != nil {
 			log.Printf("Token validation error: %v", err)
-			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
+			return c.Render(http.StatusForbidden, "layout", mergeTemplateData(map[string]interface{}{
 				"Title":           "Ungültiger Token",
 				"ContentTemplate": "invalid_token.content",
 				"CurrentPath":     c.Request().URL.Path,
 				"CurrentYear":     time.Now().Year(),
-			})
+			}))
 		}
 
 		// Save token in session for subsequent requests
@@ -148,14 +148,14 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 				if err != nil {
 					log.Printf("Failed to update current_player for token_id=%d with name=%s: %v", tokenID, sessName, err)
 					// Don't fail the request, but keep currentPlayer empty so name form shows again
-					return c.Render(http.StatusOK, "layout", map[string]interface{}{
+					return c.Render(http.StatusOK, "layout", mergeTemplateData(map[string]interface{}{
 						"Title":           "Willkommen",
 						"ContentTemplate": "enter_name.content",
 						"CurrentPath":     c.Request().URL.Path,
 						"CurrentYear":     time.Now().Year(),
 						"BagName":         bagName,
 						"Token":           token,
-					})
+					}))
 				}
 
 				rows := result.RowsAffected()
@@ -167,14 +167,14 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 				currentPlayer = sessName
 			} else {
 				// Show name entry form
-				return c.Render(http.StatusOK, "layout", map[string]interface{}{
+				return c.Render(http.StatusOK, "layout", mergeTemplateData(map[string]interface{}{
 					"Title":           "Willkommen",
 					"ContentTemplate": "enter_name.content",
 					"CurrentPath":     c.Request().URL.Path,
 					"CurrentYear":     time.Now().Year(),
 					"BagName":         bagName,
 					"Token":           token,
-				})
+				}))
 			}
 		} else {
 			// Save player name and city in session if not already there
@@ -194,24 +194,24 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Check if token is active
 		if !isActive {
-			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
+			return c.Render(http.StatusForbidden, "layout", mergeTemplateData(map[string]interface{}{
 				"Title":           "Token deaktiviert",
 				"ContentTemplate": "token_deactivated.content",
 				"CurrentPath":     c.Request().URL.Path,
 				"CurrentYear":     time.Now().Year(),
-			})
+			}))
 		}
 
 		// Check upload limit
 		if totalUploads >= maxUploads {
-			return c.Render(http.StatusForbidden, "layout", map[string]interface{}{
+			return c.Render(http.StatusForbidden, "layout", mergeTemplateData(map[string]interface{}{
 				"Title":           "Upload-Limit erreicht",
 				"ContentTemplate": "limit_reached.content",
 				"CurrentPath":     c.Request().URL.Path,
 				"CurrentYear":     time.Now().Year(),
 				"TotalUploads":    totalUploads,
 				"MaxUploads":      maxUploads,
-			})
+			}))
 		}
 
 		// For POST requests: Check cooldown
