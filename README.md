@@ -18,36 +18,65 @@ Eine moderne Go-Webanwendung für kreative Beiträge mit Echo-Framework, Supabas
 - **Supabase PostgreSQL**: Robuste Datenpersistenz
 - **Hot-Reload**: Entwicklung mit Air
 - **Responsive Design**: Modernes UI mit CSS
+- **City Autocomplete**: Nominatim-Integration für intelligente Stadtauswahl
+- **Docker-Compose**: Vollständige lokale Entwicklungsumgebung mit einem Befehl
 
 ## 📋 Voraussetzungen
 
 - **Go**: Version 1.24 oder höher
-- **Supabase Account**: Für PostgreSQL-Datenbank und Storage
-- **Docker** (optional): Für lokale Entwicklungsdatenbank
+- **Node.js**: Version 20 oder höher (für Frontend-Build)
+- **Docker & Docker Compose**: Für die vollständige lokale Entwicklungsumgebung (empfohlen)
+- **Supabase Account**: Für PostgreSQL-Datenbank und Storage (alternative zu Docker)
 
 ## 🚀 Installation
 
-### 1. Repository klonen
+### Option 1: Mit Docker Compose (Empfohlen)
+
+Die einfachste Methode, um die gesamte Anwendung mit allen Abhängigkeiten lokal zu starten:
+
+```bash
+# Repository klonen
+git clone https://github.com/dmnktoe/id-100.git
+cd id-100
+
+# Mit Docker Compose starten
+docker-compose up -d
+```
+
+Dies startet automatisch:
+- **PostgreSQL** Datenbank (Port 5432)
+- **MinIO** S3-kompatibler Objektspeicher (Port 9000, Console 9001)
+- **Nominatim** Geocoding API für Stadtsuche (Port 8081)
+- **ID-100** Webanwendung (Port 8080)
+
+Die Anwendung ist verfügbar unter: `http://localhost:8080`
+
+**Hinweis**: Der erste Start kann länger dauern, da Nominatim die Deutschland-Kartendaten herunterladen und importieren muss (ca. 5-10 Minuten).
+
+### Option 2: Manuelle Installation
+
+#### 1. Repository klonen
 
 ```bash
 git clone https://github.com/dmnktoe/id-100.git
 cd id-100
 ```
 
-### 2. Dependencies installieren
+#### 2. Dependencies installieren
 
 ```bash
 go mod download
+npm install
 ```
 
-### 3. Entwicklungstools installieren (optional)
+#### 3. Entwicklungstools installieren (optional)
 
 ```bash
 # Air für Hot-Reload
 go install github.com/air-verse/air@latest
 ```
 
-### 4. Datenbank einrichten
+#### 4. Datenbank einrichten
 
 **Option A: Mit Docker (empfohlen für Entwicklung)**
 
@@ -62,9 +91,42 @@ createdb id100
 psql id100 < schema.sql  # Falls vorhanden
 ```
 
-### 5. Umgebungsvariablen konfigurieren
+#### 5. Umgebungsvariablen konfigurieren
 
 Erstelle eine `.env` Datei im Projektverzeichnis:
+
+**Für Docker Compose (Standard):**
+
+```env
+# App Configuration
+BASE_URL=http://localhost:8080
+PORT=8080
+ENVIRONMENT=development
+
+# Admin Authentication
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change_me_in_production
+
+# Database Configuration (Docker)
+DATABASE_URL=postgres://dev:pass@localhost:5432/id100?sslmode=disable
+
+# S3 Configuration (MinIO)
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET_NAME=id100-images
+S3_BUCKET=id100-images
+S3_REGION=us-east-1
+S3_ENDPOINT=http://localhost:9000
+SUPABASE_URL=http://localhost:9000
+
+# Session Security
+SESSION_SECRET=change_this_in_production_to_random_string
+
+# Nominatim API
+NOMINATIM_URL=http://localhost:8081
+```
+
+**Für Supabase (Produktion):**
 
 ```env
 # Supabase PostgreSQL Datenbank
@@ -77,8 +139,8 @@ SUPABASE_SERVICE_ROLE_KEY=dein_service_role_key
 S3_BUCKET_NAME=id100-images
 S3_ENDPOINT=https://[DEIN-PROJEKT-REF].supabase.co/storage/v1
 
-# Lokale Entwicklung (optional)
-# DATABASE_URL=postgres://dev:pass@localhost:5432/id100?sslmode=disable
+# Nominatim API (öffentlich oder selbst gehostet)
+NOMINATIM_URL=https://nominatim.openstreetmap.org
 ```
 
 ## 🎯 Verwendung
@@ -134,12 +196,34 @@ src/
 ├── brand-animation.ts   # Markenanimationen
 ├── drawer.ts            # Drawer/Modal-Funktionalität
 ├── lazy-images.ts       # Lazy-Loading für Bilder
-└── form-handler.ts      # Formular-Handler
+├── form-handler.ts      # Formular-Handler
+└── city-autocomplete.ts # Nominatim City Autocomplete
 ```
 
 Der TypeScript-Code wird mit **esbuild** gebündelt und minifiziert in `web/static/main.js` ausgegeben.
 
-## 🛠️ Verfügbare Makefile-Befehle
+## 🛠️ Verfügbare Befehle
+
+### Docker Compose
+
+```bash
+# Alle Services starten
+docker-compose up -d
+
+# Logs anzeigen
+docker-compose logs -f
+
+# Services stoppen
+docker-compose down
+
+# Services neu bauen
+docker-compose up -d --build
+
+# Alle Daten löschen (Volumes)
+docker-compose down -v
+```
+
+### Makefile-Befehle
 
 ```bash
 make run         # Anwendung starten
@@ -189,6 +273,8 @@ id-100/
 │       └── layout.html      # Basis-Layout
 ├── tools/                    # Build-Tools
 ├── .air.toml                # Hot-Reload Konfiguration
+├── docker-compose.yml       # Docker Compose Konfiguration
+├── Dockerfile               # Docker Build Konfiguration
 ├── go.mod                   # Go Dependencies
 └── Makefile                 # Build-Automatisierung
 ```
@@ -198,11 +284,13 @@ id-100/
 | Kategorie | Technologie |
 |-----------|------------|
 | **Backend** | Go 1.24, Echo Framework v4 |
-| **Datenbank** | Supabase PostgreSQL, pgx/v5 |
-| **Storage** | Supabase Storage (S3-kompatibel) |
+| **Datenbank** | PostgreSQL 15 (Supabase oder Docker) |
+| **Storage** | MinIO / Supabase Storage (S3-kompatibel) |
+| **Geocoding** | Nominatim (OpenStreetMap) |
 | **Image Processing** | go-webp, LQIP |
 | **Frontend** | HTML5, CSS3, TypeScript, esbuild |
-| **Dev Tools** | Air (Hot-Reload), Make |
+| **Dev Tools** | Air (Hot-Reload), Docker Compose, Make |
+| **Container** | Docker, Docker Compose |
 
 ## 🔧 Konfiguration
 
