@@ -47,43 +47,16 @@ This better describes what the variable does (provides geocoding/city search) wi
 8. **`docker-compose.yml`** - Environment variable renamed
 9. **`README.md`** - Configuration examples updated
 
-## Backwards Compatibility
-
-The Go configuration code maintains backwards compatibility:
-
-```go
-func GetGeocodingURL() string {
-    // Try new variable name first
-    geocodingURL := os.Getenv("GEOCODING_API_URL")
-    if geocodingURL == "" {
-        // Fall back to old variable name for backwards compatibility
-        geocodingURL = os.Getenv("NOMINATIM_URL")
-    }
-    if geocodingURL == "" {
-        geocodingURL = DefaultGeocodingURL
-    }
-    return geocodingURL
-}
-```
-
-This means existing deployments using `NOMINATIM_URL` will continue to work, but new deployments should use `GEOCODING_API_URL`.
-
 ## Migration Guide
 
 ### For Existing Deployments
 
 If you have an existing `.env` file or environment variables:
 
-**Option 1: Rename (recommended)**
+**Update your configuration:**
 ```bash
 # In your .env file or environment
-GEOCODING_API_URL=http://meilisearch:7700  # Previously NOMINATIM_URL
-```
-
-**Option 2: Keep old name (works but deprecated)**
-```bash
-# Still works due to backwards compatibility
-NOMINATIM_URL=http://meilisearch:7700
+GEOCODING_API_URL=http://meilisearch:7700
 ```
 
 ### For Docker Compose

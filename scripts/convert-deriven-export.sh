@@ -1,16 +1,16 @@
 #!/bin/sh
 # Script to convert Supabase deriven_rows.sql to migration format
-# Usage: ./convert-deriven-export.sh [path-to-deriven_rows.sql]
+# Converts: internal/database/migrations/deriven_rows.sql
+# To: internal/database/migrations/002_insert_initial_deriven.sql
 
 set -e
 
-INPUT_FILE="${1:-internal/database/migrations/deriven_rows.sql}"
+INPUT_FILE="internal/database/migrations/deriven_rows.sql"
 OUTPUT_FILE="internal/database/migrations/002_insert_initial_deriven.sql"
 
 if [ ! -f "$INPUT_FILE" ]; then
     echo "Error: Input file '$INPUT_FILE' not found"
-    echo "Usage: $0 [path-to-deriven_rows.sql]"
-    echo "Default: internal/database/migrations/deriven_rows.sql"
+    echo "Please ensure your Supabase export is at: $INPUT_FILE"
     exit 1
 fi
 

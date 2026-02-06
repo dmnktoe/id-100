@@ -41,7 +41,7 @@ internal/database/migrations/
 Users can now see all database migration files in the migrations directory, making it obvious where database-related files belong.
 
 ### 3. Simpler Workflow
-The conversion script no longer requires an argument when using the default location:
+The conversion script always uses the fixed location:
 ```bash
 # Copy your export to the migrations directory
 cp /path/to/export.sql internal/database/migrations/deriven_rows.sql
@@ -51,12 +51,6 @@ cp /path/to/export.sql internal/database/migrations/deriven_rows.sql
 
 # Restart Docker
 docker-compose down -v && docker-compose up -d --build
-```
-
-### 4. Backwards Compatible
-You can still provide a custom path if needed:
-```bash
-./scripts/convert-deriven-export.sh /path/to/custom/export.sql
 ```
 
 ## Updated Documentation

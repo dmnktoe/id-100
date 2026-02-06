@@ -88,7 +88,6 @@ If you prefer to add data manually:
 - The migration system runs automatically on app startup
 - Migrations only run once (tracked in `schema_migrations` table)
 - The conversion script prevents duplicate data insertions
-- Old environment variable `NOMINATIM_URL` still works (backwards compatible)
 
 ---
 
