@@ -1,8 +1,8 @@
-# Placeholder File Added: deriven_rows.sql
+# Placeholder File: deriven_rows.sql
 
 ## What Was Added
 
-A placeholder file `deriven_rows.sql` has been added to the repository root. This makes it much easier to add your deriven challenge data.
+A placeholder file `deriven_rows.sql` has been added to `internal/database/migrations/`. This makes it much easier to add your deriven challenge data and keeps all migration-related files organized together.
 
 ## How to Use
 
@@ -10,12 +10,13 @@ A placeholder file `deriven_rows.sql` has been added to the repository root. Thi
 
 1. **Replace the placeholder** with your Supabase export:
    ```bash
-   cp /path/to/your-supabase-export.sql deriven_rows.sql
+   cp /path/to/your-supabase-export.sql internal/database/migrations/deriven_rows.sql
    ```
 
 2. **Run the conversion script:**
    ```bash
-   ./scripts/convert-deriven-export.sh deriven_rows.sql
+   # The script will automatically use the default location
+   ./scripts/convert-deriven-export.sh
    ```
 
 3. **Restart Docker:**
@@ -35,7 +36,7 @@ The `deriven_rows.sql` file contains:
 -- INSTRUCTIONS:
 -- 1. Export your deriven table from Supabase
 -- 2. Replace this file with your export
--- 3. Run: ./scripts/convert-deriven-export.sh deriven_rows.sql
+-- 3. Run: ./scripts/convert-deriven-export.sh
 -- 4. Restart Docker: docker-compose down -v && docker-compose up -d --build
 ```
 

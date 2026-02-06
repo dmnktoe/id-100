@@ -8,17 +8,18 @@ The application uses a migration system that automatically runs SQL files in the
 
 ## Method 1: Using the Conversion Script (Recommended)
 
-A placeholder file `deriven_rows.sql` already exists in the repository root. Simply replace it with your Supabase export:
+A placeholder file `deriven_rows.sql` already exists at `internal/database/migrations/`. Simply replace it with your Supabase export:
 
 1. Replace the placeholder with your Supabase export:
    ```bash
    # Copy your export over the placeholder
-   cp /path/to/your/supabase-export.sql deriven_rows.sql
+   cp /path/to/your/supabase-export.sql internal/database/migrations/deriven_rows.sql
    ```
 
 2. Run the conversion script:
    ```bash
-   ./scripts/convert-deriven-export.sh deriven_rows.sql
+   # The script will automatically use the default location
+   ./scripts/convert-deriven-export.sh
    ```
 
 3. The script will automatically update `internal/database/migrations/002_insert_initial_deriven.sql`

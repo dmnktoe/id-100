@@ -1,10 +1,13 @@
 -- deriven_rows.sql
 -- Placeholder file for Supabase export of deriven table
+-- Located at: internal/database/migrations/deriven_rows.sql
 -- 
 -- INSTRUCTIONS:
 -- 1. Export your deriven table from Supabase
--- 2. Replace this file with your export
--- 3. Run: ./scripts/convert-deriven-export.sh deriven_rows.sql
+-- 2. Replace this file with your export:
+--    cp /path/to/supabase-export.sql internal/database/migrations/deriven_rows.sql
+-- 3. Run the conversion script (it will automatically find this file):
+--    ./scripts/convert-deriven-export.sh
 -- 4. Restart Docker: docker-compose down -v && docker-compose up -d --build
 --
 -- EXPECTED FORMAT:
@@ -18,7 +21,7 @@
 -- NOTE: The conversion script will automatically:
 -- - Convert "public"."deriven" to deriven
 -- - Wrap the INSERT in a conditional block to prevent duplicates
--- - Generate the proper migration file
+-- - Generate the proper migration file (002_insert_initial_deriven.sql)
 --
 -- After replacing this file, the script is ready to run!
 

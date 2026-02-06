@@ -32,14 +32,15 @@ docker-compose up -d
 
 1. **Replace the placeholder file** with your Supabase export:
    ```bash
-   # A placeholder deriven_rows.sql already exists in the repository
+   # A placeholder deriven_rows.sql already exists at internal/database/migrations/
    # Simply replace it with your Supabase export:
-   cp /path/to/your/supabase-export.sql deriven_rows.sql
+   cp /path/to/your/supabase-export.sql internal/database/migrations/deriven_rows.sql
    ```
 
 2. **Run the conversion script:**
    ```bash
-   ./scripts/convert-deriven-export.sh deriven_rows.sql
+   # The script will automatically use the default location
+   ./scripts/convert-deriven-export.sh
    ```
 
 3. **Restart Docker:**

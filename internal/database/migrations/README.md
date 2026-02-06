@@ -23,7 +23,7 @@ Migrations are named with the pattern: `NNN_description.sql` where:
 
 - **002_insert_initial_deriven.sql**: Inserts initial deriven (challenge) data
   - Populated by converting a Supabase export using `scripts/convert-deriven-export.sh`
-  - A placeholder `deriven_rows.sql` file exists in the repository root
+  - A placeholder `deriven_rows.sql` file exists in this directory
   - Replace the placeholder with your Supabase export and run the conversion script
   - See `docs/ADDING_DERIVEN_DATA.md` for detailed instructions
 
