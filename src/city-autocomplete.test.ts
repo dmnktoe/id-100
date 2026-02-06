@@ -65,18 +65,21 @@ describe("city-autocomplete", () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        features: [
+        hits: [
           {
-            properties: {
-              name: "Berlin",
-              osm_key: "place",
-              osm_value: "city",
-            },
-            geometry: {
-              coordinates: [13.405, 52.52],
-            },
+            id: "2950159",
+            name: "Berlin",
+            lat: 52.52437,
+            lon: 13.41053,
+            type: "capital",
+            population: 3426354,
           },
         ],
+        query: "Ber",
+        processingTimeMs: 1,
+        limit: 10,
+        offset: 0,
+        estimatedTotalHits: 1,
       }),
     });
     global.fetch = mockFetch;

@@ -18,7 +18,7 @@ Eine moderne Go-Webanwendung für kreative Beiträge mit Echo-Framework, Supabas
 - **Supabase PostgreSQL**: Robuste Datenpersistenz
 - **Hot-Reload**: Entwicklung mit Air
 - **Responsive Design**: Modernes UI mit CSS
-- **City Autocomplete**: Photon-Integration für intelligente Stadtauswahl
+- **City Autocomplete**: Meilisearch-Integration für intelligente Stadtauswahl
 - **Docker-Compose**: Vollständige lokale Entwicklungsumgebung mit einem Befehl
 
 ## 📋 Voraussetzungen
@@ -46,12 +46,12 @@ docker-compose up -d
 Dies startet automatisch:
 - **PostgreSQL** Datenbank (Port 5432)
 - **MinIO** S3-kompatibler Objektspeicher (Port 9000, Console 9001)
-- **Photon** Geocoding API für Stadtsuche (Port 8081)
+- **Meilisearch** Suchmaschine für Stadtsuche mit GeoNames-Daten (Port 8081)
 - **ID-100** Webanwendung (Port 8080)
 
 Die Anwendung ist verfügbar unter: `http://localhost:8080`
 
-**Hinweis**: Der erste Start lädt automatisch die Deutschland-Kartendaten für Photon (ca. 350MB, dauert 2-3 Minuten).
+**Hinweis**: Der erste Start lädt automatisch deutsche Städtedaten von GeoNames.org (~10MB, dauert ca. 1 Minute).
 
 ### Option 2: Manuelle Installation
 
@@ -122,7 +122,7 @@ SUPABASE_URL=http://localhost:9000
 # Session Security
 SESSION_SECRET=change_this_in_production_to_random_string
 
-# Photon API
+# Meilisearch API
 NOMINATIM_URL=http://localhost:8081
 ```
 
@@ -139,8 +139,8 @@ SUPABASE_SERVICE_ROLE_KEY=dein_service_role_key
 S3_BUCKET_NAME=id100-images
 S3_ENDPOINT=https://[DEIN-PROJEKT-REF].supabase.co/storage/v1
 
-# Photon API (öffentlich oder selbst gehostet)
-NOMINATIM_URL=https://photon.openstreetmap.org
+# Meilisearch API (selbst gehostet mit GeoNames-Daten)
+NOMINATIM_URL=https://your-meilisearch-instance.com
 ```
 
 ## 🎯 Verwendung
@@ -197,7 +197,7 @@ src/
 ├── drawer.ts            # Drawer/Modal-Funktionalität
 ├── lazy-images.ts       # Lazy-Loading für Bilder
 ├── form-handler.ts      # Formular-Handler
-└── city-autocomplete.ts # Photon City Autocomplete
+└── city-autocomplete.ts # Meilisearch City Autocomplete
 ```
 
 Der TypeScript-Code wird mit **esbuild** gebündelt und minifiziert in `web/static/main.js` ausgegeben.
@@ -286,7 +286,7 @@ id-100/
 | **Backend** | Go 1.24, Echo Framework v4 |
 | **Datenbank** | PostgreSQL 15 (Supabase oder Docker) |
 | **Storage** | MinIO / Supabase Storage (S3-kompatibel) |
-| **Geocoding** | Photon (OpenStreetMap) |
+| **Geocoding** | Meilisearch + GeoNames.org |
 | **Image Processing** | go-webp, LQIP |
 | **Frontend** | HTML5, CSS3, TypeScript, esbuild |
 | **Dev Tools** | Air (Hot-Reload), Docker Compose, Make |

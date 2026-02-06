@@ -51,21 +51,43 @@ services:
       exit 0;
       "
 
-  # Photon Geocoding API for city autocomplete
-  photon:
-    image: komoot/photon:latest
-    container_name: id100-photon
-    command: java -jar photon.jar -country de -languages de
+  # Meilisearch for city autocomplete
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: id100-meilisearch
+    environment:
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
     volumes:
-      - photon_data:/photon/photon_data
+      - meilisearch_data:/meili_data
     ports:
-      - "8081:2322"
+      - "8081:7700"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2322/api?q=Berlin&limit=1"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 60s
+
+  # GeoNames data loader for Meilisearch
+  geonames-loader:
+    image: curlimages/curl:latest
+    container_name: id100-geonames-loader
+    depends_on:
+      meilisearch:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts:ro
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo "Downloading GeoNames data for Germany..."
+        cd /tmp
+        curl -O https://download.geonames.org/export/dump/DE.zip
+        unzip -o DE.zip
+        echo "Converting to JSON and importing to Meilisearch..."
+        /scripts/import-geonames.sh
+        echo "GeoNames import complete"
 
   # ID-100 Web Application
   webapp:
@@ -78,8 +100,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-      photon:
-        condition: service_started
+      meilisearch:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgres://dev:pass@db:5432/id100?sslmode=disable
       S3_ACCESS_KEY: minioadmin
@@ -95,7 +117,7 @@ services:
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: change_me_in_production
       SESSION_SECRET: change_this_in_production_to_random_string
-      NOMINATIM_URL: http://photon:2322
+      NOMINATIM_URL: http://meilisearch:7700
     ports:
       - "8080:8080"
     volumes:
@@ -106,4 +128,4 @@ services:
 volumes:
   postgres_data:
   minio_data:
-  photon_data:
+  meilisearch_data:
