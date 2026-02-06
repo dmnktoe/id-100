@@ -1029,6 +1029,14 @@ main {
   font-size: 0.9rem;
 }
 
+.form-hint {
+  display: block;
+  margin-top: 0.5rem;
+  color: var(--gray-600);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
 label {
   display: block;
   font-weight: 300;

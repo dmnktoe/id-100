@@ -53,7 +53,7 @@ func AdminDashboardHandler(c echo.Context) error {
 	`)
 	if err != nil {
 		log.Printf("Failed to fetch recent contributions: %v", err)
-		return c.Render(http.StatusOK, "layout", map[string]interface{}{
+		return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 			"Title":           "Admin Dashboard",
 			"ContentTemplate": "admin_dashboard.content",
 			"AdditionalCSS":   "admin.styles.css",
@@ -61,7 +61,7 @@ func AdminDashboardHandler(c echo.Context) error {
 			"CurrentYear":     time.Now().Year(),
 			"Tokens":          tokens,
 			"RecentContribs":  []models.RecentContrib{},
-		})
+		}))
 	}
 	defer contribRows.Close()
 
@@ -116,7 +116,7 @@ func AdminDashboardHandler(c echo.Context) error {
 		}
 	}
 
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Admin Dashboard",
 		"ContentTemplate": "admin_dashboard.content",
 		"AdditionalCSS":   "admin.styles.css",
@@ -129,7 +129,7 @@ func AdminDashboardHandler(c echo.Context) error {
 		"Tab":             tab,
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
-	})
+	}))
 }
 
 // AdminBagRequestCompleteHandler marks a bag request as handled
