@@ -63,8 +63,13 @@ COPY web /app/web
 COPY --from=frontend-builder /app/web/static/main.js /app/web/static/main.js
 COPY --from=frontend-builder /app/web/static/main.js.map /app/web/static/main.js.map
 
+# Copy startup and conversion scripts
+COPY scripts/startup.sh /app/scripts/startup.sh
+RUN chmod +x /app/scripts/startup.sh
+
 # Expose port
 EXPOSE 8080
 
-# Run the application
+# Use startup script as entrypoint that runs conversion before starting app
+ENTRYPOINT ["/app/scripts/startup.sh"]
 CMD ["/app/id-100"]
