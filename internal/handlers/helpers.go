@@ -1,24 +1,8 @@
 package handlers
 
-import "os"
+import "id-100/internal/templates"
 
-// GetGlobalTemplateData returns global data that should be available in all templates
-func GetGlobalTemplateData() map[string]interface{} {
-	nominatimURL := os.Getenv("NOMINATIM_URL")
-	if nominatimURL == "" {
-		nominatimURL = "http://localhost:8081" // Default fallback
-	}
-
-	return map[string]interface{}{
-		"NominatimURL": nominatimURL,
-	}
-}
-
-// MergeTemplateData merges global template data with page-specific data
+// MergeTemplateData is a convenience wrapper for handlers to use shared template data
 func MergeTemplateData(data map[string]interface{}) map[string]interface{} {
-	global := GetGlobalTemplateData()
-	for k, v := range data {
-		global[k] = v
-	}
-	return global
+	return templates.MergeTemplateData(data)
 }

@@ -16,22 +16,6 @@ const (
 	UploadCooldownDuration = 5 * time.Second
 )
 
-// getGlobalTemplateData returns global template data
-func getGlobalTemplateData() map[string]interface{} {
-	return map[string]interface{}{
-		"NominatimURL": getNominatimURL(),
-	}
-}
-
-// mergeTemplateData merges global data with page-specific data
-func mergeTemplateData(data map[string]interface{}) map[string]interface{} {
-	result := getGlobalTemplateData()
-	for k, v := range data {
-		result[k] = v
-	}
-	return result
-}
-
 // TokenWithSession is a middleware with session support for token validation
 func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {

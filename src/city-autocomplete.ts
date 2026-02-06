@@ -61,8 +61,8 @@ async function fetchCities(
   datalist: HTMLDataListElement
 ): Promise<void> {
   try {
-    // Get Nominatim URL from environment or use default
-    const nominatimUrl = (window as any).NOMINATIM_URL || "http://localhost:8081";
+    // Get Nominatim URL from window (set by template)
+    const nominatimUrl = window.NOMINATIM_URL || "http://localhost:8081";
 
     // Search for cities in Germany
     const params = new URLSearchParams({

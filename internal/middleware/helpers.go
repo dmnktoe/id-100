@@ -1,12 +1,8 @@
 package middleware
 
-import "os"
+import "id-100/internal/templates"
 
-// getNominatimURL returns the Nominatim URL from environment or default
-func getNominatimURL() string {
-	nominatimURL := os.Getenv("NOMINATIM_URL")
-	if nominatimURL == "" {
-		nominatimURL = "http://localhost:8081" // Default fallback
-	}
-	return nominatimURL
+// mergeTemplateData is a convenience wrapper around templates.MergeTemplateData
+func mergeTemplateData(data map[string]interface{}) map[string]interface{} {
+	return templates.MergeTemplateData(data)
 }
