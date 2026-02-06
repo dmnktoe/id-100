@@ -21,6 +21,12 @@ Migrations are named with the pattern: `NNN_description.sql` where:
   - `upload_logs`: Upload audit logs
   - `bag_requests`: Bag/tool requests from users
 
+- **002_insert_initial_deriven.sql**: Inserts initial deriven (challenge) data
+  - Populated by converting a Supabase export using `scripts/convert-deriven-export.sh`
+  - A placeholder `deriven_rows.sql` file exists in the repository root
+  - Replace the placeholder with your Supabase export and run the conversion script
+  - See `docs/ADDING_DERIVEN_DATA.md` for detailed instructions
+
 ## Adding New Migrations
 
 1. Create a new `.sql` file in this directory

@@ -30,10 +30,11 @@ docker-compose up -d
 
 ### Quick Steps:
 
-1. **Add your SQL file** to the repository root:
+1. **Replace the placeholder file** with your Supabase export:
    ```bash
-   # Place your deriven_rows.sql file here
-   cp /path/to/your/deriven_rows.sql .
+   # A placeholder deriven_rows.sql already exists in the repository
+   # Simply replace it with your Supabase export:
+   cp /path/to/your/supabase-export.sql deriven_rows.sql
    ```
 
 2. **Run the conversion script:**

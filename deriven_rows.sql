@@ -1,13 +1,3 @@
--- Migration: 002_insert_initial_deriven.sql
--- Description: Inserts initial derive challenges into the deriven table
--- Date: 2024-02-06
--- Source: Converted from Supabase export (deriven_rows.sql)
-
--- Insert initial deriven data
--- Only insert if the table is empty to avoid duplicates
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM deriven LIMIT 1) THEN
 -- deriven_rows.sql
 -- Placeholder file for Supabase export of deriven table
 -- 
@@ -20,20 +10,18 @@ BEGIN
 -- EXPECTED FORMAT:
 -- Your Supabase export should contain INSERT statements like:
 --
--- INSERT INTO deriven ("id", "number", "title", "description", "created_at", "points") VALUES
+-- INSERT INTO "public"."deriven" ("id", "number", "title", "description", "created_at", "points") VALUES
 -- ('1', '1', 'Derive #001', 'Dokumentiere ein Objekt, das deiner aktuellen Stimmung entspricht.', '2025-12-30 12:17:45.375781+00', '1'),
 -- ('2', '2', 'Derive #002', 'Miss die Höhe von fünf Bordsteinkanten.', '2025-12-30 12:17:45.375781+00', '2'),
 -- ('3', '3', 'Derive #003', 'Gestalte eine Postkarte für deine Innenstadt.', '2025-12-30 12:17:45.375781+00', '3');
 --
 -- NOTE: The conversion script will automatically:
--- - Convert deriven to deriven
+-- - Convert "public"."deriven" to deriven
 -- - Wrap the INSERT in a conditional block to prevent duplicates
 -- - Generate the proper migration file
 --
 -- After replacing this file, the script is ready to run!
 
 -- PLACEHOLDER DATA (for testing only - replace with your actual Supabase export)
-INSERT INTO deriven ("id", "number", "title", "description", "created_at", "points") VALUES
+INSERT INTO "public"."deriven" ("id", "number", "title", "description", "created_at", "points") VALUES
 ('1', '1', 'Derive #001', 'Placeholder derive - replace with your data', '2025-12-30 12:17:45.375781+00', '1');
-    END IF;
-END $$;

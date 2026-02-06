@@ -8,19 +8,28 @@ The application uses a migration system that automatically runs SQL files in the
 
 ## Method 1: Using the Conversion Script (Recommended)
 
-If you have a Supabase export file (`deriven_rows.sql`), use the provided script:
+A placeholder file `deriven_rows.sql` already exists in the repository root. Simply replace it with your Supabase export:
 
-1. Place your `deriven_rows.sql` file in the repository root
+1. Replace the placeholder with your Supabase export:
+   ```bash
+   # Copy your export over the placeholder
+   cp /path/to/your/supabase-export.sql deriven_rows.sql
+   ```
+
 2. Run the conversion script:
    ```bash
    ./scripts/convert-deriven-export.sh deriven_rows.sql
    ```
+
 3. The script will automatically update `internal/database/migrations/002_insert_initial_deriven.sql`
+
 4. Restart Docker containers to apply the migration:
    ```bash
-   docker-compose down
+   docker-compose down -v  # -v removes old data
    docker-compose up -d --build
    ```
+
+**Note:** The placeholder file includes helpful comments showing the expected format and instructions.
 
 ## Method 2: Manual Copy-Paste
 
