@@ -19,6 +19,17 @@ Eine moderne Go-Webanwendung für kreative Beiträge mit Echo-Framework, Supabas
 - **Hot-Reload**: Entwicklung mit Air
 - **Responsive Design**: Modernes UI mit CSS
 
+### 🔒 Security Features
+
+- **Session Management**: Einzigartige Session-UUIDs für jeden Browser
+- **Conflict Detection**: Verhindert gleichzeitigen Zugriff von mehreren Geräten
+- **Bag Release**: Benutzer können Werkzeuge freiwillig freigeben
+- **Invitation System**: Sichere Codes für Multi-User-Zusammenarbeit
+- **XSS Prevention**: Alle Benutzereingaben werden sanitisiert
+- **Token Masking**: Sensible Daten werden niemals im Klartext geloggt
+
+Siehe [SECURITY.md](SECURITY.md) für Details.
+
 ## 📋 Voraussetzungen
 
 - **Go**: Version 1.24 oder höher
