@@ -26,6 +26,8 @@ docker-compose up -d
 2. Conversion script: `scripts/convert-deriven-export.sh`
 3. Documentation: `docs/ADDING_DERIVEN_DATA.md`
 
+**Important:** The deriven data is NOT automatically populated. You must add your 100 deriven challenges using the conversion script.
+
 **Action required:** Add your deriven data
 
 ### Quick Steps:
@@ -33,7 +35,7 @@ docker-compose up -d
 1. **Replace the placeholder file** with your Supabase export:
    ```bash
    # A placeholder deriven_rows.sql already exists at internal/database/migrations/
-   # Simply replace it with your Supabase export:
+   # Simply replace it with your Supabase export containing the 100 deriven:
    cp /path/to/your/supabase-export.sql internal/database/migrations/deriven_rows.sql
    ```
 

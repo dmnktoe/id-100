@@ -82,7 +82,7 @@ services:
       - -c
       - |
         echo "Installing required tools..."
-        apk add --no-cache curl unzip awk
+        apk add --no-cache curl unzip gawk
         echo "Downloading GeoNames data for Germany..."
         cd /tmp
         curl -O https://download.geonames.org/export/dump/DE.zip

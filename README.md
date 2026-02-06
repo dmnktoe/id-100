@@ -53,6 +53,8 @@ Die Anwendung ist verfügbar unter: `http://localhost:8080`
 
 **Hinweis**: Der erste Start lädt automatisch deutsche Städtedaten von GeoNames.org (~10MB, dauert ca. 1 Minute).
 
+**Deriven-Daten hinzufügen**: Um die 100 Derive-Challenges zu laden, siehe [Deriven-Daten hinzufügen](docs/ADDING_DERIVEN_DATA.md). Die Datenbank-Migrationen laufen automatisch beim Start, aber die Deriven-Daten müssen manuell über das Konvertierungsskript hinzugefügt werden.
+
 ### Option 2: Manuelle Installation
 
 #### 1. Repository klonen
