@@ -235,7 +235,6 @@ func DeriveHandler(c echo.Context) error {
 
 	// Query contributions, filter by city if specified
 	var rows pgx.Rows
-	var err error
 	if cityFilter != "" {
 		rows, err = database.DB.Query(context.Background(),
 			"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), COALESCE(user_comment,''), created_at FROM contributions WHERE derive_id = $1 AND user_city = $2 ORDER BY created_at DESC", d.ID, cityFilter)
