@@ -1708,3 +1708,77 @@ img.blur-up.loaded {
     width: 100%;
   }
 }
+
+/* Custom City Autocomplete Dropdown */
+.city-dropdown {
+  position: absolute;
+  background: var(--white);
+  border: var(--border-light);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: -2px;
+}
+
+.city-dropdown-item {
+  padding: 0.75rem var(--pad-md);
+  cursor: pointer;
+  font-family: "Arial Rounded MT Bold", sans-serif;
+  font-size: 0.9rem;
+  color: var(--gray-900);
+  transition: all var(--transition-fast);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.city-dropdown-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.city-dropdown-item:hover {
+  background: var(--gray-50);
+  color: var(--black);
+}
+
+.city-dropdown-item.highlighted {
+  background: var(--bg-glass);
+  color: var(--black);
+  border-left: 3px solid var(--black);
+  padding-left: calc(var(--pad-md) - 3px);
+}
+
+/* Enhanced city input styling */
+#playerCity {
+  position: relative;
+}
+
+#playerCity:focus {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Hide native datalist if it still exists */
+datalist {
+  display: none;
+}
+
+/* Smooth scrolling for dropdown */
+.city-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.city-dropdown::-webkit-scrollbar-track {
+  background: var(--gray-50);
+}
+
+.city-dropdown::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 4px;
+}
+
+.city-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
+}
