@@ -1,9 +1,11 @@
 /**
  * City autocomplete module using Meilisearch SDK with custom dropdown
  * Provides autocomplete functionality for city selection with styled dropdown
+ * Includes Zod schema validation for form data
  */
 
 import { MeiliSearch } from 'meilisearch';
+import { z } from 'zod';
 
 interface CityHit {
   id: string;
@@ -12,6 +14,45 @@ interface CityHit {
   lon: number;
   type: string;
   population: number;
+}
+
+export interface ValidationResult {
+  success: boolean;
+  errors: string[];
+}
+
+// Zod schema for name form validation
+const nameFormSchema = z.object({
+  player_name: z.string()
+    .min(2, "Name muss mindestens 2 Zeichen lang sein")
+    .max(100, "Name darf maximal 100 Zeichen lang sein"),
+  player_city: z.string()
+    .min(2, "Stadt muss mindestens 2 Zeichen lang sein")
+    .max(100, "Stadt darf maximal 100 Zeichen lang sein"),
+  agree_privacy: z.literal(true, {
+    errorMap: () => ({ 
+      message: "Datenschutzerklärung muss akzeptiert werden" 
+    })
+  })
+});
+
+/**
+ * Validate form data using Zod schema
+ */
+export function validateForm(data: unknown): ValidationResult {
+  const result = nameFormSchema.safeParse(data);
+  
+  if (result.success) {
+    return {
+      success: true,
+      errors: []
+    };
+  }
+  
+  return {
+    success: false,
+    errors: result.error.errors.map(err => err.message)
+  };
 }
 
 let debounceTimer: number | undefined;
@@ -226,7 +267,7 @@ export function initCityAutocomplete(): void {
 
     // Debounce the API call
     debounceTimer = window.setTimeout(() => {
-      searchCities(query, input, dropdown, meiliClient);
+      searchCities(query, cityInput, dropdown, meiliClient);
     }, 300);
   });
 
