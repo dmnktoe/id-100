@@ -13,31 +13,41 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-// extractFileNameFromURL extracts the filename from a Supabase storage URL
+// extractFileNameFromURL extracts the filename from a MinIO/S3 storage URL
 func extractFileNameFromURL(imageURL string) (string, error) {
-	if !strings.Contains(imageURL, "/storage/v1/object/public/") {
-		return "", fmt.Errorf("URL does not contain storage path: %s", imageURL)
+	bucket := os.Getenv("S3_BUCKET")
+	if bucket == "" {
+		bucket = "id100-images"
 	}
 
-	parts := strings.Split(imageURL, "/storage/v1/object/public/")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("invalid storage URL format: %s", imageURL)
+	// Handle MinIO URL format: http://minio:9000/bucket-name/filename.ext
+	// or: http://localhost:9000/bucket-name/filename.ext
+	if strings.Contains(imageURL, "/"+bucket+"/") {
+		parts := strings.Split(imageURL, "/"+bucket+"/")
+		if len(parts) == 2 {
+			return parts[1], nil
+		}
 	}
 
-	// Extract bucket and file path
-	pathParts := strings.SplitN(parts[1], "/", 2)
-	if len(pathParts) != 2 {
-		return "", fmt.Errorf("invalid storage path format: %s", parts[1])
+	// Handle relative path: bucket-name/filename.ext or just filename.ext
+	fileName := strings.TrimLeft(imageURL, "/")
+	if strings.HasPrefix(fileName, bucket+"/") {
+		return strings.TrimPrefix(fileName, bucket+"/"), nil
 	}
 
-	return pathParts[1], nil
+	// If it's just a filename, return as-is
+	if !strings.Contains(fileName, "/") {
+		return fileName, nil
+	}
+
+	return fileName, nil
 }
 
-// DeleteFromS3 extracts the file key from the image URL and deletes it from S3
+// DeleteFromS3 extracts the file key from the image URL and deletes it from S3/MinIO
 func DeleteFromS3(imageURL string) error {
 	// Extract the filename from the URL path
-	// Example: /storage/v1/object/public/id100-images/derive_1_1234567890.webp
-	// or: https://xxx.supabase.co/storage/v1/object/public/id100-images/derive_1_1234567890.webp
+	// Example: http://minio:9000/id100-images/derive_1_1234567890.webp
+	// or: http://localhost:9000/id100-images/derive_1_1234567890.webp
 	fileName, err := extractFileNameFromURL(imageURL)
 	if err != nil {
 		return err

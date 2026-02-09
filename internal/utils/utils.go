@@ -11,6 +11,7 @@ import (
 )
 
 // EnsureFullImageURL makes sure stored image URLs are usable in templates
+// Constructs MinIO URLs for images stored in S3-compatible storage
 func EnsureFullImageURL(raw string) string {
 	if raw == "" {
 		return ""
@@ -19,42 +20,29 @@ func EnsureFullImageURL(raw string) string {
 	if strings.HasPrefix(raw, "http://") || strings.HasPrefix(raw, "https://") || strings.HasPrefix(raw, "data:") {
 		return raw
 	}
-	base := strings.TrimRight(os.Getenv("SUPABASE_URL"), "/")
-	bucket := strings.Trim(os.Getenv("S3_BUCKET"), "/")
-
-	// If the path already starts with /storage, just prefix the base
-	if strings.HasPrefix(raw, "/storage/") {
-		return base + raw
+	
+	// Get MinIO configuration
+	s3Endpoint := strings.TrimRight(os.Getenv("S3_ENDPOINT"), "/")
+	bucket := os.Getenv("S3_BUCKET")
+	
+	// Default to minio:9000 if not set (for Docker internal)
+	if s3Endpoint == "" {
+		s3Endpoint = "http://minio:9000"
 	}
-	if strings.HasPrefix(raw, "storage/") {
-		return base + "/" + raw
-	}
-
-	// If it starts with a slash (other absolute path), prefix base
-	if strings.HasPrefix(raw, "/") {
-		return base + raw
+	if bucket == "" {
+		bucket = "id100-images"
 	}
 
-	// If it already contains the storage object path, be safe
-	if strings.Contains(raw, "storage/v1/object/public") {
-		if strings.HasPrefix(raw, "/") {
-			return base + raw
-		}
-		return base + "/" + raw
+	// If it's just a filename or path, construct MinIO URL
+	// MinIO public URLs: http://minio:9000/bucket-name/object-key
+	fileName := strings.TrimLeft(raw, "/")
+	
+	// Remove bucket name if it's already in the path
+	if strings.HasPrefix(fileName, bucket+"/") {
+		fileName = strings.TrimPrefix(fileName, bucket+"/")
 	}
-
-	// If it begins with the bucket name (e.g. "contributions/derive_...")
-	if bucket != "" && (strings.HasPrefix(raw, bucket+"/") || strings.HasPrefix(raw, bucket)) {
-		return fmt.Sprintf("%s/storage/v1/object/public/%s", base, strings.TrimLeft(raw, "/"))
-	}
-
-	// If it's just a filename, assume bucket and build the public url
-	if bucket != "" && !strings.Contains(raw, "/") {
-		return fmt.Sprintf("%s/storage/v1/object/public/%s/%s", base, bucket, raw)
-	}
-
-	// Fallback: prefix base
-	return base + "/" + raw
+	
+	return fmt.Sprintf("%s/%s/%s", s3Endpoint, bucket, fileName)
 }
 
 // GetFooterStats wraps the database function and returns a FooterStats model

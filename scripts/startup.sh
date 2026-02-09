@@ -22,6 +22,7 @@ if [ -f "$INPUT_FILE" ]; then
     
     if [ "$ACTUAL_LINES" -gt 0 ]; then
         echo "==> Converting deriven_rows.sql to migration format..."
+        echo "    Found $ACTUAL_LINES INSERT statement(s)"
         
         # Run the conversion inline (since we're in the container)
         cat > "$OUTPUT_FILE" << 'EOF'
@@ -31,25 +32,21 @@ if [ -f "$INPUT_FILE" ]; then
 -- Source: Converted from Supabase export (deriven_rows.sql)
 -- Auto-converted on container startup
 
--- Insert initial deriven data
--- Only insert if the table is empty to avoid duplicates
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM deriven LIMIT 1) THEN
+-- Delete existing data if any (for clean re-import)
+DELETE FROM deriven WHERE id IS NOT NULL;
+
+-- Reset sequence to start from 1
+ALTER SEQUENCE deriven_id_seq RESTART WITH 1;
+
 EOF
 
         # Append the actual INSERT statements from the input file
-        # Convert "public"."deriven" to just deriven
-        sed 's/"public"\."deriven"/deriven/g' "$INPUT_FILE" >> "$OUTPUT_FILE"
-
-        # Add the closing of the DO block
-        cat >> "$OUTPUT_FILE" << 'EOF'
-    END IF;
-END $$;
-EOF
+        # Convert "public"."deriven" to just deriven and remove quotes
+        sed -e 's/"public"\."deriven"/deriven/g' -e 's/"public"\.deriven/deriven/g' "$INPUT_FILE" >> "$OUTPUT_FILE"
 
         echo "==> ✓ Conversion complete!"
         echo "    Created: $OUTPUT_FILE"
+        echo "    The migration will run automatically when the app starts"
     else
         echo "==> Skipping conversion: deriven_rows.sql contains no INSERT statements"
         echo "    (Placeholder file detected)"

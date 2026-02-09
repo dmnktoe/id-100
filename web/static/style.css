@@ -287,6 +287,20 @@ main {
   letter-spacing: -0.06em;
 }
 
+/* Page header with title and filter */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--gap-lg);
+  margin-bottom: var(--gap-md);
+}
+
+.page-header .page-title {
+  padding: 2rem 0 0 0;
+  margin: 0;
+}
+
 .container.content-page h2 {
   margin-bottom: 0.5rem;
   padding-bottom: 0;
@@ -1066,6 +1080,32 @@ input[list]:focus {
   box-shadow: var(--shadow-sm);
 }
 
+/* Better datalist dropdown styling */
+input[list] + datalist {
+  width: 100%;
+}
+
+datalist {
+  position: absolute;
+  background: var(--white);
+  border: var(--border-medium);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  font-family: inherit;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+datalist option {
+  padding: var(--pad-sm) var(--pad-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+datalist option:hover {
+  background: var(--gray-50);
+}
+
 /* Visual indicator when city is selected */
 input[list].city-selected {
   border-color: rgba(0, 128, 0, 0.3);
@@ -1541,13 +1581,13 @@ img.blur-up.loaded {
   display: flex;
   align-items: center;
   gap: var(--gap-sm);
-  padding: var(--pad-md) var(--pad-lg);
+  padding: var(--pad-sm) var(--pad-md);
   background: var(--bg-glass);
   backdrop-filter: var(--backdrop-blur-sm);
   border: var(--border-light);
   border-radius: var(--radius-md);
-  margin-bottom: var(--gap-lg);
   transition: all var(--transition-smooth);
+  flex-shrink: 0;
 }
 
 .filter-section:hover {
@@ -1651,5 +1691,20 @@ img.blur-up.loaded {
   .filter-clear {
     width: 2.5rem;
     height: 2.5rem;
+  }
+
+  /* Mobile: stack page header vertically */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--gap-md);
+  }
+
+  .page-header .page-title {
+    padding: 1.5rem 0 0 0;
+  }
+
+  .page-header .filter-section {
+    width: 100%;
   }
 }
