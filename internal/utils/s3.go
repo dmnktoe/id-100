@@ -13,11 +13,27 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-// extractFileNameFromURL extracts the filename from a MinIO/S3 storage URL
+// extractFileNameFromURL extracts the filename from a MinIO/S3 storage URL or legacy Supabase URL
 func extractFileNameFromURL(imageURL string) (string, error) {
+	if imageURL == "" {
+		return "", fmt.Errorf("empty URL")
+	}
+
 	bucket := os.Getenv("S3_BUCKET")
 	if bucket == "" {
 		bucket = "id100-images"
+	}
+
+	// Handle legacy Supabase storage path: /storage/v1/object/public/bucket-name/filename.ext
+	if strings.Contains(imageURL, "/storage/v1/object/public/") {
+		parts := strings.Split(imageURL, "/storage/v1/object/public/")
+		if len(parts) == 2 {
+			// Extract everything after the bucket name
+			pathParts := strings.SplitN(parts[1], "/", 2)
+			if len(pathParts) == 2 {
+				return pathParts[1], nil // Return filename after bucket
+			}
+		}
 	}
 
 	// Handle MinIO URL format: http://minio:9000/bucket-name/filename.ext
@@ -29,17 +45,14 @@ func extractFileNameFromURL(imageURL string) (string, error) {
 		}
 	}
 
-	// Handle relative path: bucket-name/filename.ext or just filename.ext
+	// Handle relative path: bucket-name/filename.ext
 	fileName := strings.TrimLeft(imageURL, "/")
 	if strings.HasPrefix(fileName, bucket+"/") {
 		return strings.TrimPrefix(fileName, bucket+"/"), nil
 	}
 
-	// If it's just a filename, return as-is
-	if !strings.Contains(fileName, "/") {
-		return fileName, nil
-	}
-
+	// If it's just a filename or nested path (no URL), return as-is
+	// Examples: "derive_5_1.webp" or "subfolder/image.jpg"
 	return fileName, nil
 }
 

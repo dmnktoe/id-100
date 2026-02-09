@@ -112,7 +112,7 @@ services:
       S3_BUCKET: id100-images
       S3_REGION: us-east-1
       S3_ENDPOINT: http://minio:9000
-      SUPABASE_URL: http://minio:9000
+      S3_PUBLIC_URL: http://localhost:9000
       BASE_URL: http://localhost:8080
       PORT: 8080
       ENVIRONMENT: development

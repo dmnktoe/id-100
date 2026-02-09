@@ -422,8 +422,8 @@ func UploadPostHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "S3 Fehler: "+err.Error())
 	}
 
-	// Store relative path in DB, EnsureFullImageURL will add the base URL when reading
-	relativePath := fmt.Sprintf("/storage/v1/object/public/%s/%s", os.Getenv("S3_BUCKET"), fileName)
+	// Store just the filename in DB, EnsureFullImageURL will construct the full MinIO URL when reading
+	relativePath := fileName
 
 	// generate tiny LQIP (data-uri) and store it
 	lqip, lqipErr := utils.GenerateLQIP(img, 24)
