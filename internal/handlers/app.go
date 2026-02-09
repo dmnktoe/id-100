@@ -80,7 +80,7 @@ func DerivenHandler(c echo.Context) error {
             INNER JOIN contributions city_contrib ON city_contrib.derive_id = d.id AND city_contrib.user_city = $1
             LEFT JOIN LATERAL (
                 SELECT image_url, image_lqip FROM contributions 
-                WHERE derive_id = d.id 
+                WHERE derive_id = d.id AND user_city = $1
                 ORDER BY created_at DESC LIMIT 1
             ) c ON true
             GROUP BY d.id, d.number, d.title, d.description, c.image_url, c.image_lqip, d.points
