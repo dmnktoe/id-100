@@ -235,12 +235,16 @@ func DeriveHandler(c echo.Context) error {
 
 	// Query contributions, filter by city if specified
 	var rows pgx.Rows
+	var err error
 	if cityFilter != "" {
-		rows, _ = database.DB.Query(context.Background(),
+		rows, err = database.DB.Query(context.Background(),
 			"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), COALESCE(user_comment,''), created_at FROM contributions WHERE derive_id = $1 AND user_city = $2 ORDER BY created_at DESC", d.ID, cityFilter)
 	} else {
-		rows, _ = database.DB.Query(context.Background(),
+		rows, err = database.DB.Query(context.Background(),
 			"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), COALESCE(user_comment,''), created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
+	}
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Fehler beim Laden der Beiträge")
 	}
 	defer rows.Close()
 
