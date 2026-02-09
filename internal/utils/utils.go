@@ -12,6 +12,7 @@ import (
 
 // EnsureFullImageURL makes sure stored image URLs are usable in templates
 // Constructs MinIO URLs for images stored in S3-compatible storage
+// Uses S3_PUBLIC_URL for browser-accessible URLs (e.g., http://localhost:9000)
 func EnsureFullImageURL(raw string) string {
 	if raw == "" {
 		return ""
@@ -22,19 +23,24 @@ func EnsureFullImageURL(raw string) string {
 	}
 	
 	// Get MinIO configuration
-	s3Endpoint := strings.TrimRight(os.Getenv("S3_ENDPOINT"), "/")
-	bucket := os.Getenv("S3_BUCKET")
-	
-	// Default to minio:9000 if not set (for Docker internal)
-	if s3Endpoint == "" {
-		s3Endpoint = "http://minio:9000"
+	// Use S3_PUBLIC_URL for browser-accessible endpoint, fallback to S3_ENDPOINT
+	s3PublicURL := strings.TrimRight(os.Getenv("S3_PUBLIC_URL"), "/")
+	if s3PublicURL == "" {
+		// Fallback to S3_ENDPOINT for backward compatibility
+		s3PublicURL = strings.TrimRight(os.Getenv("S3_ENDPOINT"), "/")
+		if s3PublicURL == "" {
+			// Default to localhost for browser access
+			s3PublicURL = "http://localhost:9000"
+		}
 	}
+	
+	bucket := os.Getenv("S3_BUCKET")
 	if bucket == "" {
 		bucket = "id100-images"
 	}
 
 	// If it's just a filename or path, construct MinIO URL
-	// MinIO public URLs: http://minio:9000/bucket-name/object-key
+	// MinIO public URLs: http://localhost:9000/bucket-name/object-key
 	fileName := strings.TrimLeft(raw, "/")
 	
 	// Remove bucket name if it's already in the path
@@ -42,7 +48,7 @@ func EnsureFullImageURL(raw string) string {
 		fileName = strings.TrimPrefix(fileName, bucket+"/")
 	}
 	
-	return fmt.Sprintf("%s/%s/%s", s3Endpoint, bucket, fileName)
+	return fmt.Sprintf("%s/%s/%s", s3PublicURL, bucket, fileName)
 }
 
 // GetFooterStats wraps the database function and returns a FooterStats model
