@@ -207,6 +207,7 @@ func DeriveHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	num := c.Param("number")
 	pageParam := c.QueryParam("page") // Capture page parameter for back navigation
+	cityFilter := c.QueryParam("city") // Capture city filter parameter
 
 	var d models.Derive
 	query := `
@@ -232,8 +233,15 @@ func DeriveHandler(c echo.Context) error {
 		d.PointsTier = 3
 	}
 
-	rows, _ := database.DB.Query(context.Background(),
-		"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), COALESCE(user_comment,''), created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
+	// Query contributions, filter by city if specified
+	var rows pgx.Rows
+	if cityFilter != "" {
+		rows, _ = database.DB.Query(context.Background(),
+			"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), COALESCE(user_comment,''), created_at FROM contributions WHERE derive_id = $1 AND user_city = $2 ORDER BY created_at DESC", d.ID, cityFilter)
+	} else {
+		rows, _ = database.DB.Query(context.Background(),
+			"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), COALESCE(user_comment,''), created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
+	}
 	defer rows.Close()
 
 	var contribs []models.Contribution
@@ -251,6 +259,7 @@ func DeriveHandler(c echo.Context) error {
 			"Derive":        d,
 			"Contributions": contribs,
 			"PageParam":     pageParam,
+			"CityFilter":    cityFilter,
 			"IsPartial":     true,
 		})
 	}
@@ -260,6 +269,7 @@ func DeriveHandler(c echo.Context) error {
 		"Derive":          d,
 		"Contributions":   contribs,
 		"PageParam":       pageParam,
+		"CityFilter":      cityFilter,
 		"IsPartial":       false,
 		"ContentTemplate": "id_detail.content",
 		"CurrentPath":     c.Request().URL.Path,
