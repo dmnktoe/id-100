@@ -34,7 +34,7 @@ func Close() {
 }
 
 // GetFooterStats fetches creative database statistics
-func GetFooterStats() (totalDeriven, totalContribs, activeUsers int, lastActivity sql.NullTime) {
+func GetFooterStats() (totalDeriven, totalContribs, activeUsers, totalCities int, lastActivity sql.NullTime) {
 	// Count total deriven
 	DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM deriven").Scan(&totalDeriven)
 
@@ -43,6 +43,9 @@ func GetFooterStats() (totalDeriven, totalContribs, activeUsers int, lastActivit
 
 	// Count active users (users who contributed)
 	DB.QueryRow(context.Background(), "SELECT COUNT(DISTINCT user_name) FROM contributions WHERE user_name != ''").Scan(&activeUsers)
+
+	// Count distinct cities
+	DB.QueryRow(context.Background(), "SELECT COUNT(DISTINCT user_city) FROM contributions WHERE user_city IS NOT NULL AND user_city != ''").Scan(&totalCities)
 
 	// Get last activity timestamp
 	err := DB.QueryRow(context.Background(), "SELECT MAX(created_at) FROM contributions").Scan(&lastActivity)

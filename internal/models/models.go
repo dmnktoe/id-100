@@ -32,6 +32,7 @@ type FooterStats struct {
 	TotalDeriven       int
 	TotalContributions int
 	ActiveUsers        int
+	TotalCities        int
 	LastActivity       time.Time
 }
 

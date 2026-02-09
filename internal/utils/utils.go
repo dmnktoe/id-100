@@ -54,11 +54,12 @@ func EnsureFullImageURL(raw string) string {
 // GetFooterStats wraps the database function and returns a FooterStats model
 func GetFooterStats() models.FooterStats {
 	stats := models.FooterStats{}
-	totalDeriven, totalContribs, activeUsers, lastActivity := database.GetFooterStats()
+	totalDeriven, totalContribs, activeUsers, totalCities, lastActivity := database.GetFooterStats()
 
 	stats.TotalDeriven = totalDeriven
 	stats.TotalContributions = totalContribs
 	stats.ActiveUsers = activeUsers
+	stats.TotalCities = totalCities
 
 	if lastActivity.Valid {
 		stats.LastActivity = lastActivity.Time
