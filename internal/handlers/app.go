@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/chai2010/webp"
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/database"
@@ -29,7 +30,7 @@ import (
 	"id-100/internal/utils"
 )
 
-// DerivenHandler displays the list of deriven with pagination
+// DerivenHandler displays the list of deriven with pagination and optional city filter
 func DerivenHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 
@@ -37,19 +38,60 @@ func DerivenHandler(c echo.Context) error {
 	if page < 1 {
 		page = 1
 	}
+	cityFilter := c.QueryParam("city") // Get city filter from query params
 	limit := 20
 	offset := (page - 1) * limit
 
-	// Get total count for pagination
-	var totalCount int
-	err := database.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM deriven").Scan(&totalCount)
+	// Get list of all distinct cities from contributions for the filter dropdown
+	citiesQuery := `SELECT DISTINCT user_city FROM contributions WHERE user_city IS NOT NULL AND user_city != '' ORDER BY user_city ASC`
+	citiesRows, err := database.DB.Query(context.Background(), citiesQuery)
 	if err != nil {
-		log.Printf("Count Error: %v", err)
-		totalCount = 100 // fallback
+		log.Printf("Cities Query Error: %v", err)
 	}
-	totalPages := (totalCount + limit - 1) / limit // ceiling division
+	defer citiesRows.Close()
 
-	query := `
+	var cities []string
+	for citiesRows.Next() {
+		var city string
+		if err := citiesRows.Scan(&city); err == nil {
+			cities = append(cities, city)
+		}
+	}
+
+	// Build the count and main query based on city filter
+	var totalCount int
+	var countQuery string
+	var query string
+
+	if cityFilter != "" {
+		// Filter by city: only show deriven that have contributions from this city
+		countQuery = `SELECT COUNT(DISTINCT d.id) FROM deriven d 
+		              INNER JOIN contributions c ON c.derive_id = d.id 
+		              WHERE c.user_city = $1`
+		err = database.DB.QueryRow(context.Background(), countQuery, cityFilter).Scan(&totalCount)
+
+		query = `
+            SELECT 
+                d.id, d.number, d.title, d.description, 
+                COALESCE(c.image_url, ''), COALESCE(c.image_lqip, ''),
+                (SELECT COUNT(*) FROM contributions WHERE derive_id = d.id) as contrib_count,
+                d.points
+            FROM deriven d
+            INNER JOIN contributions city_contrib ON city_contrib.derive_id = d.id AND city_contrib.user_city = $1
+            LEFT JOIN LATERAL (
+                SELECT image_url, image_lqip FROM contributions 
+                WHERE derive_id = d.id 
+                ORDER BY created_at DESC LIMIT 1
+            ) c ON true
+            GROUP BY d.id, d.number, d.title, d.description, c.image_url, c.image_lqip, d.points
+            ORDER BY d.number ASC 
+            LIMIT $2 OFFSET $3`
+	} else {
+		// No filter: show all deriven
+		countQuery = "SELECT COUNT(*) FROM deriven"
+		err = database.DB.QueryRow(context.Background(), countQuery).Scan(&totalCount)
+
+		query = `
             SELECT 
                 d.id, d.number, d.title, d.description, 
                 COALESCE(c.image_url, ''), COALESCE(c.image_lqip, ''),
@@ -63,8 +105,22 @@ func DerivenHandler(c echo.Context) error {
             ) c ON true
             ORDER BY d.number ASC 
             LIMIT $1 OFFSET $2`
+	}
 
-	rows, err := database.DB.Query(context.Background(), query, limit, offset)
+	if err != nil {
+		log.Printf("Count Error: %v", err)
+		totalCount = 100 // fallback
+	}
+	totalPages := (totalCount + limit - 1) / limit // ceiling division
+
+	// Execute the main query
+	var rows pgx.Rows
+	if cityFilter != "" {
+		rows, err = database.DB.Query(context.Background(), query, cityFilter, limit, offset)
+	} else {
+		rows, err = database.DB.Query(context.Background(), query, limit, offset)
+	}
+
 	if err != nil {
 		log.Printf("Query Error: %v", err)
 		return c.String(http.StatusInternalServerError, "Datenbankfehler")
@@ -137,6 +193,8 @@ func DerivenHandler(c echo.Context) error {
 		"HasPrev":         page > 1,
 		"NextPage":        page + 1,
 		"PrevPage":        page - 1,
+		"Cities":          cities,
+		"SelectedCity":    cityFilter,
 		"ContentTemplate": "ids.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
