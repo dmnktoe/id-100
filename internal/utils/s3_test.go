@@ -36,18 +36,6 @@ func TestExtractFileNameFromURL(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "legacy Supabase full URL (backward compat)",
-			url:     "https://example.supabase.co/storage/v1/object/public/contributions/derive_5_1.webp",
-			want:    "derive_5_1.webp",
-			wantErr: false,
-		},
-		{
-			name:    "legacy Supabase relative URL (backward compat)",
-			url:     "/storage/v1/object/public/contributions/derive_5_1.webp",
-			want:    "derive_5_1.webp",
-			wantErr: false,
-		},
-		{
 			name:    "empty URL",
 			url:     "",
 			want:    "",

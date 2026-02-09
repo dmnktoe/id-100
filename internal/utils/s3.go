@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-// extractFileNameFromURL extracts the filename from a MinIO/S3 storage URL or legacy Supabase URL
+// extractFileNameFromURL extracts the filename from a MinIO/S3 storage URL
 func extractFileNameFromURL(imageURL string) (string, error) {
 	if imageURL == "" {
 		return "", fmt.Errorf("empty URL")
@@ -22,18 +22,6 @@ func extractFileNameFromURL(imageURL string) (string, error) {
 	bucket := os.Getenv("S3_BUCKET")
 	if bucket == "" {
 		bucket = "id100-images"
-	}
-
-	// Handle legacy Supabase storage path: /storage/v1/object/public/bucket-name/filename.ext
-	if strings.Contains(imageURL, "/storage/v1/object/public/") {
-		parts := strings.Split(imageURL, "/storage/v1/object/public/")
-		if len(parts) == 2 {
-			// Extract everything after the bucket name
-			pathParts := strings.SplitN(parts[1], "/", 2)
-			if len(pathParts) == 2 {
-				return pathParts[1], nil // Return filename after bucket
-			}
-		}
 	}
 
 	// Handle MinIO URL format: http://minio:9000/bucket-name/filename.ext
