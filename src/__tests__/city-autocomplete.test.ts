@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { initCityAutocomplete, initFormValidation, resetState } from "./city-autocomplete";
+import { initCityAutocomplete, initFormValidation, resetState } from "../lib/city-autocomplete";
 
 describe("city-autocomplete", () => {
   let cityInput: HTMLInputElement;

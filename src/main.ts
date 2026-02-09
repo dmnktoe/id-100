@@ -3,12 +3,12 @@
  * Initializes all modules when the DOM is ready
  */
 
-import { initBrandAnimation } from "./brand-animation";
-import { initDrawer } from "./drawer";
-import { initLazyImages } from "./lazy-images";
-import { initFormHandlers } from "./form-handler";
-import { initCityAutocomplete, initFormValidation } from "./city-autocomplete";
-import "./favicon-emoji";
+import { initBrandAnimation } from "./lib/brand-animation";
+import { initDrawer } from "./lib/drawer";
+import { initLazyImages } from "./lib/lazy-images";
+import { initFormHandlers } from "./lib/form-handler";
+import { initCityAutocomplete, initFormValidation } from "./lib/city-autocomplete";
+import "./lib/favicon-emoji";
 
 // Initialize all modules when DOM is ready
 (() => {
