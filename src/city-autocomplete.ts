@@ -22,6 +22,17 @@ interface MeilisearchResponse {
 }
 
 let debounceTimer: number | undefined;
+let validCities: Set<string> = new Set();
+let citySelected = false;
+
+/**
+ * Reset module state (useful for testing)
+ */
+export function resetState(): void {
+  debounceTimer = undefined;
+  validCities = new Set();
+  citySelected = false;
+}
 
 /**
  * Initialize city autocomplete functionality
@@ -29,6 +40,7 @@ let debounceTimer: number | undefined;
 export function initCityAutocomplete(): void {
   const cityInput = document.getElementById("playerCity") as HTMLInputElement;
   const datalist = document.getElementById("cityOptions") as HTMLDataListElement;
+  const submitBtn = document.querySelector(".submit-btn") as HTMLButtonElement;
 
   if (!cityInput || !datalist) {
     return;
@@ -39,6 +51,19 @@ export function initCityAutocomplete(): void {
   // Listen to input changes
   cityInput.addEventListener("input", () => {
     const query = cityInput.value.trim();
+
+    // Mark as not selected when user types
+    citySelected = false;
+    cityInput.classList.remove("city-selected");
+    updateSubmitButton(submitBtn);
+
+    // Check if the current value matches a valid city
+    if (validCities.has(query)) {
+      citySelected = true;
+      cityInput.classList.add("city-selected");
+      updateSubmitButton(submitBtn);
+      return;
+    }
 
     // Don't search if query is too short or same as last query
     if (query.length < 2 || query === lastQuery) {
@@ -56,6 +81,26 @@ export function initCityAutocomplete(): void {
     debounceTimer = window.setTimeout(() => {
       fetchCities(query, datalist);
     }, 300);
+  });
+
+  // Listen for selection from datalist
+  cityInput.addEventListener("change", () => {
+    const value = cityInput.value.trim();
+    if (validCities.has(value)) {
+      citySelected = true;
+      cityInput.classList.add("city-selected");
+      updateSubmitButton(submitBtn);
+    }
+  });
+
+  // Also check on blur
+  cityInput.addEventListener("blur", () => {
+    const value = cityInput.value.trim();
+    if (validCities.has(value)) {
+      citySelected = true;
+      cityInput.classList.add("city-selected");
+      updateSubmitButton(submitBtn);
+    }
   });
 }
 
@@ -93,8 +138,9 @@ async function fetchCities(
 
     const data: MeilisearchResponse = await response.json();
 
-    // Clear existing options
+    // Clear existing options and valid cities
     datalist.innerHTML = "";
+    validCities.clear();
 
     // Track unique city names to avoid duplicates
     const uniqueCities = new Set<string>();
@@ -106,6 +152,7 @@ async function fetchCities(
       // Only add if not already in the list
       if (cityName && !uniqueCities.has(cityName)) {
         uniqueCities.add(cityName);
+        validCities.add(cityName);
         const option = document.createElement("option");
         option.value = cityName;
         datalist.appendChild(option);
@@ -114,4 +161,41 @@ async function fetchCities(
   } catch (error) {
     console.error("Error fetching cities:", error);
   }
+}
+
+/**
+ * Update submit button state based on form validity
+ */
+function updateSubmitButton(submitBtn: HTMLButtonElement | null): void {
+  if (!submitBtn) return;
+
+  const nameInput = document.getElementById("playerName") as HTMLInputElement;
+  const privacyCheckbox = document.getElementById("agreePrivacy") as HTMLInputElement;
+
+  const nameValid = nameInput && nameInput.value.trim().length >= 2;
+  const privacyChecked = privacyCheckbox && privacyCheckbox.checked;
+
+  // Enable button only if all conditions are met
+  const allValid = nameValid && privacyChecked && citySelected;
+  submitBtn.disabled = !allValid;
+}
+
+/**
+ * Initialize form validation for the name entry form
+ */
+export function initFormValidation(): void {
+  const submitBtn = document.querySelector(".submit-btn") as HTMLButtonElement;
+  const nameInput = document.getElementById("playerName") as HTMLInputElement;
+  const privacyCheckbox = document.getElementById("agreePrivacy") as HTMLInputElement;
+
+  if (!submitBtn || !nameInput || !privacyCheckbox) {
+    return;
+  }
+
+  // Initially disable the button
+  submitBtn.disabled = true;
+
+  // Add event listeners for validation
+  nameInput.addEventListener("input", () => updateSubmitButton(submitBtn));
+  privacyCheckbox.addEventListener("change", () => updateSubmitButton(submitBtn));
 }

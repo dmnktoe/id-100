@@ -1037,6 +1037,41 @@ main {
   font-style: italic;
 }
 
+/* City autocomplete dropdown styling */
+#playerCity {
+  position: relative;
+}
+
+/* Style for datalist dropdown (limited browser support) */
+datalist {
+  position: absolute;
+  background: var(--white);
+  border: var(--border-dark);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+/* Better styling for autocomplete suggestions */
+input[list]::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+
+input[list]:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.3);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Visual indicator when city is selected */
+input[list].city-selected {
+  border-color: rgba(0, 128, 0, 0.3);
+  background: rgba(0, 255, 0, 0.02);
+}
+
 label {
   display: block;
   font-weight: 300;
