@@ -73,6 +73,7 @@ services:
   geonames-loader:
     image: alpine:latest
     container_name: id100-geonames-loader
+    restart: no
     depends_on:
       meilisearch:
         condition: service_healthy
