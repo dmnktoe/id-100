@@ -4,15 +4,15 @@ services:
     image: postgres:15-alpine
     container_name: id100-db
     environment:
-      POSTGRES_USER: dev
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: id100
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dev -d id100"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,8 +23,8 @@ services:
     container_name: id100-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
     ports:
@@ -45,9 +45,9 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set myminio http://minio:9000 minioadmin minioadmin;
-      mc mb myminio/id100-images --ignore-existing;
-      mc anonymous set download myminio/id100-images;
+      mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb myminio/${S3_BUCKET_NAME} --ignore-existing;
+      mc anonymous set download myminio/${S3_BUCKET_NAME};
       exit 0;
       "
 
@@ -56,8 +56,9 @@ services:
     image: getmeili/meilisearch:v1.7
     container_name: id100-meilisearch
     environment:
-      MEILI_ENV: development
-      MEILI_NO_ANALYTICS: "true"
+      MEILI_ENV: ${ENVIRONMENT}
+      MEILI_NO_ANALYTICS: ${MEILI_NO_ANALYTICS}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
     volumes:
       - meilisearch_data:/meili_data
     ports:
@@ -81,15 +82,11 @@ services:
     command:
       - -c
       - |
-        echo "Installing required tools..."
         apk add --no-cache curl unzip gawk
-        echo "Downloading GeoNames data for Germany..."
         cd /tmp
         curl -O https://download.geonames.org/export/dump/DE.zip
         unzip -o DE.zip
-        echo "Converting to JSON and importing to Meilisearch..."
         sh /scripts/import-geonames.sh
-        echo "GeoNames import complete"
 
   # ID-100 Web Application
   webapp:
@@ -105,23 +102,23 @@ services:
       meilisearch:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://dev:pass@db:5432/id100?sslmode=disable
-      S3_ACCESS_KEY: minioadmin
-      S3_SECRET_KEY: minioadmin
-      S3_BUCKET_NAME: id100-images
-      S3_BUCKET: id100-images
-      S3_REGION: us-east-1
-      S3_ENDPOINT: http://minio:9000
-      S3_PUBLIC_URL: http://localhost:9000
-      BASE_URL: http://localhost:8080
-      PORT: 8080
-      ENVIRONMENT: development
-      ADMIN_USERNAME: admin
-      ADMIN_PASSWORD: change_me_in_production
-      SESSION_SECRET: change_this_in_production_to_random_string
-      GEOCODING_API_URL: http://localhost:8081
+      DATABASE_URL: ${DATABASE_URL}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_REGION: ${S3_REGION}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL}
+      BASE_URL: ${BASE_URL}
+      PORT: ${PORT}
+      ENVIRONMENT: ${ENVIRONMENT}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET}
+      GEOCODING_API_URL: ${GEOCODING_API_URL}
     ports:
-      - "8080:8080"
+      - "${WEBAPP_PORT}:8080"
     volumes:
       - ./web:/app/web
       - ./cmd:/app/cmd
