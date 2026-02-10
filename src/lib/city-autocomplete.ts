@@ -221,12 +221,20 @@ export function initCityAutocomplete(): void {
     return;
   }
 
+  // Set initial button state to disabled
+  if (submitBtn) {
+    submitBtn.disabled = true;
+  }
+
   // Initialize Meilisearch client
   const meiliClient = initMeilisearchClient();
 
-  // Create custom dropdown
+  // Create custom dropdown and insert after the input
   const dropdown = createDropdown();
-  cityInput.parentElement?.appendChild(dropdown);
+  if (cityInput.parentNode) {
+    // Insert dropdown right after the input element
+    cityInput.parentNode.insertBefore(dropdown, cityInput.nextSibling);
+  }
 
   let lastQuery = "";
 
@@ -368,14 +376,23 @@ export function initFormValidation(): void {
     const privacyAccepted = privacyCheckbox.checked;
     const cityValid = citySelected;
 
-    submitBtn.disabled = !(nameValid && privacyAccepted && cityValid);
+    const allValid = nameValid && privacyAccepted && cityValid;
+    submitBtn.disabled = !allValid;
+    
+    // Update button appearance
+    if (allValid) {
+      submitBtn.classList.remove("disabled");
+    } else {
+      submitBtn.classList.add("disabled");
+    }
   };
 
   nameInput.addEventListener("input", updateButton);
   privacyCheckbox.addEventListener("change", updateButton);
 
-  // Initial check
-  updateButton();
+  // Set initial disabled state
+  submitBtn.disabled = true;
+  submitBtn.classList.add("disabled");
 }
 
 /**
@@ -391,6 +408,14 @@ function updateSubmitButton(submitBtn: HTMLButtonElement | null): void {
 
   const nameValid = nameInput.value.trim().length >= 2;
   const privacyAccepted = privacyCheckbox.checked;
-
-  submitBtn.disabled = !(nameValid && privacyAccepted && citySelected);
+  
+  const allValid = nameValid && privacyAccepted && citySelected;
+  submitBtn.disabled = !allValid;
+  
+  // Update button appearance
+  if (allValid) {
+    submitBtn.classList.remove("disabled");
+  } else {
+    submitBtn.classList.add("disabled");
+  }
 }
