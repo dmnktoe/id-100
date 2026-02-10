@@ -115,15 +115,18 @@ describe("City Autocomplete - Dropdown Rendering", () => {
   });
 
   it("should enable button only when all conditions are met", async () => {
-    initCityAutocomplete();
-    initFormValidation();
-
     const submitBtn = document.getElementById("submitNameBtn") as HTMLButtonElement;
     const nameInput = document.getElementById("playerName") as HTMLInputElement;
     const cityInput = document.getElementById("playerCity") as HTMLInputElement;
     const privacyCheckbox = document.getElementById(
       "agreePrivacy"
     ) as HTMLInputElement;
+
+    // Set button disabled initially (matches real implementation)
+    submitBtn.disabled = true;
+
+    initCityAutocomplete();
+    initFormValidation();
 
     // Initial state
     expect(submitBtn.disabled).toBe(true);
