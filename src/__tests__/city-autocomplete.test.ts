@@ -46,8 +46,8 @@ describe("City Autocomplete - Dropdown Rendering", () => {
       <form id="set-name-form" novalidate>
         <input type="text" id="playerName" name="player_name" />
         <input type="text" id="playerCity" name="player_city" />
-        <input type="checkbox" id="agreePrivacy" name="agree_privacy" />
-        <button type="submit" id="submitNameBtn">Weiter zum Upload</button>
+        <input type="checkbox" id="privacyCheckbox" name="agree_privacy" />
+        <button type="submit" id="submitNameBtn" class="submit-btn">Weiter zum Upload</button>
         
         <div class="form-status">
           <ul id="validationStatus">
@@ -119,7 +119,7 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     const nameInput = document.getElementById("playerName") as HTMLInputElement;
     const cityInput = document.getElementById("playerCity") as HTMLInputElement;
     const privacyCheckbox = document.getElementById(
-      "agreePrivacy"
+      "privacyCheckbox"
     ) as HTMLInputElement;
 
     // Set button disabled initially (matches real implementation)
