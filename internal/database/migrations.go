@@ -44,7 +44,7 @@ func runMigrations() {
 		}
 
 		log.Printf("Running migration %03d_%s...", migration.Version, migration.Name)
-		
+
 		tx, err := DB.Begin(ctx)
 		if err != nil {
 			log.Fatalf("Failed to begin transaction for migration %d: %v", migration.Version, err)

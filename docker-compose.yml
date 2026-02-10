@@ -3,6 +3,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: id100-db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -16,11 +17,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - id100-network
 
   # MinIO S3-compatible storage
   minio:
     image: minio/minio:latest
     container_name: id100-minio
+    restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -35,11 +39,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - id100-network
 
-  # MinIO client for bucket creation
+  # MinIO client for bucket creation (run once only)
   minio-init:
     image: minio/mc:latest
     container_name: id100-minio-init
+    restart: "no"
     depends_on:
       minio:
         condition: service_healthy
@@ -50,11 +57,14 @@ services:
       mc anonymous set download myminio/${S3_BUCKET_NAME};
       exit 0;
       "
+    networks:
+      - id100-network
 
   # Meilisearch for city autocomplete
   meilisearch:
     image: getmeili/meilisearch:v1.7
     container_name: id100-meilisearch
+    restart: unless-stopped
     environment:
       MEILI_ENV: ${ENVIRONMENT}
       MEILI_NO_ANALYTICS: ${MEILI_NO_ANALYTICS}
@@ -68,12 +78,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - id100-network
 
-  # GeoNames data loader for Meilisearch
+  # GeoNames data loader for Meilisearch (run once only)
   geonames-loader:
     image: alpine:latest
     container_name: id100-geonames-loader
-    restart: no
+    restart: "no"
     depends_on:
       meilisearch:
         condition: service_healthy
@@ -88,6 +100,8 @@ services:
         curl -O https://download.geonames.org/export/dump/DE.zip
         unzip -o DE.zip
         sh /scripts/import-geonames.sh
+    networks:
+      - id100-network
 
   # ID-100 Web Application
   webapp:
@@ -95,6 +109,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: id100-webapp
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -120,10 +135,22 @@ services:
       GEOCODING_API_URL: ${GEOCODING_API_URL}
     ports:
       - "${WEBAPP_PORT}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - id100-network
     volumes:
       - ./web:/app/web
       - ./cmd:/app/cmd
       - ./internal:/app/internal
+
+networks:
+  id100-network:
+    driver: bridge
 
 volumes:
   postgres_data:

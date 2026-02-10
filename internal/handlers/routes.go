@@ -7,6 +7,13 @@ import (
 
 // RegisterRoutes registers all application routes
 func RegisterRoutes(e *echo.Echo, baseURL string) {
+	e.GET("/health", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{
+			"status":  "ok",
+			"service": "id-100",
+		})
+	})
+
 	e.Static("/static", "web/static")
 
 	e.GET("/", DerivenHandler)

@@ -72,7 +72,7 @@ func Load() *Renderer {
 	if err != nil {
 		log.Fatalf("failed to parse templates %v: %v", files, err)
 	}
-	
+
 	log.Printf("Successfully loaded templates")
 	return &Renderer{templates: tmpls}
 }

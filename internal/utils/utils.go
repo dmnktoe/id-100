@@ -21,7 +21,7 @@ func EnsureFullImageURL(raw string) string {
 	if strings.HasPrefix(raw, "http://") || strings.HasPrefix(raw, "https://") || strings.HasPrefix(raw, "data:") {
 		return raw
 	}
-	
+
 	// Get MinIO configuration
 	// Use S3_PUBLIC_URL for browser-accessible endpoint, fallback to S3_ENDPOINT
 	s3PublicURL := strings.TrimRight(os.Getenv("S3_PUBLIC_URL"), "/")
@@ -33,7 +33,7 @@ func EnsureFullImageURL(raw string) string {
 			s3PublicURL = "http://localhost:9000"
 		}
 	}
-	
+
 	bucket := os.Getenv("S3_BUCKET")
 	if bucket == "" {
 		bucket = "id100-images"
@@ -42,12 +42,12 @@ func EnsureFullImageURL(raw string) string {
 	// If it's just a filename or path, construct MinIO URL
 	// MinIO public URLs: http://localhost:9000/bucket-name/object-key
 	fileName := strings.TrimLeft(raw, "/")
-	
+
 	// Remove bucket name if it's already in the path
 	if strings.HasPrefix(fileName, bucket+"/") {
 		fileName = strings.TrimPrefix(fileName, bucket+"/")
 	}
-	
+
 	return fmt.Sprintf("%s/%s/%s", s3PublicURL, bucket, fileName)
 }
 

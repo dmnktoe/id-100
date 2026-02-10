@@ -37,19 +37,19 @@ func TestEnsureFullImageURLFallback(t *testing.T) {
 
 	got := EnsureFullImageURL("derive_1.webp")
 	want := "http://minio:9000/id100-images/derive_1.webp"
-	
+
 	if got != want {
 		t.Fatalf("want=%q got=%q", want, got)
 	}
-	
+
 	// Test default fallback when neither is set
 	os.Unsetenv("S3_PUBLIC_URL")
 	os.Unsetenv("S3_ENDPOINT")
 	os.Setenv("S3_BUCKET", "id100-images")
-	
+
 	got = EnsureFullImageURL("derive_2.webp")
 	want = "http://localhost:9000/id100-images/derive_2.webp"
-	
+
 	if got != want {
 		t.Fatalf("want=%q got=%q", want, got)
 	}

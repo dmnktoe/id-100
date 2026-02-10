@@ -13,7 +13,7 @@ func TestLoad(t *testing.T) {
 	origPort := os.Getenv("PORT")
 	origAdminUser := os.Getenv("ADMIN_USERNAME")
 	origAdminPass := os.Getenv("ADMIN_PASSWORD")
-	
+
 	defer func() {
 		os.Setenv("BASE_URL", origBaseURL)
 		os.Setenv("ENVIRONMENT", origEnv)

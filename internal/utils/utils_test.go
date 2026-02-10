@@ -66,12 +66,12 @@ func TestSanitizeFilenameHeaderInjection(t *testing.T) {
 	// Test that header injection attempts are neutralized
 	malicious := "image.jpg\r\nContent-Type: text/html"
 	result := SanitizeFilename(malicious)
-	
+
 	// Check that dangerous characters are replaced
 	if result == malicious {
 		t.Error("SanitizeFilename should modify strings with CRLF")
 	}
-	
+
 	// Ensure no CRLF sequences remain
 	for _, char := range result {
 		if char == '\n' || char == '\r' || char == '"' || char == '\\' {

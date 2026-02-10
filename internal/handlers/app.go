@@ -206,7 +206,7 @@ func DerivenHandler(c echo.Context) error {
 func DeriveHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	num := c.Param("number")
-	pageParam := c.QueryParam("page") // Capture page parameter for back navigation
+	pageParam := c.QueryParam("page")  // Capture page parameter for back navigation
 	cityFilter := c.QueryParam("city") // Capture city filter parameter
 
 	var d models.Derive
