@@ -11,6 +11,8 @@ import (
 )
 
 // EnsureFullImageURL makes sure stored image URLs are usable in templates
+// Constructs MinIO URLs for images stored in S3-compatible storage
+// Uses S3_PUBLIC_URL for browser-accessible URLs (e.g., http://localhost:9000)
 func EnsureFullImageURL(raw string) string {
 	if raw == "" {
 		return ""
@@ -19,52 +21,45 @@ func EnsureFullImageURL(raw string) string {
 	if strings.HasPrefix(raw, "http://") || strings.HasPrefix(raw, "https://") || strings.HasPrefix(raw, "data:") {
 		return raw
 	}
-	base := strings.TrimRight(os.Getenv("SUPABASE_URL"), "/")
-	bucket := strings.Trim(os.Getenv("S3_BUCKET"), "/")
-
-	// If the path already starts with /storage, just prefix the base
-	if strings.HasPrefix(raw, "/storage/") {
-		return base + raw
-	}
-	if strings.HasPrefix(raw, "storage/") {
-		return base + "/" + raw
-	}
-
-	// If it starts with a slash (other absolute path), prefix base
-	if strings.HasPrefix(raw, "/") {
-		return base + raw
-	}
-
-	// If it already contains the storage object path, be safe
-	if strings.Contains(raw, "storage/v1/object/public") {
-		if strings.HasPrefix(raw, "/") {
-			return base + raw
+	
+	// Get MinIO configuration
+	// Use S3_PUBLIC_URL for browser-accessible endpoint, fallback to S3_ENDPOINT
+	s3PublicURL := strings.TrimRight(os.Getenv("S3_PUBLIC_URL"), "/")
+	if s3PublicURL == "" {
+		// Fallback to S3_ENDPOINT for backward compatibility
+		s3PublicURL = strings.TrimRight(os.Getenv("S3_ENDPOINT"), "/")
+		if s3PublicURL == "" {
+			// Default to localhost for browser access
+			s3PublicURL = "http://localhost:9000"
 		}
-		return base + "/" + raw
+	}
+	
+	bucket := os.Getenv("S3_BUCKET")
+	if bucket == "" {
+		bucket = "id100-images"
 	}
 
-	// If it begins with the bucket name (e.g. "contributions/derive_...")
-	if bucket != "" && (strings.HasPrefix(raw, bucket+"/") || strings.HasPrefix(raw, bucket)) {
-		return fmt.Sprintf("%s/storage/v1/object/public/%s", base, strings.TrimLeft(raw, "/"))
+	// If it's just a filename or path, construct MinIO URL
+	// MinIO public URLs: http://localhost:9000/bucket-name/object-key
+	fileName := strings.TrimLeft(raw, "/")
+	
+	// Remove bucket name if it's already in the path
+	if strings.HasPrefix(fileName, bucket+"/") {
+		fileName = strings.TrimPrefix(fileName, bucket+"/")
 	}
-
-	// If it's just a filename, assume bucket and build the public url
-	if bucket != "" && !strings.Contains(raw, "/") {
-		return fmt.Sprintf("%s/storage/v1/object/public/%s/%s", base, bucket, raw)
-	}
-
-	// Fallback: prefix base
-	return base + "/" + raw
+	
+	return fmt.Sprintf("%s/%s/%s", s3PublicURL, bucket, fileName)
 }
 
 // GetFooterStats wraps the database function and returns a FooterStats model
 func GetFooterStats() models.FooterStats {
 	stats := models.FooterStats{}
-	totalDeriven, totalContribs, activeUsers, lastActivity := database.GetFooterStats()
+	totalDeriven, totalContribs, activeUsers, totalCities, lastActivity := database.GetFooterStats()
 
 	stats.TotalDeriven = totalDeriven
 	stats.TotalContributions = totalContribs
 	stats.ActiveUsers = activeUsers
+	stats.TotalCities = totalCities
 
 	if lastActivity.Valid {
 		stats.LastActivity = lastActivity.Time

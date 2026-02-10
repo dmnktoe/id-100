@@ -34,7 +34,7 @@
         </section>
 
         <footer class="detail-footer">
-            <a href="/{{if .PageParam}}?page={{.PageParam}}{{end}}" class="back-link drawer-back-link">← zurück zum Index</a>
+            <a href="/{{if or (ne .PageParam "") (ne .CityFilter "")}}?{{if ne .PageParam ""}}page={{.PageParam}}{{end}}{{if and (ne .PageParam "") (ne .CityFilter "")}}&{{end}}{{if ne .CityFilter ""}}city={{.CityFilter}}{{end}}{{end}}" class="back-link drawer-back-link">← zurück zum Index</a>
         </footer>
     </main>
 {{end}}

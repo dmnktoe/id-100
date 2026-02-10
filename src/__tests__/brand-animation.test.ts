@@ -2,7 +2,7 @@
  * Tests for brand-animation module
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { initBrandAnimation } from './brand-animation'
+import { initBrandAnimation } from '../lib/brand-animation'
 
 describe('initBrandAnimation', () => {
   beforeEach(() => {

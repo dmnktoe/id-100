@@ -2,7 +2,7 @@
  * Tests for favicon-emoji module
  */
 import { describe, it, expect, beforeEach } from 'vitest'
-import { setRandomEmojiFavicon } from './favicon-emoji'
+import { setRandomEmojiFavicon } from '../lib/favicon-emoji'
 
 describe('setRandomEmojiFavicon', () => {
   beforeEach(() => {

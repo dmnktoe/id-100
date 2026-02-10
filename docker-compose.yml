@@ -1,0 +1,130 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: id100-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO S3-compatible storage
+  minio:
+    image: minio/minio:latest
+    container_name: id100-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO client for bucket creation
+  minio-init:
+    image: minio/mc:latest
+    container_name: id100-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb myminio/${S3_BUCKET_NAME} --ignore-existing;
+      mc anonymous set download myminio/${S3_BUCKET_NAME};
+      exit 0;
+      "
+
+  # Meilisearch for city autocomplete
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: id100-meilisearch
+    environment:
+      MEILI_ENV: ${ENVIRONMENT}
+      MEILI_NO_ANALYTICS: ${MEILI_NO_ANALYTICS}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+    volumes:
+      - meilisearch_data:/meili_data
+    ports:
+      - "8081:7700"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # GeoNames data loader for Meilisearch
+  geonames-loader:
+    image: alpine:latest
+    container_name: id100-geonames-loader
+    depends_on:
+      meilisearch:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts:ro
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        apk add --no-cache curl unzip gawk
+        cd /tmp
+        curl -O https://download.geonames.org/export/dump/DE.zip
+        unzip -o DE.zip
+        sh /scripts/import-geonames.sh
+
+  # ID-100 Web Application
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: id100-webapp
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_REGION: ${S3_REGION}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL}
+      BASE_URL: ${BASE_URL}
+      PORT: ${PORT}
+      ENVIRONMENT: ${ENVIRONMENT}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET}
+      GEOCODING_API_URL: ${GEOCODING_API_URL}
+    ports:
+      - "${WEBAPP_PORT}:8080"
+    volumes:
+      - ./web:/app/web
+      - ./cmd:/app/cmd
+      - ./internal:/app/internal
+
+volumes:
+  postgres_data:
+  minio_data:
+  meilisearch_data:

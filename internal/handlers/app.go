@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/chai2010/webp"
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/database"
@@ -29,7 +30,7 @@ import (
 	"id-100/internal/utils"
 )
 
-// DerivenHandler displays the list of deriven with pagination
+// DerivenHandler displays the list of deriven with pagination and optional city filter
 func DerivenHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 
@@ -37,19 +38,60 @@ func DerivenHandler(c echo.Context) error {
 	if page < 1 {
 		page = 1
 	}
+	cityFilter := c.QueryParam("city") // Get city filter from query params
 	limit := 20
 	offset := (page - 1) * limit
 
-	// Get total count for pagination
-	var totalCount int
-	err := database.DB.QueryRow(context.Background(), "SELECT COUNT(*) FROM deriven").Scan(&totalCount)
+	// Get list of all distinct cities from contributions for the filter dropdown
+	citiesQuery := `SELECT DISTINCT user_city FROM contributions WHERE user_city IS NOT NULL AND user_city != '' ORDER BY user_city ASC`
+	citiesRows, err := database.DB.Query(context.Background(), citiesQuery)
 	if err != nil {
-		log.Printf("Count Error: %v", err)
-		totalCount = 100 // fallback
+		log.Printf("Cities Query Error: %v", err)
 	}
-	totalPages := (totalCount + limit - 1) / limit // ceiling division
+	defer citiesRows.Close()
 
-	query := `
+	var cities []string
+	for citiesRows.Next() {
+		var city string
+		if err := citiesRows.Scan(&city); err == nil {
+			cities = append(cities, city)
+		}
+	}
+
+	// Build the count and main query based on city filter
+	var totalCount int
+	var countQuery string
+	var query string
+
+	if cityFilter != "" {
+		// Filter by city: only show deriven that have contributions from this city
+		countQuery = `SELECT COUNT(DISTINCT d.id) FROM deriven d 
+		              INNER JOIN contributions c ON c.derive_id = d.id 
+		              WHERE c.user_city = $1`
+		err = database.DB.QueryRow(context.Background(), countQuery, cityFilter).Scan(&totalCount)
+
+		query = `
+            SELECT 
+                d.id, d.number, d.title, d.description, 
+                COALESCE(c.image_url, ''), COALESCE(c.image_lqip, ''),
+                (SELECT COUNT(*) FROM contributions WHERE derive_id = d.id) as contrib_count,
+                d.points
+            FROM deriven d
+            INNER JOIN contributions city_contrib ON city_contrib.derive_id = d.id AND city_contrib.user_city = $1
+            LEFT JOIN LATERAL (
+                SELECT image_url, image_lqip FROM contributions 
+                WHERE derive_id = d.id AND user_city = $1
+                ORDER BY created_at DESC LIMIT 1
+            ) c ON true
+            GROUP BY d.id, d.number, d.title, d.description, c.image_url, c.image_lqip, d.points
+            ORDER BY d.number ASC 
+            LIMIT $2 OFFSET $3`
+	} else {
+		// No filter: show all deriven
+		countQuery = "SELECT COUNT(*) FROM deriven"
+		err = database.DB.QueryRow(context.Background(), countQuery).Scan(&totalCount)
+
+		query = `
             SELECT 
                 d.id, d.number, d.title, d.description, 
                 COALESCE(c.image_url, ''), COALESCE(c.image_lqip, ''),
@@ -63,8 +105,22 @@ func DerivenHandler(c echo.Context) error {
             ) c ON true
             ORDER BY d.number ASC 
             LIMIT $1 OFFSET $2`
+	}
 
-	rows, err := database.DB.Query(context.Background(), query, limit, offset)
+	if err != nil {
+		log.Printf("Count Error: %v", err)
+		totalCount = 100 // fallback
+	}
+	totalPages := (totalCount + limit - 1) / limit // ceiling division
+
+	// Execute the main query
+	var rows pgx.Rows
+	if cityFilter != "" {
+		rows, err = database.DB.Query(context.Background(), query, cityFilter, limit, offset)
+	} else {
+		rows, err = database.DB.Query(context.Background(), query, limit, offset)
+	}
+
 	if err != nil {
 		log.Printf("Query Error: %v", err)
 		return c.String(http.StatusInternalServerError, "Datenbankfehler")
@@ -127,7 +183,7 @@ func DerivenHandler(c echo.Context) error {
 		pages = append(pages, models.PageNumber{Number: totalPages, IsCurrent: page == totalPages})
 	}
 
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Innenstadt (🏠) ID (🆔) - 100 (💯)",
 		"Deriven":         deriven,
 		"CurrentPage":     page,
@@ -137,11 +193,13 @@ func DerivenHandler(c echo.Context) error {
 		"HasPrev":         page > 1,
 		"NextPage":        page + 1,
 		"PrevPage":        page - 1,
+		"Cities":          cities,
+		"SelectedCity":    cityFilter,
 		"ContentTemplate": "ids.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // DeriveHandler displays a single derive with its contributions
@@ -149,6 +207,7 @@ func DeriveHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	num := c.Param("number")
 	pageParam := c.QueryParam("page") // Capture page parameter for back navigation
+	cityFilter := c.QueryParam("city") // Capture city filter parameter
 
 	var d models.Derive
 	query := `
@@ -174,8 +233,18 @@ func DeriveHandler(c echo.Context) error {
 		d.PointsTier = 3
 	}
 
-	rows, _ := database.DB.Query(context.Background(),
-		"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), COALESCE(user_comment,''), created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
+	// Query contributions, filter by city if specified
+	var rows pgx.Rows
+	if cityFilter != "" {
+		rows, err = database.DB.Query(context.Background(),
+			"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), COALESCE(user_comment,''), created_at FROM contributions WHERE derive_id = $1 AND user_city = $2 ORDER BY created_at DESC", d.ID, cityFilter)
+	} else {
+		rows, err = database.DB.Query(context.Background(),
+			"SELECT image_url, COALESCE(image_lqip,''), user_name, COALESCE(user_city,''), COALESCE(user_comment,''), created_at FROM contributions WHERE derive_id = $1 ORDER BY created_at DESC", d.ID)
+	}
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Fehler beim Laden der Beiträge")
+	}
 	defer rows.Close()
 
 	var contribs []models.Contribution
@@ -193,21 +262,23 @@ func DeriveHandler(c echo.Context) error {
 			"Derive":        d,
 			"Contributions": contribs,
 			"PageParam":     pageParam,
+			"CityFilter":    cityFilter,
 			"IsPartial":     true,
 		})
 	}
 
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           fmt.Sprintf("#%d %s", d.Number, d.Title),
 		"Derive":          d,
 		"Contributions":   contribs,
 		"PageParam":       pageParam,
+		"CityFilter":      cityFilter,
 		"IsPartial":       false,
 		"ContentTemplate": "id_detail.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // UploadGetHandler displays the upload form
@@ -287,7 +358,7 @@ ORDER BY d.number ASC`)
 		}
 	}
 
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Beweis hochladen - 🏠🆔💯",
 		"Deriven":         list,
 		"ContentTemplate": "upload.content",
@@ -300,7 +371,7 @@ ORDER BY d.number ASC`)
 		"CurrentPlayer":   currentPlayer,
 		"UploadedNumbers": uploadedNumbers,
 		"TotalPoints":     totalPoints,
-	})
+	}))
 }
 
 // UploadPostHandler handles image upload
@@ -364,8 +435,8 @@ func UploadPostHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "S3 Fehler: "+err.Error())
 	}
 
-	// Store relative path in DB, EnsureFullImageURL will add the base URL when reading
-	relativePath := fmt.Sprintf("/storage/v1/object/public/%s/%s", os.Getenv("S3_BUCKET"), fileName)
+	// Store just the filename in DB, EnsureFullImageURL will construct the full MinIO URL when reading
+	relativePath := fileName
 
 	// generate tiny LQIP (data-uri) and store it
 	lqip, lqipErr := utils.GenerateLQIP(img, 24)
@@ -448,37 +519,37 @@ func UploadPostHandler(c echo.Context) error {
 // RulesHandler displays the rules page
 func RulesHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Leitfaden - 🏠🆔💯",
 		"ContentTemplate": "leitfaden.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // ImpressumHandler displays the impressum page
 func ImpressumHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Impressum - 🏠🆔💯",
 		"ContentTemplate": "impressum.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // DatenschutzHandler displays the privacy policy page
 func DatenschutzHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Datenschutzerklärung - 🏠🆔💯",
 		"ContentTemplate": "datenschutz.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // RequestBagHandler displays the bag request form
@@ -492,13 +563,13 @@ func RequestBagHandler(c echo.Context) error {
 			"IsPartial":   true,
 		})
 	}
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Werkzeug anfordern - 🏠🆔💯",
 		"ContentTemplate": "request_bag.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
-	})
+	}))
 }
 
 // RequestBagPostHandler handles bag request submissions
@@ -548,13 +619,13 @@ func SetPlayerNameHandler(c echo.Context) error {
 		// try to fetch bag name for nicer rendering
 		var bagName string
 		_ = database.DB.QueryRow(context.Background(), "SELECT COALESCE(bag_name,'') FROM upload_tokens WHERE token = $1", token).Scan(&bagName)
-		return c.Render(http.StatusBadRequest, "layout", map[string]interface{}{
+		return c.Render(http.StatusBadRequest, "layout", MergeTemplateData(map[string]interface{}{
 			"Title":           "Willkommen bei ID-100!",
 			"ContentTemplate": "enter_name.content",
 			"Token":           token,
 			"BagName":         bagName,
 			"FormError":       "Bitte bestätige die Datenschutzerklärung und dass du keine erkennbaren Personen ohne Einwilligung hochlädst.",
-		})
+		}))
 	}
 
 	playerCity := strings.TrimSpace(c.FormValue("player_city"))

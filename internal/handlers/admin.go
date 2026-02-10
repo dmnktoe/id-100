@@ -53,7 +53,7 @@ func AdminDashboardHandler(c echo.Context) error {
 	`)
 	if err != nil {
 		log.Printf("Failed to fetch recent contributions: %v", err)
-		return c.Render(http.StatusOK, "layout", map[string]interface{}{
+		return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 			"Title":           "Admin Dashboard",
 			"ContentTemplate": "admin_dashboard.content",
 			"AdditionalCSS":   "admin.styles.css",
@@ -61,7 +61,7 @@ func AdminDashboardHandler(c echo.Context) error {
 			"CurrentYear":     time.Now().Year(),
 			"Tokens":          tokens,
 			"RecentContribs":  []models.RecentContrib{},
-		})
+		}))
 	}
 	defer contribRows.Close()
 
@@ -116,7 +116,7 @@ func AdminDashboardHandler(c echo.Context) error {
 		}
 	}
 
-	return c.Render(http.StatusOK, "layout", map[string]interface{}{
+	return c.Render(http.StatusOK, "layout", MergeTemplateData(map[string]interface{}{
 		"Title":           "Admin Dashboard",
 		"ContentTemplate": "admin_dashboard.content",
 		"AdditionalCSS":   "admin.styles.css",
@@ -129,7 +129,7 @@ func AdminDashboardHandler(c echo.Context) error {
 		"Tab":             tab,
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
-	})
+	}))
 }
 
 // AdminBagRequestCompleteHandler marks a bag request as handled
@@ -445,11 +445,15 @@ func AdminDeleteContributionHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid contribution ID"})
 	}
 
-	// Get the image URL before deletion to delete from S3
+	// Get the image URL and token_id before deletion
 	var imageURL string
-	err = database.DB.QueryRow(context.Background(),
-		"SELECT image_url FROM contributions WHERE id = $1",
-		contributionID).Scan(&imageURL)
+	var tokenID int
+	err = database.DB.QueryRow(context.Background(), `
+		SELECT c.image_url, ul.token_id
+		FROM contributions c
+		JOIN upload_logs ul ON ul.contribution_id = c.id
+		WHERE c.id = $1
+	`, contributionID).Scan(&imageURL, &tokenID)
 
 	if err != nil {
 		log.Printf("Failed to fetch contribution: %v", err)
@@ -478,6 +482,16 @@ func AdminDeleteContributionHandler(c echo.Context) error {
 
 	if result.RowsAffected() == 0 {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Contribution not found"})
+	}
+
+	// Decrement the total_uploads counter for the token
+	_, err = database.DB.Exec(context.Background(),
+		"UPDATE upload_tokens SET total_uploads = total_uploads - 1 WHERE id = $1 AND total_uploads > 0",
+		tokenID)
+
+	if err != nil {
+		log.Printf("Failed to decrement upload counter: %v", err)
+		// Don't fail the request
 	}
 
 	// Delete from S3 storage if the image exists

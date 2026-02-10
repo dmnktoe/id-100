@@ -287,6 +287,20 @@ main {
   letter-spacing: -0.06em;
 }
 
+/* Page header with title and filter */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--gap-lg);
+  margin-bottom: var(--gap-md);
+}
+
+.page-header .page-title {
+  padding: 2rem 0 0 0;
+  margin: 0;
+}
+
 .container.content-page h2 {
   margin-bottom: 0.5rem;
   padding-bottom: 0;
@@ -1029,6 +1043,75 @@ main {
   font-size: 0.9rem;
 }
 
+.form-hint {
+  display: block;
+  margin-top: 0.5rem;
+  color: var(--gray-600);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* City autocomplete dropdown styling */
+#playerCity {
+  position: relative;
+}
+
+/* Style for datalist dropdown (limited browser support) */
+datalist {
+  position: absolute;
+  background: var(--white);
+  border: var(--border-dark);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+/* Better styling for autocomplete suggestions */
+input[list]::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+
+input[list]:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.3);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Better datalist dropdown styling */
+input[list] + datalist {
+  width: 100%;
+}
+
+datalist {
+  position: absolute;
+  background: var(--white);
+  border: var(--border-medium);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  font-family: inherit;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+datalist option {
+  padding: var(--pad-sm) var(--pad-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+datalist option:hover {
+  background: var(--gray-50);
+}
+
+/* Visual indicator when city is selected */
+input[list].city-selected {
+  border-color: rgba(0, 128, 0, 0.3);
+  background: rgba(0, 255, 0, 0.02);
+}
+
 label {
   display: block;
   font-weight: 300;
@@ -1489,4 +1572,248 @@ img.blur-up.loaded {
   .id-card {
     border-radius: 8px;
   }
+}
+
+/* ========================================
+   CITY FILTER
+   ======================================== */
+.filter-section {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: var(--pad-sm) var(--pad-md);
+  background: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur-sm);
+  border: var(--border-light);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-smooth);
+  flex-shrink: 0;
+}
+
+.filter-section:hover {
+  background: var(--bg-glass-hover);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--gray-800);
+  letter-spacing: var(--letter-spacing-tight);
+  white-space: nowrap;
+}
+
+.filter-label svg {
+  color: var(--gray-600);
+}
+
+.city-filter-dropdown {
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 0.625rem var(--pad-md);
+  font-family: "Arial Rounded MT Bold", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--gray-900);
+  background: var(--white);
+  border: var(--border-medium);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  letter-spacing: var(--letter-spacing-tight);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.city-filter-dropdown:hover {
+  border-color: rgba(0, 0, 0, 0.16);
+  background-color: var(--gray-50);
+}
+
+.city-filter-dropdown:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.24);
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--gray-600);
+  background: var(--white);
+  border: var(--border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.filter-clear:hover {
+  color: var(--black);
+  background: var(--gray-50);
+  border-color: rgba(0, 0, 0, 0.12);
+  transform: scale(1.05);
+}
+
+.filter-clear:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .filter-section {
+    flex-wrap: wrap;
+    padding: var(--pad-md);
+  }
+
+  .filter-label {
+    width: 100%;
+    font-size: 0.85rem;
+  }
+
+  .city-filter-dropdown {
+    flex: 1;
+    max-width: none;
+    font-size: 0.85rem;
+  }
+
+  .filter-clear {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  /* Mobile: stack page header vertically */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--gap-md);
+  }
+
+  .page-header .page-title {
+    padding: 1.5rem 0 0 0;
+  }
+
+  .page-header .filter-section {
+    width: 100%;
+  }
+}
+
+/* Custom City Autocomplete Dropdown */
+.city-dropdown {
+  position: absolute;
+  background: var(--white);
+  border: var(--border-light);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: -2px;
+}
+
+.city-dropdown-item {
+  padding: 0.75rem var(--pad-md);
+  cursor: pointer;
+  font-family: "Arial Rounded MT Bold", sans-serif;
+  font-size: 0.9rem;
+  color: var(--gray-900);
+  transition: all var(--transition-fast);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.city-dropdown-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.city-dropdown-item:hover {
+  background: var(--gray-50);
+  color: var(--black);
+}
+
+.city-dropdown-item.highlighted {
+  background: var(--bg-glass);
+  color: var(--black);
+  border-left: 3px solid var(--black);
+  padding-left: calc(var(--pad-md) - 3px);
+}
+
+/* Enhanced city input styling */
+#playerCity {
+  position: relative;
+}
+
+#playerCity:focus {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Hide native datalist if it still exists */
+datalist {
+  display: none;
+}
+
+/* Smooth scrolling for dropdown */
+.city-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.city-dropdown::-webkit-scrollbar-track {
+  background: var(--gray-50);
+}
+
+.city-dropdown::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 4px;
+}
+
+.city-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
+}
+
+/* Form Status Section */
+.form-status {
+  margin-top: var(--pad-xl);
+  padding: var(--pad-md);
+  background: var(--bg-glass);
+  border: var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.form-status h4 {
+  margin: 0 0 var(--pad-sm) 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+
+.form-status ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.form-status li {
+  padding: var(--pad-xs) 0;
+  font-size: 0.85rem;
+  transition: color var(--transition-fast);
+}
+
+/* Button disabled state */
+button.disabled,
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
