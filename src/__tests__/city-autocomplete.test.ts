@@ -1,181 +1,145 @@
-/**
- * Tests for city-autocomplete module
- */
-
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { initCityAutocomplete, initFormValidation, resetState } from "../lib/city-autocomplete";
+import {
+  initCityAutocomplete,
+  initFormValidation,
+  resetState,
+} from "../lib/city-autocomplete";
 
-describe("city-autocomplete", () => {
-  let cityInput: HTMLInputElement;
-  let datalist: HTMLDataListElement;
-  let submitBtn: HTMLButtonElement;
+// Mock city data for testing
+const mockCities = [
+  { name: "Berlin" },
+  { name: "München" },
+  { name: "Hamburg" },
+  { name: "Köln" },
+  { name: "Frankfurt am Main" },
+];
 
-  beforeEach(() => {
-    // Reset module state before each test
-    resetState();
-    
-    // Setup DOM elements
-    document.body.innerHTML = `
-      <input type="text" id="playerName" value="Test User" />
-      <input type="text" id="playerCity" />
-      <datalist id="cityOptions"></datalist>
-      <input type="checkbox" id="agreePrivacy" />
-      <button class="submit-btn" type="submit">Submit</button>
-    `;
-
-    cityInput = document.getElementById("playerCity") as HTMLInputElement;
-    datalist = document.getElementById("cityOptions") as HTMLDataListElement;
-    submitBtn = document.querySelector(".submit-btn") as HTMLButtonElement;
-
-    // Mock window.GEOCODING_API_URL
-    (window as any).GEOCODING_API_URL = "http://localhost:8081";
-
-    // Mock fetch
-    global.fetch = vi.fn();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-    resetState();
-  });
-
-  it("should initialize without errors", () => {
-    expect(() => initCityAutocomplete()).not.toThrow();
-  });
-
-  it("should not throw error if elements are missing", () => {
-    document.body.innerHTML = "";
-    expect(() => initCityAutocomplete()).not.toThrow();
-  });
-
-  it("should attach input listener to city input", () => {
-    initCityAutocomplete();
-    const spy = vi.spyOn(cityInput, "addEventListener");
-    
-    // Re-initialize to catch the addEventListener call
-    document.body.innerHTML = `
-      <input type="text" id="playerName" value="Test User" />
-      <input type="text" id="playerCity" />
-      <datalist id="cityOptions"></datalist>
-      <input type="checkbox" id="agreePrivacy" />
-      <button class="submit-btn" type="submit">Submit</button>
-    `;
-    cityInput = document.getElementById("playerCity") as HTMLInputElement;
-    
-    initCityAutocomplete();
-    
-    // Trigger input event
-    cityInput.value = "Berlin";
-    const event = new Event("input");
-    cityInput.dispatchEvent(event);
-    
-    // Check that event listener was setup
-    expect(cityInput.value).toBe("Berlin");
-  });
-
-  it("should fetch cities when input has 2 or more characters", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        hits: [
-          {
-            id: "2950159",
-            name: "Berlin",
-            lat: 52.52437,
-            lon: 13.41053,
-            type: "capital",
-            population: 3426354,
-          },
-        ],
-        query: "Ber",
-        processingTimeMs: 1,
-        limit: 10,
-        offset: 0,
-        estimatedTotalHits: 1,
-      }),
-    });
-    global.fetch = mockFetch;
-
-    initCityAutocomplete();
-
-    // Simulate user typing
-    cityInput.value = "Ber";
-    const event = new Event("input");
-    cityInput.dispatchEvent(event);
-
-    // Wait for debounce
-    await new Promise((resolve) => setTimeout(resolve, 350));
-
-    expect(mockFetch).toHaveBeenCalled();
-  });
-
-  it("should not fetch cities when input is less than 2 characters", async () => {
-    const mockFetch = vi.fn();
-    global.fetch = mockFetch;
-
-    initCityAutocomplete();
-
-    cityInput.value = "B";
-    const event = new Event("input");
-    cityInput.dispatchEvent(event);
-
-    await new Promise((resolve) => setTimeout(resolve, 350));
-
-    expect(mockFetch).not.toHaveBeenCalled();
-  });
-
-  it("should disable submit button initially when form validation is enabled", () => {
-    initFormValidation();
-    expect(submitBtn.disabled).toBe(true);
-  });
-
-  it("should keep button disabled when city is not from valid list", () => {
-    const nameInput = document.getElementById("playerName") as HTMLInputElement;
-    const privacyCheckbox = document.getElementById("agreePrivacy") as HTMLInputElement;
-    
-    initFormValidation();
-    initCityAutocomplete();
-    
-    // Fill in name (already has value)
-    expect(nameInput.value).toBe("Test User");
-    
-    // Check privacy
-    privacyCheckbox.checked = true;
-    privacyCheckbox.dispatchEvent(new Event("change"));
-    
-    // Type a city (but not selected from valid dropdown yet)
-    cityInput.value = "Berlin";
-    cityInput.dispatchEvent(new Event("input"));
-    
-    // Button should be disabled until city is in validCities
-    expect(submitBtn.disabled).toBe(true);
-  });
+// Mock Meilisearch
+vi.mock("meilisearch", () => {
+  return {
+    MeiliSearch: vi.fn(() => ({
+      index: vi.fn(() => ({
+        search: vi.fn(async (query: string) => {
+          // Simulate search based on query
+          const filtered = mockCities.filter((city) =>
+            city.name.toLowerCase().includes(query.toLowerCase())
+          );
+          return {
+            hits: filtered,
+            estimatedTotalHits: filtered.length,
+          };
+        }),
+      })),
+    })),
+  };
 });
 
-describe("initFormValidation", () => {
+describe("City Autocomplete - Dropdown Rendering", () => {
+  let container: HTMLDivElement;
+
   beforeEach(() => {
-    resetState();
-    document.body.innerHTML = `
-      <input type="text" id="playerName" />
-      <input type="text" id="playerCity" />
-      <datalist id="cityOptions"></datalist>
-      <input type="checkbox" id="agreePrivacy" />
-      <button class="submit-btn" type="submit">Submit</button>
+    // Setup DOM
+    container = document.createElement("div");
+    container.innerHTML = `
+      <form>
+        <input type="text" id="player_name" name="player_name" />
+        <input type="text" id="player_city" name="player_city" />
+        <input type="checkbox" id="agree_privacy" name="agree_privacy" />
+        <button type="submit" id="submit-btn">Weiter zum Upload</button>
+      </form>
     `;
+    document.body.appendChild(container);
+
+    // Set window.GEOCODING_API_URL for tests
+    (window as any).GEOCODING_API_URL = "http://localhost:8081";
+
+    resetState();
   });
 
   afterEach(() => {
-    resetState();
+    document.body.removeChild(container);
+    vi.clearAllMocks();
   });
 
-  it("should not throw error if elements are missing", () => {
-    document.body.innerHTML = "";
-    expect(() => initFormValidation()).not.toThrow();
+  it("should create dropdown element when initializing", () => {
+    initCityAutocomplete();
+
+    const dropdown = document.querySelector(".city-dropdown");
+    expect(dropdown).toBeTruthy();
+    expect(dropdown?.classList.contains("city-dropdown")).toBe(true);
   });
 
-  it("should disable button initially", () => {
-    const submitBtn = document.querySelector(".submit-btn") as HTMLButtonElement;
+  it("should hide dropdown initially", () => {
+    initCityAutocomplete();
+
+    const dropdown = document.querySelector(
+      ".city-dropdown"
+    ) as HTMLDivElement;
+    expect(dropdown).toBeTruthy();
+    expect(dropdown?.style.display).toBe("none");
+  });
+
+  it("should show dropdown when typing 2 or more characters", async () => {
+    initCityAutocomplete();
+
+    const cityInput = document.getElementById(
+      "player_city"
+    ) as HTMLInputElement;
+    const dropdown = document.querySelector(
+      ".city-dropdown"
+    ) as HTMLDivElement;
+
+    // Type less than 2 characters - dropdown should stay hidden
+    cityInput.value = "B";
+    cityInput.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 350)); // Wait for debounce
+    expect(dropdown.style.display).toBe("none");
+
+    // Type 2 or more characters - dropdown should appear
+    cityInput.value = "Be";
+    cityInput.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 350)); // Wait for debounce
+
+    expect(dropdown.style.display).toBe("block");
+  });
+
+  it("should enable button only when all conditions are met", async () => {
+    initCityAutocomplete();
     initFormValidation();
+
+    const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement;
+    const nameInput = document.getElementById("player_name") as HTMLInputElement;
+    const cityInput = document.getElementById("player_city") as HTMLInputElement;
+    const privacyCheckbox = document.getElementById(
+      "agree_privacy"
+    ) as HTMLInputElement;
+
+    // Initial state
     expect(submitBtn.disabled).toBe(true);
+
+    // Fill in name
+    nameInput.value = "Max Mustermann";
+    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(submitBtn.disabled).toBe(true); // Still disabled
+
+    // Select city
+    cityInput.value = "Ber";
+    cityInput.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    const dropdown = document.querySelector(".city-dropdown") as HTMLDivElement;
+    const firstItem = dropdown.querySelector(
+      ".city-dropdown-item"
+    ) as HTMLDivElement;
+    firstItem?.click();
+    expect(submitBtn.disabled).toBe(true); // Still disabled
+
+    // Check privacy
+    privacyCheckbox.checked = true;
+    privacyCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+
+    // Now button should be enabled
+    expect(submitBtn.disabled).toBe(false);
+    expect(submitBtn.classList.contains("disabled")).toBe(false);
   });
 });
