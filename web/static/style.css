@@ -1782,3 +1782,38 @@ datalist {
 .city-dropdown::-webkit-scrollbar-thumb:hover {
   background: var(--gray-400);
 }
+
+/* Form Status Section */
+.form-status {
+  margin-top: var(--pad-xl);
+  padding: var(--pad-md);
+  background: var(--bg-glass);
+  border: var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.form-status h4 {
+  margin: 0 0 var(--pad-sm) 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+
+.form-status ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.form-status li {
+  padding: var(--pad-xs) 0;
+  font-size: 0.85rem;
+  transition: color var(--transition-fast);
+}
+
+/* Button disabled state */
+button.disabled,
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
