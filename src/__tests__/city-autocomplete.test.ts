@@ -38,14 +38,23 @@ describe("City Autocomplete - Dropdown Rendering", () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
-    // Setup DOM
+    // Setup DOM with complete structure matching enter_name.html
     container = document.createElement("div");
     container.innerHTML = `
-      <form>
-        <input type="text" id="player_name" name="player_name" />
-        <input type="text" id="player_city" name="player_city" />
-        <input type="checkbox" id="agree_privacy" name="agree_privacy" />
-        <button type="submit" id="submit-btn">Weiter zum Upload</button>
+      <form id="set-name-form" novalidate>
+        <input type="text" id="playerName" name="player_name" />
+        <input type="text" id="playerCity" name="player_city" />
+        <input type="checkbox" id="agreePrivacy" name="agree_privacy" />
+        <button type="submit" id="submitNameBtn">Weiter zum Upload</button>
+        
+        <div class="form-status">
+          <ul id="validationStatus">
+            <li id="statusName">❌ Name: Nicht ausgefüllt</li>
+            <li id="statusCity">❌ Stadt: Nicht ausgewählt</li>
+            <li id="statusPrivacy">❌ Datenschutz: Nicht akzeptiert</li>
+            <li id="statusButton">❌ Submit-Button: Deaktiviert</li>
+          </ul>
+        </div>
       </form>
     `;
     document.body.appendChild(container);
@@ -83,7 +92,7 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     initCityAutocomplete();
 
     const cityInput = document.getElementById(
-      "player_city"
+      "playerCity"
     ) as HTMLInputElement;
     const dropdown = document.querySelector(
       ".city-dropdown"
@@ -107,11 +116,11 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     initCityAutocomplete();
     initFormValidation();
 
-    const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement;
-    const nameInput = document.getElementById("player_name") as HTMLInputElement;
-    const cityInput = document.getElementById("player_city") as HTMLInputElement;
+    const submitBtn = document.getElementById("submitNameBtn") as HTMLButtonElement;
+    const nameInput = document.getElementById("playerName") as HTMLInputElement;
+    const cityInput = document.getElementById("playerCity") as HTMLInputElement;
     const privacyCheckbox = document.getElementById(
-      "agree_privacy"
+      "agreePrivacy"
     ) as HTMLInputElement;
 
     // Initial state

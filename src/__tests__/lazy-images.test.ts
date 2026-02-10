@@ -2,7 +2,7 @@
  * Tests for lazy-images module
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { initLazyImages } from './lazy-images'
+import { initLazyImages } from '../lib/lazy-images'
 
 describe('initLazyImages', () => {
   beforeEach(() => {

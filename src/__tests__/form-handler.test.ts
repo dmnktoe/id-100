@@ -2,7 +2,7 @@
  * Tests for form-handler module
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { initFormHandlers } from './form-handler'
+import { initFormHandlers } from '../lib/form-handler'
 
 describe('initFormHandlers', () => {
   beforeEach(() => {
