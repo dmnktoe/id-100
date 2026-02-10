@@ -17,20 +17,22 @@ const mockCities = [
 // Mock Meilisearch
 vi.mock("meilisearch", () => {
   return {
-    MeiliSearch: vi.fn(() => ({
-      index: vi.fn(() => ({
-        search: vi.fn(async (query: string) => {
-          // Simulate search based on query
-          const filtered = mockCities.filter((city) =>
-            city.name.toLowerCase().includes(query.toLowerCase())
-          );
-          return {
-            hits: filtered,
-            estimatedTotalHits: filtered.length,
-          };
-        }),
-      })),
-    })),
+    MeiliSearch: vi.fn().mockImplementation(function() {
+      return {
+        index: vi.fn(() => ({
+          search: vi.fn(async (query: string) => {
+            // Simulate search based on query
+            const filtered = mockCities.filter((city) =>
+              city.name.toLowerCase().includes(query.toLowerCase())
+            );
+            return {
+              hits: filtered,
+              estimatedTotalHits: filtered.length,
+            };
+          }),
+        })),
+      };
+    }),
   };
 });
 
