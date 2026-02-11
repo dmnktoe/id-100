@@ -4,6 +4,9 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
+	"id-100/internal/handlers/admin"
+	"id-100/internal/handlers/app"
 	"id-100/internal/middleware"
 )
 
@@ -18,39 +21,39 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 
 	e.Static("/static", "web/static")
 
-	e.GET("/", DerivenHandler)
-	e.GET("/id/:number", DeriveHandler)
+	e.GET("/", app.DerivenHandler)
+	e.GET("/id/:number", app.DeriveHandler)
 
 	// Upload routes - protected by token middleware with session support
-	e.GET("/upload", UploadGetHandler, middleware.TokenWithSession)
-	e.POST("/upload", UploadPostHandler, middleware.TokenWithSession)
-	e.POST("/upload/set-name", SetPlayerNameHandler, middleware.TokenWithSession)
-	e.POST("/upload/contributions/:id/delete", UserDeleteContributionHandler, middleware.TokenWithSession)
+	e.GET("/upload", app.UploadGetHandler, middleware.TokenWithSession)
+	e.POST("/upload", app.UploadPostHandler, middleware.TokenWithSession)
+	e.POST("/upload/set-name", app.SetPlayerNameHandler, middleware.TokenWithSession)
+	e.POST("/upload/contributions/:id/delete", app.UserDeleteContributionHandler, middleware.TokenWithSession)
 
-	e.GET("/leitfaden", RulesHandler)
-	e.GET("/impressum", ImpressumHandler)
-	e.GET("/datenschutz", DatenschutzHandler)
-	e.GET("/werkzeug-anfordern", RequestBagHandler)
-	e.POST("/werkzeug-anfordern", RequestBagPostHandler)
+	e.GET("/leitfaden", app.RulesHandler)
+	e.GET("/impressum", app.ImpressumHandler)
+	e.GET("/datenschutz", app.DatenschutzHandler)
+	e.GET("/werkzeug-anfordern", app.RequestBagHandler)
+	e.POST("/werkzeug-anfordern", app.RequestBagPostHandler)
 
 	// Admin routes for token management
 	adminGroup := e.Group("/admin", middleware.BasicAuth)
-	adminGroup.GET("", AdminDashboardHandler)
-	adminGroup.GET("/tokens", AdminTokenListHandler)
+	adminGroup.GET("", admin.AdminDashboardHandler)
+	adminGroup.GET("/tokens", admin.AdminTokenListHandler)
 	adminGroup.POST("/tokens", func(c echo.Context) error {
-		return AdminCreateTokenHandler(c, baseURL)
+		return admin.AdminCreateTokenHandler(c, baseURL)
 	})
-	adminGroup.POST("/tokens/:id/deactivate", AdminTokenDeactivateHandler)
-	adminGroup.POST("/tokens/:id/reset", AdminTokenResetHandler)
-	adminGroup.POST("/tokens/:id/assign", AdminTokenAssignHandler)
-	adminGroup.POST("/tokens/:id/quota", AdminUpdateQuotaHandler)
+	adminGroup.POST("/tokens/:id/deactivate", admin.AdminTokenDeactivateHandler)
+	adminGroup.POST("/tokens/:id/reset", admin.AdminTokenResetHandler)
+	adminGroup.POST("/tokens/:id/assign", admin.AdminTokenAssignHandler)
+	adminGroup.POST("/tokens/:id/quota", admin.AdminUpdateQuotaHandler)
 	adminGroup.GET("/tokens/:id/qr", func(c echo.Context) error {
-		return AdminDownloadQRHandler(c, baseURL)
+		return admin.AdminDownloadQRHandler(c, baseURL)
 	})
 
 	// Werkzeug request management
-	adminGroup.POST("/werkzeug-anfragen/:id/complete", AdminBagRequestCompleteHandler)
+	adminGroup.POST("/werkzeug-anfragen/:id/complete", admin.AdminBagRequestCompleteHandler)
 
 	// Contribution deletion
-	adminGroup.POST("/contributions/:id/delete", AdminDeleteContributionHandler)
+	adminGroup.POST("/contributions/:id/delete", admin.AdminDeleteContributionHandler)
 }
