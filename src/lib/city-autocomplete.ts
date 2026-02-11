@@ -79,7 +79,7 @@ export function resetState(): void {
 function initMeilisearchClient(): MeiliSearch {
   if (!client) {
     const meilisearchUrl = window.GEOCODING_API_URL || "http://localhost:8081";
-    const apiKey = window.MEILI_MASTER_KEY || "";
+    const apiKey = window.MEILI_SEARCH_KEY || "";
     client = new MeiliSearch({
       host: meilisearchUrl,
       apiKey: apiKey,
