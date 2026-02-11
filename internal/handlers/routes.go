@@ -19,6 +19,8 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 		})
 	})
 
+	e.GET("/api/stats", StatsHandler)
+
 	e.Static("/static", "web/static")
 
 	e.GET("/", app.DerivenHandler)

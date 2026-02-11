@@ -1,391 +1,186 @@
-# 🏠🆔💯 Innenstadt ID 100
+# Innenstadt ID 100
 
-Eine moderne Go-Webanwendung für kreative Beiträge mit Echo-Framework, Supabase PostgreSQL und Supabase Storage.
+Eine moderne Go-Webanwendung fuer kreative Beitraege mit Echo, PostgreSQL, MinIO (S3-kompatibel) und Meilisearch.
 
 [![Go Version](https://img.shields.io/badge/Go-1.24-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![Echo](https://img.shields.io/badge/Echo-v4.14.0-00ADD8?style=flat)](https://echo.labstack.com/)
+[![Echo](https://img.shields.io/badge/Echo-v4.15.0-00ADD8?style=flat)](https://echo.labstack.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=flat&logo=postgresql)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker)](https://www.docker.com/)
+[![CI](https://github.com/dmnktoe/id-100/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/dmnktoe/id-100/actions/workflows/go.yml)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
 
-[![CI](https://github.com/dmnktoe/id-100/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/dmnktoe/id-100/actions/workflows/go.yml)
+[![Staedte](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fid-100.online%2Fapi%2Fstats&query=$.total_cities&label=St%C3%A4dte&labelColor=000&color=9031aa)](https://id-100.online)
+[![Beitraege](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fid-100.online%2Fapi%2Fstats&query=$.total_contributions&label=Beitr%C3%A4ge&labelColor=000&color=613cb1)](https://id-100.online)
+[![Teilnehmer*innen](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fid-100.online%2Fapi%2Fstats&query=$.active_users&label=Teilnehmer*innen&labelColor=000&color=54b9d1)](https://id-100.online)
 
-## ✨ Features
+## Features
 
-- **Upload & Gallery**: Benutzer können kreative Beiträge hochladen
-- **WebP-Konvertierung**: Automatische Bildoptimierung
-- **LQIP-Support**: Low-Quality Image Placeholders für schnelles Laden
-- **Supabase Storage**: Sichere Cloud-Speicherung
-- **Supabase PostgreSQL**: Robuste Datenpersistenz
-- **Hot-Reload**: Entwicklung mit Air
-- **Responsive Design**: Modernes UI mit CSS
-- **City Autocomplete**: Meilisearch-Integration für intelligente Stadtauswahl
-- **Docker-Compose**: Vollständige lokale Entwicklungsumgebung mit einem Befehl
+- Upload und Galerie fuer kreative Beitraege
+- WebP-Konvertierung und LQIP fuer schnelle Bildausgabe
+- S3-kompatibler Storage ueber MinIO
+- PostgreSQL fuer Daten und Migrations
+- Meilisearch fuer City Autocomplete
+- Hot Reload via Air
+- Komplettes lokales Setup via Docker Compose
 
-## 📋 Voraussetzungen
+## Voraussetzungen
 
-- **Go**: Version 1.24 oder höher
-- **Node.js**: Version 20 oder höher (für Frontend-Build)
-- **Docker & Docker Compose**: Für die vollständige lokale Entwicklungsumgebung (empfohlen)
-- **Supabase Account**: Für PostgreSQL-Datenbank und Storage (alternative zu Docker)
+- Go 1.24 oder hoeher
+- Node.js 20 oder hoeher (Frontend Build)
+- Docker und Docker Compose (empfohlen)
 
-## 🚀 Installation
+## Schnellstart mit Docker Compose
 
-### Option 1: Mit Docker Compose (Empfohlen)
-
-Die einfachste Methode, um die gesamte Anwendung mit allen Abhängigkeiten lokal zu starten:
-
-#### Lokale Entwicklung (ohne nginx)
+Lokale Entwicklung (ohne nginx):
 
 ```bash
-# Repository klonen
 git clone https://github.com/dmnktoe/id-100.git
 cd id-100
-
-# Mit Docker Compose für lokale Entwicklung starten
 docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
 ```
 
-#### Produktion (mit nginx)
+Produktion (mit nginx):
 
 ```bash
-# Mit Docker Compose für Produktion starten
 docker compose up -d
 ```
 
-Dies startet automatisch:
-- **PostgreSQL** Datenbank (Port 5432)
-- **MinIO** S3-kompatibler Objektspeicher (Port 9000, Console 9001)
-- **Meilisearch** Suchmaschine für Stadtsuche mit GeoNames-Daten (Port 8081)
-- **ID-100** Webanwendung (Port 8080 - direkt zugänglich in dev, über nginx in Produktion)
+Hinweise:
 
-Die Anwendung ist verfügbar unter: `http://localhost:8080`
+- In Produktion wird ein externes Netzwerk namens nginx-proxy erwartet.
+- Der erste Start laedt deutsche Staedtedaten von GeoNames (ca. 10 MB).
 
-**Hinweis**: Der erste Start lädt automatisch deutsche Städtedaten von GeoNames.org (~10MB, dauert ca. 1 Minute).
-
-**Deriven-Daten hinzufügen**: Um die 100 Derive-Challenges zu laden:
-1. Ersetze `internal/database/migrations/deriven_rows.sql` mit deinem Supabase-Export
-2. Starte Docker mit `docker-compose up -d --build`
-3. Die Konvertierung erfolgt automatisch beim Start!
-
-Siehe [Deriven-Daten hinzufügen](docs/ADDING_DERIVEN_DATA.md) für Details.
-
-### Option 2: Manuelle Installation
-
-#### 1. Repository klonen
-
-```bash
-git clone https://github.com/dmnktoe/id-100.git
-cd id-100
-```
-
-#### 2. Dependencies installieren
+## Manuelle Entwicklung
 
 ```bash
 go mod download
 npm install
 ```
 
-#### 3. Entwicklungstools installieren (optional)
-
-```bash
-# Air für Hot-Reload
-go install github.com/air-verse/air@latest
-```
-
-#### 4. Datenbank einrichten
-
-**Option A: Mit Docker (empfohlen für Entwicklung)**
-
-```bash
-make docker-db
-```
-
-**Option B: Lokale PostgreSQL-Installation**
-
-```bash
-createdb id100
-psql id100 < schema.sql  # Falls vorhanden
-```
-
-#### 5. Umgebungsvariablen konfigurieren
-
-Erstelle eine `.env` Datei im Projektverzeichnis:
-
-**Für Docker Compose (Standard):**
-
-```env
-# App Configuration
-BASE_URL=http://localhost:8080
-PORT=8080
-ENVIRONMENT=development
-
-# Admin Authentication
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=change_me_in_production
-
-# Database Configuration (Docker)
-DATABASE_URL=postgres://dev:pass@localhost:5432/id100?sslmode=disable
-
-# S3 Configuration (MinIO)
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-S3_BUCKET_NAME=id100-images
-S3_BUCKET=id100-images
-S3_REGION=us-east-1
-S3_ENDPOINT=http://localhost:9000
-SUPABASE_URL=http://localhost:9000
-
-# Session Security
-SESSION_SECRET=change_this_in_production_to_random_string
-
-# Geocoding API (Meilisearch mit GeoNames-Daten)
-GEOCODING_API_URL=http://localhost:8081
-```
-
-**Für Supabase (Produktion):**
-
-```env
-# Supabase PostgreSQL Datenbank
-DATABASE_URL=postgres://postgres:[DEIN-PASSWORT]@db.[DEIN-PROJEKT-REF].supabase.co:5432/postgres
-
-# Supabase Storage Konfiguration
-SUPABASE_URL=https://[DEIN-PROJEKT-REF].supabase.co
-SUPABASE_ANON_KEY=dein_anon_key
-SUPABASE_SERVICE_ROLE_KEY=dein_service_role_key
-S3_BUCKET_NAME=id100-images
-S3_ENDPOINT=https://[DEIN-PROJEKT-REF].supabase.co/storage/v1
-
-# Geocoding API (selbst gehostete Meilisearch-Instanz mit GeoNames-Daten)
-GEOCODING_API_URL=https://your-meilisearch-instance.com
-```
-
-## 🎯 Verwendung
-
-### Entwicklungsmodus (mit Hot-Reload)
-
-```bash
-air
-```
-
-### Standard-Entwicklung
+Start:
 
 ```bash
 make run
-# oder
-go run ./cmd/id-100
 ```
 
-### Produktions-Build
+Build:
 
 ```bash
 make build
 ./bin/id-100
 ```
 
-Die Anwendung läuft standardmäßig auf `http://localhost:8080`
+## Konfiguration
 
-## 🎨 Frontend-Entwicklung
+Die Beispielwerte stehen in [.env.example](.env.example). Fuer die lokale Docker-Entwicklung wird [.env.dev](.env.dev) verwendet.
 
-Das Frontend verwendet TypeScript für type-sichere, modulare Client-seitige Code.
+Wichtige Variablen:
 
-### Frontend Build
+| Variable | Beschreibung |
+|---|---|
+| `DATABASE_URL` | PostgreSQL Verbindung fuer App und Migrationen |
+| `POSTGRES_USER` | DB Nutzer (Docker) |
+| `POSTGRES_PASSWORD` | DB Passwort (Docker) |
+| `POSTGRES_DB` | DB Name (Docker) |
+| `S3_ACCESS_KEY` | S3 Access Key (MinIO) |
+| `S3_SECRET_KEY` | S3 Secret Key (MinIO) |
+| `S3_BUCKET_NAME` | Bucket fuer Uploads |
+| `S3_ENDPOINT` | Interner S3 Endpoint (Container) |
+| `S3_PUBLIC_URL` | Externer S3 URL fuer Browser |
+| `MINIO_ROOT_USER` | MinIO Root User |
+| `MINIO_ROOT_PASSWORD` | MinIO Root Password |
+| `MEILI_MASTER_KEY` | Meilisearch Master Key |
+| `GEOCODING_API_URL` | Meilisearch API URL |
+| `SESSION_SECRET` | Session Secret |
+| `ADMIN_USERNAME` | Admin User |
+| `ADMIN_PASSWORD` | Admin Passwort |
+
+## Datenbank und Migrationen
+
+Die Migrationen liegen in [internal/database/migrations](internal/database/migrations).
+
+- [001_create_initial_tables.sql](internal/database/migrations/001_create_initial_tables.sql) legt die Kern-Tabellen an.
+- [002_insert_initial_deriven.sql](internal/database/migrations/002_insert_initial_deriven.sql) fuellt die 100 Deriven.
+
+Wenn du eigene Deriven verwenden willst, ersetze die Inhalte von [002_insert_initial_deriven.sql](internal/database/migrations/002_insert_initial_deriven.sql) und starte den Stack neu.
+
+## API Endpunkte
+
+| Methode | Pfad | Beschreibung |
+|---|---|---|
+| `GET` | `/health` | Health Check (JSON) |
+| `GET` | `/api/stats` | Statistik fuer Badges (JSON) |
+| `GET` | `/` | Index der Deriven |
+| `GET` | `/id/:number` | Detailansicht einer Derive |
+| `GET` | `/upload` | Upload Formular |
+| `POST` | `/upload` | Beitrag hochladen |
+| `POST` | `/upload/set-name` | Spielernamen setzen |
+| `POST` | `/upload/contributions/:id/delete` | Eigenen Beitrag loeschen |
+| `GET` | `/leitfaden` | Leitfaden |
+| `GET` | `/impressum` | Impressum |
+| `GET` | `/datenschutz` | Datenschutz |
+| `GET` | `/werkzeug-anfordern` | Werkzeug anfordern |
+| `POST` | `/werkzeug-anfordern` | Werkzeug anfordern (Submit) |
+| `GET` | `/static/*` | Statische Dateien |
+
+Beispielantwort fuer /api/stats:
+
+```json
+{
+	"total_contributions": 42,
+	"total_deriven": 100,
+	"active_users": 16,
+	"total_cities": 7,
+	"last_activity": "2026-02-11T10:15:30Z"
+}
+```
+
+## Dynamische Badges
+
+Die Badges oben nutzen den JSON Endpoint. Passe die URL an deine Domain an:
+
+```
+https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fid-100.online%2Fapi%2Fstats&query=$.total_contributions&label=Beitr%C3%A4ge&color=000
+```
+
+## Makefile Kurzuebersicht
+
+Die wichtigsten Targets stehen in [Makefile](Makefile):
 
 ```bash
-# Dependencies installieren
-npm install
+make run
+make build
+make build-all
+make test
+make fmt
+make vet
+make docker-dev-up
+make docker-dev-down
+make docker-dev-rebuild
+make docker-up
+make docker-down
+```
 
-# TypeScript kompilieren und bundlen
+## Frontend
+
+```bash
 npm run build
-
-# Entwicklungsmodus (ohne Minifizierung)
 npm run build:dev
-
-# Watch-Modus (automatischer Build bei Änderungen)
 npm run watch
 ```
 
-### Frontend-Struktur
+Build Output liegt in [web/static/main.js](web/static/main.js).
 
-```
-src/
-├── main.ts              # Haupteinstiegspunkt
-├── brand-animation.ts   # Markenanimationen
-├── drawer.ts            # Drawer/Modal-Funktionalität
-├── lazy-images.ts       # Lazy-Loading für Bilder
-├── form-handler.ts      # Formular-Handler
-└── city-autocomplete.ts # Meilisearch City Autocomplete
-```
-
-Der TypeScript-Code wird mit **esbuild** gebündelt und minifiziert in `web/static/main.js` ausgegeben.
-
-## 🛠️ Verfügbare Befehle
-
-### Docker Compose
-
-#### Lokale Entwicklung
-
-```bash
-# Alle Services für lokale Entwicklung starten (ohne nginx)
-docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
-
-# Logs anzeigen
-docker compose -f docker-compose.dev.yml logs -f
-
-# Services stoppen
-docker compose -f docker-compose.dev.yml down
-
-# Services neu bauen
-docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
-
-# Alle Daten löschen (Volumes)
-docker compose -f docker-compose.dev.yml down -v
-```
-
-#### Produktion
-
-```bash
-# Alle Services für Produktion starten (mit nginx)
-docker compose up -d
-
-# Logs anzeigen
-docker compose logs -f
-
-# Services stoppen
-docker compose down
-
-# Services neu bauen
-docker compose up -d --build
-
-# Alle Daten löschen (Volumes)
-docker compose down -v
-```
-
-### Makefile-Befehle
-
-#### Entwicklung
-
-```bash
-make run         # Anwendung starten
-make build       # Backend-Binary erstellen
-make build-all   # Backend und Frontend bauen
-make test        # Tests ausführen
-make fmt         # Code formatieren
-make vet         # Code analysieren
-make clean       # Build-Artefakte entfernen
-```
-
-#### Docker Compose - Lokale Entwicklung
-
-```bash
-make docker-dev-up      # Alle Services für lokale Entwicklung starten
-make docker-dev-down    # Development-Services stoppen
-make docker-dev-restart # Development-Services neu starten
-make docker-dev-logs    # Logs anzeigen
-make docker-dev-clean   # Services stoppen und Volumes löschen
-```
-
-#### Docker Compose - Produktion
-
-```bash
-make docker-up      # Alle Services starten (mit nginx)
-make docker-down    # Services stoppen
-make docker-restart # Services neu starten
-make docker-logs    # Logs anzeigen
-make docker-clean   # Services stoppen und Volumes löschen
-```
-
-## 📁 Projektstruktur
+## Projektstruktur
 
 ```
 id-100/
-├── cmd/
-│   └── id-100/
-│       └── main.go           # Entry Point
-├── internal/
-│   ├── config/               # Konfigurationsverwaltung
-│   ├── database/             # Datenbank-Verbindung & Migrations
-│   ├── handlers/             # HTTP-Handler
-│   │   ├── app.go           # Hauptanwendungs-Handler
-│   │   ├── admin.go         # Admin-Handler
-│   │   └── routes.go        # Routen-Registrierung
-│   ├── middleware/           # Middleware-Funktionen
-│   │   ├── auth.go          # Authentifizierung
-│   │   ├── token.go         # Token-Validierung
-│   │   └── session_helpers.go # Session-Hilfsfunktionen
-│   ├── models/               # Datenmodelle
-│   ├── templates/            # Template-Rendering
-│   ├── utils/                # Hilfsfunktionen
-│   │   ├── lqip.go          # Bildplatzhalter-Generierung
-│   │   ├── qr.go            # QR-Code-Generierung
-│   │   ├── token.go         # Token-Generierung
-│   │   └── utils.go         # Allgemeine Utilities
-│   └── imgutil/              # Bildverarbeitung
-├── web/
-│   ├── static/               # CSS, JS, Assets
-│   └── templates/
-│       ├── admin/           # Admin-Templates
-│       ├── app/             # Hauptanwendungs-Templates
-│       ├── errors/          # Fehlerseiten
-│       ├── components/      # Wiederverwendbare Komponenten
-│       └── layout.html      # Basis-Layout
-├── tools/                    # Build-Tools
-├── .air.toml                # Hot-Reload Konfiguration
-├── docker-compose.yml       # Docker Compose Konfiguration
-├── Dockerfile               # Docker Build Konfiguration
-├── go.mod                   # Go Dependencies
-└── Makefile                 # Build-Automatisierung
+├── cmd/id-100
+├── internal
+├── web
+├── src
+├── docker-compose.yml
+├── docker-compose.dev.yml
+├── Dockerfile
+└── Makefile
 ```
-
-## 🏗️ Technologie-Stack
-
-| Kategorie | Technologie |
-|-----------|------------|
-| **Backend** | Go 1.24, Echo Framework v4 |
-| **Datenbank** | PostgreSQL 15 (Supabase oder Docker) |
-| **Storage** | MinIO / Supabase Storage (S3-kompatibel) |
-| **Geocoding** | Meilisearch + GeoNames.org |
-| **Image Processing** | go-webp, LQIP |
-| **Frontend** | HTML5, CSS3, TypeScript, esbuild |
-| **Dev Tools** | Air (Hot-Reload), Docker Compose, Make |
-| **Container** | Docker, Docker Compose |
-
-## 🔧 Konfiguration
-
-### Air (Hot-Reload)
-
-Die Konfiguration befindet sich in [`.air.toml`](.air.toml). Wichtige Einstellungen:
-
-- **Port**: 8080
-- **Watch-Verzeichnisse**: cmd, web
-- **Delay**: 1000ms (verhindert mehrfache Neustarts)
-
-### Templates
-
-Templates nutzen Go's `html/template` und befinden sich in `web/templates/`:
-
-- `layout.html` - Basis-Layout
-- `admin/` - Admin-Dashboard und Verwaltung
-- `app/` - Hauptanwendungs-Seiten (Upload, Deriven, etc.)
-- `errors/` - Fehlerseiten (Zugriff verweigert, ungültiger Token, etc.)
-- `components/` - Wiederverwendbare Komponenten (Header, Footer)
-
-## 🧪 Testing
-
-```bash
-# Alle Tests ausführen
-make test
-
-# Spezifische Tests
-go test ./cmd/id-100 -v
-```
-
-## 📝 API-Endpunkte
-
-| Methode | Pfad | Beschreibung |
-|---------|------|--------------|
-| `GET` | `/` | Übersicht aller IDs (Index) |
-| `GET` | `/id/:number` | Detail-Ansicht einer ID |
-| `GET` | `/upload` | Upload-Formular |
-| `POST` | `/upload` | Beitrag hochladen |
-| `GET` | `/leitfaden` | 🚨 |
-| `GET` | `/static/*` | Statische Dateien |

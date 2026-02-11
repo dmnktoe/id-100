@@ -3,7 +3,7 @@
 
 .PHONY: help run build build-all build-frontend test fmt vet clean
 .PHONY: docker-build docker-up docker-down docker-restart docker-logs docker-clean
-.PHONY: docker-dev-up docker-dev-down docker-dev-restart docker-dev-logs docker-dev-clean
+.PHONY: docker-dev-up docker-dev-down docker-dev-restart docker-dev-logs docker-dev-clean docker-dev-rebuild
 
 # Default target - show help
 help:
@@ -32,6 +32,7 @@ help:
 	@echo "    docker-dev-restart - Restart development services"
 	@echo "    docker-dev-logs  - View logs from development services"
 	@echo "    docker-dev-clean - Stop development services and remove volumes"
+	@echo "    docker-dev-rebuild - Clean rebuild of development services"
 	@echo ""
 
 # Development targets
@@ -96,6 +97,11 @@ docker-dev-logs:
 docker-dev-clean:
 	docker compose -f docker-compose.dev.yml down -v
 	docker system prune -f
+
+docker-dev-rebuild:
+	docker compose -f docker-compose.dev.yml --env-file .env.dev down
+	docker compose -f docker-compose.dev.yml --env-file .env.dev build --no-cache
+	docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
 
 # Combined targets
 rebuild: docker-down docker-build docker-up
