@@ -4,4 +4,5 @@
 
 interface Window {
   GEOCODING_API_URL: string;
+  MEILI_MASTER_KEY: string;
 }

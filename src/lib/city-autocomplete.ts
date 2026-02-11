@@ -79,8 +79,10 @@ export function resetState(): void {
 function initMeilisearchClient(): MeiliSearch {
   if (!client) {
     const meilisearchUrl = window.GEOCODING_API_URL || "http://localhost:8081";
+    const apiKey = window.MEILI_MASTER_KEY || "";
     client = new MeiliSearch({
       host: meilisearchUrl,
+      apiKey: apiKey,
     });
   }
   return client;
@@ -214,28 +216,20 @@ function updateHighlight(items: NodeListOf<Element>): void {
  * Initialize city autocomplete functionality
  */
 export function initCityAutocomplete(): void {
-  console.log("[CityAutocomplete] Initializing...");
-  
   const cityInput = document.getElementById("playerCity") as HTMLInputElement;
   const submitBtn = document.querySelector(".submit-btn") as HTMLButtonElement;
 
   if (!cityInput) {
-    console.error("[CityAutocomplete] City input not found!");
     return;
   }
-
-  console.log("[CityAutocomplete] City input found");
 
   // Set initial button state to disabled
   if (submitBtn) {
     submitBtn.disabled = true;
     submitBtn.classList.add("disabled");
-    console.log("[CityAutocomplete] Submit button set to disabled");
   }
 
   // Initialize Meilisearch client
-  const geocodingUrl = window.GEOCODING_API_URL || "http://localhost:8081";
-  console.log("[CityAutocomplete] Initializing Meilisearch with URL:", geocodingUrl);
   const meiliClient = initMeilisearchClient();
 
   // Create custom dropdown and insert after the input
@@ -243,7 +237,6 @@ export function initCityAutocomplete(): void {
   if (cityInput.parentNode) {
     // Insert dropdown right after the input element
     cityInput.parentNode.insertBefore(dropdown, cityInput.nextSibling);
-    console.log("[CityAutocomplete] Dropdown created and inserted into DOM");
   }
 
   let lastQuery = "";
@@ -251,7 +244,6 @@ export function initCityAutocomplete(): void {
   // Listen to input changes
   cityInput.addEventListener("input", () => {
     const query = cityInput.value.trim();
-    console.log("[CityAutocomplete] Input changed, query:", query);
 
     // Mark as not selected when user types
     citySelected = false;
@@ -261,7 +253,6 @@ export function initCityAutocomplete(): void {
 
     // Check if the current value matches a valid city
     if (validCities.has(query)) {
-      console.log("[CityAutocomplete] Query matches valid city!");
       citySelected = true;
       cityInput.classList.add("city-selected");
       updateSubmitButton(submitBtn);
@@ -272,13 +263,11 @@ export function initCityAutocomplete(): void {
 
     // Don't search if query is too short or same as last query
     if (query.length < 2) {
-      console.log("[CityAutocomplete] Query too short, hiding dropdown");
       hideDropdown(dropdown);
       return;
     }
 
     if (query === lastQuery) {
-      console.log("[CityAutocomplete] Same query as before, skipping search");
       return;
     }
 
@@ -290,9 +279,7 @@ export function initCityAutocomplete(): void {
     }
 
     // Debounce the API call
-    console.log("[CityAutocomplete] Setting up debounced search...");
     debounceTimer = window.setTimeout(() => {
-      console.log("[CityAutocomplete] Executing search for:", query);
       searchCities(query, cityInput, dropdown, meiliClient);
     }, 300);
   });
@@ -314,7 +301,6 @@ export function initCityAutocomplete(): void {
   // Listen for selection
   cityInput.addEventListener("change", () => {
     const value = cityInput.value.trim();
-    console.log("[CityAutocomplete] Change event, value:", value);
     if (validCities.has(value)) {
       citySelected = true;
       cityInput.classList.add("city-selected");
@@ -338,8 +324,6 @@ export function initCityAutocomplete(): void {
       }
     }, 200);
   });
-  
-  console.log("[CityAutocomplete] Initialization complete");
 }
 
 /**
@@ -352,15 +336,11 @@ async function searchCities(
   meiliClient: MeiliSearch
 ): Promise<void> {
   try {
-    console.log("[CityAutocomplete] Searching Meilisearch for:", query);
-    
     // Search using Meilisearch SDK
     const searchResults = await meiliClient.index("cities").search<CityHit>(query, {
       limit: 10,
       attributesToRetrieve: ["name"],
     });
-
-    console.log("[CityAutocomplete] Search results received:", searchResults.hits.length, "hits");
 
     // Clear valid cities
     validCities.clear();
@@ -378,8 +358,6 @@ async function searchCities(
       }
     });
 
-    console.log("[CityAutocomplete] Unique cities found:", cityNames.length);
-
     // Show dropdown with results
     showDropdown(input, dropdown, cityNames);
   } catch (error) {
@@ -392,26 +370,19 @@ async function searchCities(
  * Initialize form validation for name entry page
  */
 export function initFormValidation(): void {
-  console.log("[FormValidation] Initializing...");
-  
   const nameInput = document.getElementById("playerName") as HTMLInputElement;
   const privacyCheckbox = document.getElementById("privacyCheckbox") as HTMLInputElement;
   const submitBtn = document.querySelector(".submit-btn") as HTMLButtonElement;
   const form = document.getElementById("nameForm") as HTMLFormElement;
 
   if (!nameInput || !privacyCheckbox || !submitBtn) {
-    console.error("[FormValidation] Required elements not found!");
     return;
   }
-
-  console.log("[FormValidation] All required elements found");
 
   const updateButton = () => {
     const nameValid = nameInput.value.trim().length >= 2;
     const privacyAccepted = privacyCheckbox.checked;
     const cityValid = citySelected;
-
-    console.log("[FormValidation] Validation state - Name:", nameValid, "Privacy:", privacyAccepted, "City:", cityValid);
 
     const allValid = nameValid && privacyAccepted && cityValid;
     submitBtn.disabled = !allValid;
@@ -419,10 +390,8 @@ export function initFormValidation(): void {
     // Update button appearance
     if (allValid) {
       submitBtn.classList.remove("disabled");
-      console.log("[FormValidation] All valid - button enabled");
     } else {
       submitBtn.classList.add("disabled");
-      console.log("[FormValidation] Not all valid - button disabled");
     }
     
     updateStatusIndicators();
@@ -445,19 +414,14 @@ export function initFormValidation(): void {
       
       if (!allValid) {
         e.preventDefault();
-        console.log("[FormValidation] Form submission prevented - not all fields valid");
         alert("Bitte fülle alle Felder korrekt aus und wähle eine Stadt aus der Liste!");
         return false;
       }
-      
-      console.log("[FormValidation] Form submission allowed");
     });
   }
   
   // Initialize status indicators
   updateStatusIndicators();
-  
-  console.log("[FormValidation] Initialization complete");
 }
 
 /**
