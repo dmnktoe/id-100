@@ -999,7 +999,9 @@ main {
   font-size: 1rem;
   padding: 0.2rem;
   opacity: 0.7;
-  transition: opacity 0.2s, transform 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
 }
 
 .session-delete-btn:hover {
@@ -1604,6 +1606,7 @@ img.blur-up.loaded {
   color: var(--gray-800);
   letter-spacing: var(--letter-spacing-tight);
   white-space: nowrap;
+  margin: 0;
 }
 
 .filter-label svg {
@@ -1673,24 +1676,66 @@ img.blur-up.loaded {
 
 @media (max-width: 768px) {
   .filter-section {
-    flex-wrap: wrap;
-    padding: var(--pad-md);
+    flex-wrap: nowrap;
+    padding: 0;
+    background: transparent;
+    backdrop-filter: none;
+    border: none;
+    gap: 0.375rem;
+  }
+
+  .filter-section:hover {
+    background: transparent;
+    border: none;
   }
 
   .filter-label {
-    width: 100%;
-    font-size: 0.85rem;
+    display: none;
   }
 
   .city-filter-dropdown {
-    flex: 1;
+    flex: 0;
+    min-width: auto;
     max-width: none;
-    font-size: 0.85rem;
+    padding: 0;
+    font-size: 0.9rem;
+    color: var(--gray-900);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid currentColor;
+    border-radius: 0;
+    background-image: none;
+    padding-right: 0;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+  }
+
+  .city-filter-dropdown:hover {
+    border: none;
+    border-bottom: 1px solid currentColor;
+    background-color: transparent;
+  }
+
+  .city-filter-dropdown:focus {
+    outline: none;
+    border: none;
+    border-bottom: 1px solid currentColor;
+    box-shadow: none;
   }
 
   .filter-clear {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    background: transparent;
+    border: none;
+    color: var(--gray-600);
+  }
+
+  .filter-clear:hover {
+    background: transparent;
+    border: none;
+    color: var(--black);
   }
 
   /* Mobile: stack page header vertically */
@@ -1705,7 +1750,7 @@ img.blur-up.loaded {
   }
 
   .page-header .filter-section {
-    width: 100%;
+    width: auto;
   }
 }
 
