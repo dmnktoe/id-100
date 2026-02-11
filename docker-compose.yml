@@ -89,6 +89,8 @@ services:
   geonames-loader:
     image: alpine:latest
     container_name: id100-geonames-loader
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
     restart: "no"
     depends_on:
       meilisearch:
