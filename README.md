@@ -34,20 +34,29 @@ Eine moderne Go-Webanwendung für kreative Beiträge mit Echo-Framework, Supabas
 
 Die einfachste Methode, um die gesamte Anwendung mit allen Abhängigkeiten lokal zu starten:
 
+#### Lokale Entwicklung (ohne nginx)
+
 ```bash
 # Repository klonen
 git clone https://github.com/dmnktoe/id-100.git
 cd id-100
 
-# Mit Docker Compose starten
-docker-compose up -d
+# Mit Docker Compose für lokale Entwicklung starten
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
+```
+
+#### Produktion (mit nginx)
+
+```bash
+# Mit Docker Compose für Produktion starten
+docker compose up -d
 ```
 
 Dies startet automatisch:
 - **PostgreSQL** Datenbank (Port 5432)
 - **MinIO** S3-kompatibler Objektspeicher (Port 9000, Console 9001)
 - **Meilisearch** Suchmaschine für Stadtsuche mit GeoNames-Daten (Port 8081)
-- **ID-100** Webanwendung (Port 8080)
+- **ID-100** Webanwendung (Port 8080 - direkt zugänglich in dev, über nginx in Produktion)
 
 Die Anwendung ist verfügbar unter: `http://localhost:8080`
 
@@ -213,24 +222,47 @@ Der TypeScript-Code wird mit **esbuild** gebündelt und minifiziert in `web/stat
 
 ### Docker Compose
 
+#### Lokale Entwicklung
+
 ```bash
-# Alle Services starten
-docker-compose up -d
+# Alle Services für lokale Entwicklung starten (ohne nginx)
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
 
 # Logs anzeigen
-docker-compose logs -f
+docker compose -f docker-compose.dev.yml logs -f
 
 # Services stoppen
-docker-compose down
+docker compose -f docker-compose.dev.yml down
 
 # Services neu bauen
-docker-compose up -d --build
+docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
 
 # Alle Daten löschen (Volumes)
-docker-compose down -v
+docker compose -f docker-compose.dev.yml down -v
+```
+
+#### Produktion
+
+```bash
+# Alle Services für Produktion starten (mit nginx)
+docker compose up -d
+
+# Logs anzeigen
+docker compose logs -f
+
+# Services stoppen
+docker compose down
+
+# Services neu bauen
+docker compose up -d --build
+
+# Alle Daten löschen (Volumes)
+docker compose down -v
 ```
 
 ### Makefile-Befehle
+
+#### Entwicklung
 
 ```bash
 make run         # Anwendung starten
@@ -239,9 +271,27 @@ make build-all   # Backend und Frontend bauen
 make test        # Tests ausführen
 make fmt         # Code formatieren
 make vet         # Code analysieren
-make docker-db   # PostgreSQL-Container starten
-make docker-stop # PostgreSQL-Container stoppen
 make clean       # Build-Artefakte entfernen
+```
+
+#### Docker Compose - Lokale Entwicklung
+
+```bash
+make docker-dev-up      # Alle Services für lokale Entwicklung starten
+make docker-dev-down    # Development-Services stoppen
+make docker-dev-restart # Development-Services neu starten
+make docker-dev-logs    # Logs anzeigen
+make docker-dev-clean   # Services stoppen und Volumes löschen
+```
+
+#### Docker Compose - Produktion
+
+```bash
+make docker-up      # Alle Services starten (mit nginx)
+make docker-down    # Services stoppen
+make docker-restart # Services neu starten
+make docker-logs    # Logs anzeigen
+make docker-clean   # Services stoppen und Volumes löschen
 ```
 
 ## 📁 Projektstruktur
