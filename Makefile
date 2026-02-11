@@ -3,6 +3,7 @@
 
 .PHONY: help run build build-all build-frontend test fmt vet clean
 .PHONY: docker-build docker-up docker-down docker-restart docker-logs docker-clean
+.PHONY: docker-dev-up docker-dev-down docker-dev-restart docker-dev-logs docker-dev-clean
 
 # Default target - show help
 help:
@@ -17,13 +18,20 @@ help:
 	@echo "    vet              - Run Go vet"
 	@echo "    clean            - Remove build artifacts"
 	@echo ""
-	@echo "  Docker Compose:"
+	@echo "  Docker Compose (Production):"
 	@echo "    docker-build     - Build Docker images"
 	@echo "    docker-up        - Start all services"
 	@echo "    docker-down      - Stop all services"
 	@echo "    docker-restart   - Restart all services"
 	@echo "    docker-logs      - View logs from all services"
 	@echo "    docker-clean     - Stop services and remove volumes"
+	@echo ""
+	@echo "  Docker Compose (Development):"
+	@echo "    docker-dev-up    - Start all services for local development"
+	@echo "    docker-dev-down  - Stop development services"
+	@echo "    docker-dev-restart - Restart development services"
+	@echo "    docker-dev-logs  - View logs from development services"
+	@echo "    docker-dev-clean - Stop development services and remove volumes"
 	@echo ""
 
 # Development targets
@@ -52,7 +60,7 @@ clean:
 	rm -f bin/id-100
 	rm -f web/static/main.js web/static/main.js.map
 
-# Docker Compose targets
+# Docker Compose targets (Production)
 docker-build:
 	docker-compose build --no-cache
 
@@ -70,6 +78,23 @@ docker-logs:
 
 docker-clean:
 	docker-compose down -v
+	docker system prune -f
+
+# Docker Compose targets (Development)
+docker-dev-up:
+	docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
+
+docker-dev-down:
+	docker compose -f docker-compose.dev.yml down
+
+docker-dev-restart:
+	docker compose -f docker-compose.dev.yml restart
+
+docker-dev-logs:
+	docker compose -f docker-compose.dev.yml logs -f
+
+docker-dev-clean:
+	docker compose -f docker-compose.dev.yml down -v
 	docker system prune -f
 
 # Combined targets

@@ -262,6 +262,8 @@ docker compose down -v
 
 ### Makefile-Befehle
 
+#### Entwicklung
+
 ```bash
 make run         # Anwendung starten
 make build       # Backend-Binary erstellen
@@ -269,9 +271,27 @@ make build-all   # Backend und Frontend bauen
 make test        # Tests ausführen
 make fmt         # Code formatieren
 make vet         # Code analysieren
-make docker-db   # PostgreSQL-Container starten
-make docker-stop # PostgreSQL-Container stoppen
 make clean       # Build-Artefakte entfernen
+```
+
+#### Docker Compose - Lokale Entwicklung
+
+```bash
+make docker-dev-up      # Alle Services für lokale Entwicklung starten
+make docker-dev-down    # Development-Services stoppen
+make docker-dev-restart # Development-Services neu starten
+make docker-dev-logs    # Logs anzeigen
+make docker-dev-clean   # Services stoppen und Volumes löschen
+```
+
+#### Docker Compose - Produktion
+
+```bash
+make docker-up      # Alle Services starten (mit nginx)
+make docker-down    # Services stoppen
+make docker-restart # Services neu starten
+make docker-logs    # Logs anzeigen
+make docker-clean   # Services stoppen und Volumes löschen
 ```
 
 ## 📁 Projektstruktur
