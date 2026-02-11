@@ -62,22 +62,22 @@ clean:
 
 # Docker Compose targets (Production)
 docker-build:
-	docker-compose build --no-cache
+	docker compose build --no-cache
 
 docker-up:
-	docker-compose up -d
+	docker compose up -d
 
 docker-down:
-	docker-compose down
+	docker compose down
 
 docker-restart:
-	docker-compose restart
+	docker compose restart
 
 docker-logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 docker-clean:
-	docker-compose down -v
+	docker compose down -v
 	docker system prune -f
 
 # Docker Compose targets (Development)
