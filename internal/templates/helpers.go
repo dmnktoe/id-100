@@ -6,6 +6,7 @@ import "id-100/internal/config"
 func GetGlobalTemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"GeocodingURL": config.GetGeocodingURL(),
+		"MeiliKey":     config.GetMeiliSearchKey(),
 	}
 }
 

@@ -138,6 +138,7 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       GEOCODING_API_URL: ${GEOCODING_API_URL}
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_SEARCH_KEY: ${MEILI_SEARCH_KEY}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
       interval: 30s
