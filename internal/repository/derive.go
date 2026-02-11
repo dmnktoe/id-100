@@ -10,7 +10,7 @@ import (
 	"id-100/internal/models"
 )
 
-// API layer for database queries - extracted from app.go and admin.go
+// Repository layer for database queries - provides data access abstraction for handlers
 
 // GetDistinctCities retrieves all distinct cities from contributions
 func GetDistinctCities(ctx context.Context) ([]string, error) {
@@ -147,7 +147,10 @@ func GetDeriveContributions(ctx context.Context, deriveID int, cityFilter string
 	var contribs []models.Contribution
 	for rows.Next() {
 		var ct models.Contribution
-		rows.Scan(&ct.ImageUrl, &ct.ImageLqip, &ct.UserName, &ct.UserCity, &ct.UserComment, &ct.CreatedAt)
+		if err := rows.Scan(&ct.ImageUrl, &ct.ImageLqip, &ct.UserName, &ct.UserCity, &ct.UserComment, &ct.CreatedAt); err != nil {
+			log.Printf("Error scanning contribution row: %v", err)
+			continue
+		}
 		contribs = append(contribs, ct)
 	}
 
