@@ -62,7 +62,7 @@ func UserDeleteContributionHandler(c echo.Context) error {
 	err = repository.DecrementTokenUploadCount(context.Background(), tokenID)
 	if err != nil {
 		log.Printf("Failed to decrement upload counter: %v", err)
-		sentryhelper.CaptureException(c, err)
+		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
 	}
 
 	// Delete from S3 storage
