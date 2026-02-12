@@ -1,0 +1,20 @@
+name: Deploy
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remote SSH Deploy (pass release tag)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_SERVER_HOST }}
+          username: ${{ secrets.SSH_SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            export APP_VERSION="${{ github.ref_name }}"
+            echo "Running remote deploy (APP_VERSION=$APP_VERSION)"
+            /root/deploy.sh

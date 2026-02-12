@@ -1,12 +1,16 @@
 package templates
 
-import "id-100/internal/config"
+import (
+	"id-100/internal/config"
+	"id-100/internal/version"
+)
 
 // GetGlobalTemplateData returns global data that should be available in all templates
 func GetGlobalTemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"GeocodingURL": config.GetGeocodingURL(),
 		"MeiliKey":     config.GetMeiliSearchKey(),
+		"AppVersion":   version.Version,
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"id-100/internal/handlers"
 	appMiddleware "id-100/internal/middleware"
 	"id-100/internal/templates"
+	"id-100/internal/version"
 )
 
 func main() {
@@ -36,6 +37,7 @@ func main() {
 	// Register routes
 	handlers.RegisterRoutes(e, cfg.BaseURL)
 
-	log.Printf("Starting server on port %s", cfg.Port)
+	// Log app version
+	log.Printf("Starting server on port %s (version=%s)", cfg.Port, version.Version)
 	e.Logger.Fatal(e.Start(":" + cfg.Port))
 }
