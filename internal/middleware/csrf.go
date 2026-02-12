@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"crypto/subtle"
 	"log"
 	"net/http"
 	"strings"
@@ -80,7 +81,7 @@ func CSRFProtection(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		// Compare tokens (constant time comparison for security)
-		if requestToken != sessionToken {
+		if subtle.ConstantTimeCompare([]byte(requestToken), []byte(sessionToken)) != 1 {
 			log.Printf("CSRF token mismatch")
 			return c.Render(http.StatusForbidden, "layout", mergeTemplateData(map[string]interface{}{
 				"Title":           "Ungültiger CSRF-Token",

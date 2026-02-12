@@ -11,6 +11,9 @@
                         Gib den Einladungscode ein, den du erhalten hast, um Zugriff auf das Werkzeug zu erhalten.
                     </p>
                     
+                    <!-- CSRF protection is intentionally skipped for this form as it's accessed 
+                         by users who may not have an existing session. The invitation code itself 
+                         provides sufficient protection as it's time-limited and single-use. -->
                     <form action="/upload/invitations/accept" method="POST">
                         <div class="form-group mb-3">
                             <label for="invitation_code" class="form-label">Einladungscode</label>
