@@ -268,10 +268,9 @@ func SetPlayerNameHandler(c echo.Context) error {
 
 	// Ensure session_uuid is saved in session
 	session.Values["session_uuid"] = sessionUUID
-	err = session.Save(c.Request(), c.Response())
-	if err != nil {
-		log.Printf("Failed to save session: %v", err)
-		return c.String(http.StatusInternalServerError, "Session save failed")
+	// Save session - errors are logged but not fatal as middleware also saves
+	if err := session.Save(c.Request(), c.Response()); err != nil {
+		log.Printf("Warning: Failed to save session in handler (non-fatal): %v", err)
 	}
 
 	// Get token ID
