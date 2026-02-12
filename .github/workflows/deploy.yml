@@ -8,13 +8,34 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Remote SSH Deploy (pass release tag)
+      - name: Remote SSH Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_SERVER_HOST }}
           username: ${{ secrets.SSH_SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            export APP_VERSION="${{ github.ref_name }}"
+            APP_VERSION="${{ github.ref_name }}"
             echo "Running remote deploy (APP_VERSION=$APP_VERSION)"
-            /root/deploy.sh
+
+            # change to project dir and fetch tags
+            cd /root/id-100 || exit 1
+            git fetch --tags --quiet
+
+            # checkout the release tag (detached HEAD is fine for deploy)
+            git checkout "$APP_VERSION"
+
+            # build the webapp image with the release tag injected into the binary
+            echo "🏗️ Building webapp image with APP_VERSION=$APP_VERSION"
+            docker compose build --build-arg APP_VERSION="$APP_VERSION" webapp
+
+            # bring services up (use already-built image)
+            docker compose up -d
+
+            # ensure Meili loader runs if needed
+            docker compose up geonames-loader || true
+
+            # cleanup old images
+            docker image prune -f || true
+
+            echo "✅ Deployment of $APP_VERSION finished."

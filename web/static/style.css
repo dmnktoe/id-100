@@ -316,7 +316,7 @@ main {
   cursor: pointer;
 }
 .leitfaden-cta:focus {
-  outline: 3px solid rgba(0,0,0,0.08);
+  outline: 3px solid rgba(0, 0, 0, 0.08);
   outline-offset: 3px;
   border-radius: 4px;
 }
