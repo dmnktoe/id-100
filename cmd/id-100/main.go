@@ -23,7 +23,7 @@ func main() {
 
 	// Initialize Sentry
 	if err := appSentry.Init(cfg.SentryDSN); err != nil {
-		log.Printf("Sentry initialization error: %v", err)
+		log.Printf("Failed to initialize Sentry error tracking, continuing without it. Please verify SENTRY_DSN configuration: %v", err)
 	}
 	defer sentry.Flush(2 * time.Second)
 

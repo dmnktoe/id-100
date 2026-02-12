@@ -21,6 +21,6 @@ func Init(dsn string) error {
 		return fmt.Errorf("sentry initialization failed: %w", err)
 	}
 
-	log.Println("Sentry initialized successfully")
+	log.Println("Sentry error tracking initialized successfully")
 	return nil
 }
