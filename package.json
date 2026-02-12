@@ -16,7 +16,7 @@
   "license": "MIT",
   "dependencies": {
     "meilisearch": "^0.44.0",
-    "zod": "^3.22.4"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@vitest/ui": "^4.0.18",
