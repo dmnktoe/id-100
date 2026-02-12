@@ -20,6 +20,7 @@ Eine moderne Go-Webanwendung fuer kreative Beitraege mit Echo, PostgreSQL, MinIO
 - S3-kompatibler Storage ueber MinIO
 - PostgreSQL fuer Daten und Migrations
 - Meilisearch fuer City Autocomplete
+- Datadog APM Integration fuer Performance Monitoring
 - Hot Reload via Air
 - Komplettes lokales Setup via Docker Compose
 
@@ -94,6 +95,12 @@ Wichtige Variablen:
 | `SESSION_SECRET` | Session Secret |
 | `ADMIN_USERNAME` | Admin User |
 | `ADMIN_PASSWORD` | Admin Passwort |
+| `DD_TRACE_ENABLED` | Datadog APM aktivieren (true/false) |
+| `DD_SERVICE` | Datadog Service Name |
+| `DD_ENV` | Datadog Umgebung (development/production) |
+| `DD_VERSION` | Anwendungsversion fuer Datadog |
+| `DD_AGENT_HOST` | Datadog Agent Hostname |
+| `DD_TRACE_AGENT_PORT` | Datadog Agent Port (Standard: 8126) |
 
 ## Datenbank und Migrationen
 
@@ -103,6 +110,48 @@ Die Migrationen liegen in [internal/database/migrations](internal/database/migra
 - [002_insert_initial_deriven.sql](internal/database/migrations/002_insert_initial_deriven.sql) fuellt die 100 Deriven.
 
 Wenn du eigene Deriven verwenden willst, ersetze die Inhalte von [002_insert_initial_deriven.sql](internal/database/migrations/002_insert_initial_deriven.sql) und starte den Stack neu.
+
+## Datadog APM Integration
+
+Die Anwendung unterstuetzt Datadog Application Performance Monitoring (APM) fuer verteiltes Tracing und Performance-Analyse.
+
+### Aktivierung
+
+Setze die folgenden Umgebungsvariablen:
+
+```bash
+DD_TRACE_ENABLED=true
+DD_SERVICE=id-100
+DD_ENV=production
+DD_VERSION=1.0.0
+DD_AGENT_HOST=localhost
+DD_TRACE_AGENT_PORT=8126
+```
+
+### Funktionen
+
+- Automatisches HTTP Request Tracing mit Echo Middleware
+- Service Name, Environment und Version Tagging
+- Integration mit Datadog Agent
+- Performance Metrics und Traces
+
+### Voraussetzungen
+
+Um Datadog APM zu nutzen, muss der [Datadog Agent](https://docs.datadoghq.com/agent/) installiert und konfiguriert sein. Der Agent empfaengt Traces auf Port 8126 (Standard).
+
+### Docker Compose Beispiel
+
+```yaml
+datadog-agent:
+  image: gcr.io/datadoghq/agent:latest
+  environment:
+    - DD_API_KEY=${DD_API_KEY}
+    - DD_SITE=datadoghq.eu
+    - DD_APM_ENABLED=true
+    - DD_APM_NON_LOCAL_TRAFFIC=true
+  ports:
+    - "8126:8126"
+```
 
 ## API Endpunkte
 
