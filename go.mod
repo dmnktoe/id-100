@@ -15,6 +15,7 @@ require (
 	github.com/labstack/echo/v4 v4.15.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	golang.org/x/image v0.35.0
+	gopkg.in/DataDog/dd-trace-go.v1 v1.74.8
 )
 
 require (
@@ -121,7 +122,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250425173222-7b384671a197 // indirect
 	google.golang.org/grpc v1.72.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
-	gopkg.in/DataDog/dd-trace-go.v1 v1.74.8 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
