@@ -266,7 +266,13 @@ func SetPlayerNameHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "Session initialization failed")
 	}
 
-	session.Save(c.Request(), c.Response())
+	// Ensure session_uuid is saved in session
+	session.Values["session_uuid"] = sessionUUID
+	err = session.Save(c.Request(), c.Response())
+	if err != nil {
+		log.Printf("Failed to save session: %v", err)
+		return c.String(http.StatusInternalServerError, "Session save failed")
+	}
 
 	// Get token ID
 	var tokenID int

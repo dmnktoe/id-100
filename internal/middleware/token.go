@@ -92,38 +92,6 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.String(http.StatusInternalServerError, "Session initialization failed")
 		}
 
-		// Check for session conflict (another browser is using this token)
-		if dbSessionUUID != nil && *dbSessionUUID != "" && *dbSessionUUID != sessionUUID {
-			// Token is already bound to a different session
-			// Check if this session has an active invitation
-			var invitationExists bool
-			err = database.DB.QueryRow(context.Background(),
-				`SELECT EXISTS(
-					SELECT 1 FROM invitations 
-					WHERE token_id = $1 
-					AND (accepted_by_session_uuid = $2 OR created_by_session_uuid = $2)
-					AND is_active = true
-					AND expires_at > NOW()
-				)`,
-				tokenID, sessionUUID).Scan(&invitationExists)
-
-			if err != nil {
-				log.Printf("Failed to check invitation: %v", err)
-			}
-
-			if !invitationExists {
-				// Return 409 Conflict - bag is in use by another device
-				return c.Render(http.StatusConflict, "layout", mergeTemplateData(map[string]interface{}{
-					"Title":           "Werkzeug wird bereits verwendet",
-					"ContentTemplate": "bag_in_use.content",
-					"CurrentPath":     c.Request().URL.Path,
-					"CurrentYear":     time.Now().Year(),
-					"BagName":         bagName,
-					"CurrentPlayer":   currentPlayer,
-				}))
-			}
-		}
-
 		// Save token in session for subsequent requests
 		session.Values["token"] = token
 		session.Values["token_id"] = tokenID
@@ -228,6 +196,39 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 				}))
 			}
 		} else {
+			// currentPlayer is set - check for session conflict
+			// Only check if another browser is using this token when player is already set
+			if dbSessionUUID != nil && *dbSessionUUID != "" && *dbSessionUUID != sessionUUID {
+				// Token is already bound to a different session
+				// Check if this session has an active invitation
+				var invitationExists bool
+				err = database.DB.QueryRow(context.Background(),
+					`SELECT EXISTS(
+						SELECT 1 FROM invitations 
+						WHERE token_id = $1 
+						AND (accepted_by_session_uuid = $2 OR created_by_session_uuid = $2)
+						AND is_active = true
+						AND expires_at > NOW()
+					)`,
+					tokenID, sessionUUID).Scan(&invitationExists)
+
+				if err != nil {
+					log.Printf("Failed to check invitation: %v", err)
+				}
+
+				if !invitationExists {
+					// Return 409 Conflict - bag is in use by another device
+					return c.Render(http.StatusConflict, "layout", mergeTemplateData(map[string]interface{}{
+						"Title":           "Werkzeug wird bereits verwendet",
+						"ContentTemplate": "bag_in_use.content",
+						"CurrentPath":     c.Request().URL.Path,
+						"CurrentYear":     time.Now().Year(),
+						"BagName":         bagName,
+						"CurrentPlayer":   currentPlayer,
+					}))
+				}
+			}
+
 			// Save player name and city in session if not already there
 			session.Values["player_name"] = currentPlayer
 			session.Values["player_city"] = currentPlayerCity
