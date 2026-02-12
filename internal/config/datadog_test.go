@@ -56,6 +56,20 @@ func TestLoadDatadogConfig(t *testing.T) {
 				AgentPort:   "8126",
 			},
 		},
+		{
+			name: "invalid DD_TRACE_ENABLED value defaults to false",
+			envVars: map[string]string{
+				"DD_TRACE_ENABLED": "invalid",
+			},
+			expected: DatadogConfig{
+				Enabled:     false,
+				ServiceName: "id-100",
+				Environment: "development",
+				Version:     "1.0.0",
+				AgentHost:   "localhost",
+				AgentPort:   "8126",
+			},
+		},
 	}
 
 	for _, tt := range tests {

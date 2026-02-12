@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log"
 	"os"
 	"strconv"
 )
@@ -19,7 +20,12 @@ type DatadogConfig struct {
 func LoadDatadogConfig() *DatadogConfig {
 	enabled := false
 	if ddEnabled := os.Getenv("DD_TRACE_ENABLED"); ddEnabled != "" {
-		enabled, _ = strconv.ParseBool(ddEnabled)
+		var err error
+		enabled, err = strconv.ParseBool(ddEnabled)
+		if err != nil {
+			log.Printf("WARNING: Invalid DD_TRACE_ENABLED value '%s', defaulting to false: %v", ddEnabled, err)
+			enabled = false
+		}
 	}
 
 	serviceName := os.Getenv("DD_SERVICE")
