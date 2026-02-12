@@ -18,12 +18,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/chai2010/webp"
 	"github.com/getsentry/sentry-go"
-	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/imgutil"
 	"id-100/internal/middleware"
 	"id-100/internal/repository"
+	"id-100/internal/sentryhelper"
 	"id-100/internal/templates"
 	"id-100/internal/utils"
 )
@@ -44,12 +44,7 @@ func UploadGetHandler(c echo.Context) error {
 	sessionContribs, err := repository.GetSessionUploads(context.Background(), tokenID, sessionNumber)
 	if err != nil {
 		log.Printf("Failed to fetch session uploads: %v", err)
-		if hub := sentryecho.GetHubFromContext(c); hub != nil {
-			hub.WithScope(func(scope *sentry.Scope) {
-				scope.SetLevel(sentry.LevelWarning)
-				hub.CaptureException(err)
-			})
-		}
+		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
 		sessionContribs = []map[string]interface{}{}
 	}
 
@@ -163,12 +158,7 @@ func UploadPostHandler(c echo.Context) error {
 	lqip, lqipErr := utils.GenerateLQIP(img, 24)
 	if lqipErr != nil {
 		log.Printf("LQIP generation failed: %v", lqipErr)
-		if hub := sentryecho.GetHubFromContext(c); hub != nil {
-			hub.WithScope(func(scope *sentry.Scope) {
-				scope.SetLevel(sentry.LevelWarning)
-				hub.CaptureException(lqipErr)
-			})
-		}
+		sentryhelper.CaptureError(c, lqipErr, sentry.LevelWarning)
 		lqip = ""
 	}
 
@@ -192,9 +182,7 @@ func UploadPostHandler(c echo.Context) error {
 
 	if err != nil {
 		log.Printf("DB Error inserting contribution: %v", err)
-		if hub := sentryecho.GetHubFromContext(c); hub != nil {
-			hub.CaptureException(err)
-		}
+		sentryhelper.CaptureException(c, err)
 		return c.String(http.StatusInternalServerError, "DB Error")
 	}
 
@@ -202,24 +190,14 @@ func UploadPostHandler(c echo.Context) error {
 	err = repository.InsertUploadLog(context.Background(), tokenID, deriveNumber, currentPlayer, sessionNumber, contributionID)
 	if err != nil {
 		log.Printf("Failed to log upload: %v", err)
-		if hub := sentryecho.GetHubFromContext(c); hub != nil {
-			hub.WithScope(func(scope *sentry.Scope) {
-				scope.SetLevel(sentry.LevelWarning)
-				hub.CaptureException(err)
-			})
-		}
+		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
 	}
 
 	// Increment total_uploads counter
 	err = repository.IncrementTokenUploadCount(context.Background(), tokenID)
 	if err != nil {
 		log.Printf("Failed to increment upload counter: %v", err)
-		if hub := sentryecho.GetHubFromContext(c); hub != nil {
-			hub.WithScope(func(scope *sentry.Scope) {
-				scope.SetLevel(sentry.LevelWarning)
-				hub.CaptureException(err)
-			})
-		}
+		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
 	}
 
 	// Redirect back to the upload page

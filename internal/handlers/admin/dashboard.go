@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/models"
 	"id-100/internal/repository"
+	"id-100/internal/sentryhelper"
 	"id-100/internal/templates"
 	"id-100/internal/utils"
 )
@@ -28,12 +28,7 @@ func AdminDashboardHandler(c echo.Context) error {
 	recentContribs, err := repository.GetRecentContributions(context.Background(), 20)
 	if err != nil {
 		log.Printf("Failed to fetch recent contributions: %v", err)
-		if hub := sentryecho.GetHubFromContext(c); hub != nil {
-			hub.WithScope(func(scope *sentry.Scope) {
-				scope.SetLevel(sentry.LevelWarning)
-				hub.CaptureException(err)
-			})
-		}
+		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
 		recentContribs = []models.RecentContrib{}
 	}
 
@@ -53,12 +48,7 @@ func AdminDashboardHandler(c echo.Context) error {
 	openCount, handledCount, err := repository.GetBagRequestCounts(context.Background())
 	if err != nil {
 		log.Printf("Failed to fetch bag request counts: %v", err)
-		if hub := sentryecho.GetHubFromContext(c); hub != nil {
-			hub.WithScope(func(scope *sentry.Scope) {
-				scope.SetLevel(sentry.LevelWarning)
-				hub.CaptureException(err)
-			})
-		}
+		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
 		openCount, handledCount = 0, 0
 	}
 
@@ -66,12 +56,7 @@ func AdminDashboardHandler(c echo.Context) error {
 	bagRequests, err := repository.GetBagRequests(context.Background(), status, 50)
 	if err != nil {
 		log.Printf("Failed to fetch bag requests: %v", err)
-		if hub := sentryecho.GetHubFromContext(c); hub != nil {
-			hub.WithScope(func(scope *sentry.Scope) {
-				scope.SetLevel(sentry.LevelWarning)
-				hub.CaptureException(err)
-			})
-		}
+		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
 		bagRequests = []models.BagRequest{}
 	}
 
