@@ -15,6 +15,7 @@ type Config struct {
 	Port          string
 	AdminUsername string
 	AdminPassword string
+	SentryDSN     string
 }
 
 // Load loads configuration from environment variables
@@ -49,5 +50,6 @@ func Load() *Config {
 		Port:          port,
 		AdminUsername: os.Getenv("ADMIN_USERNAME"),
 		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
+		SentryDSN:     os.Getenv("SENTRY_DSN"),
 	}
 }
