@@ -21,3 +21,18 @@ func GenerateSecureToken(length int) (string, error) {
 	}
 	return encoded, nil
 }
+
+// GenerateSessionUUID generates a 44-character session UUID for browser identification
+func GenerateSessionUUID() (string, error) {
+	return GenerateSecureToken(44)
+}
+
+// GenerateInvitationCode generates a 12-character invitation code
+func GenerateInvitationCode() (string, error) {
+	return GenerateSecureToken(12)
+}
+
+// GenerateCSRFToken generates a CSRF token
+func GenerateCSRFToken() (string, error) {
+	return GenerateSecureToken(32)
+}

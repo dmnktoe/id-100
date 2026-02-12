@@ -19,6 +19,7 @@ import (
 	"github.com/chai2010/webp"
 	"github.com/labstack/echo/v4"
 
+	"id-100/internal/database"
 	"id-100/internal/imgutil"
 	"id-100/internal/middleware"
 	"id-100/internal/repository"
@@ -227,6 +228,12 @@ func SetPlayerNameHandler(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Name und Token erforderlich")
 	}
 
+	// Sanitize player name to prevent XSS
+	playerName = strings.TrimSpace(playerName)
+	if len(playerName) > 50 {
+		playerName = playerName[:50]
+	}
+
 	// Consent checkbox (required)
 	consent := c.FormValue("agree_privacy")
 	if consent == "" {
@@ -241,17 +248,54 @@ func SetPlayerNameHandler(c echo.Context) error {
 	}
 
 	playerCity := strings.TrimSpace(c.FormValue("player_city"))
+	if len(playerCity) > 100 {
+		playerCity = playerCity[:100]
+	}
 
 	// Save name and city in session
 	session, _ := middleware.Store.Get(c.Request(), "id-100-session")
 	session.Values["player_name"] = playerName
 	session.Values["player_city"] = playerCity
+
+	// Get or create session UUID
+	sessionUUID, err := middleware.GetOrCreateSessionUUID(session)
+	if err != nil {
+		log.Printf("Failed to create session UUID: %v", err)
+		return c.String(http.StatusInternalServerError, "Session initialization failed")
+	}
+
 	session.Save(c.Request(), c.Response())
 
-	// Update database
-	err := repository.UpdatePlayerNameAndCity(context.Background(), playerName, playerCity, token)
+	// Get token ID
+	var tokenID int
+	err = database.DB.QueryRow(context.Background(),
+		"SELECT id FROM upload_tokens WHERE token = $1",
+		token).Scan(&tokenID)
+
+	if err != nil {
+		log.Printf("Error getting token ID: %v", err)
+		return c.String(http.StatusInternalServerError, "Token nicht gefunden")
+	}
+
+	// Update database with session binding
+	_, err = database.DB.Exec(context.Background(),
+		"UPDATE upload_tokens SET current_player = $1, current_player_city = $2, session_started_at = NOW(), session_uuid = $3 WHERE token = $4",
+		playerName, playerCity, sessionUUID, token)
+
 	if err != nil {
 		log.Printf("Error setting player name: %v", err)
+	}
+
+	// Create or update active session record
+	_, err = database.DB.Exec(context.Background(),
+		`INSERT INTO active_sessions (token_id, session_uuid, player_name, player_city, started_at, last_activity_at, is_active)
+		 VALUES ($1, $2, $3, $4, NOW(), NOW(), true)
+		 ON CONFLICT (token_id, session_uuid) 
+		 DO UPDATE SET player_name = $3, player_city = $4, last_activity_at = NOW(), is_active = true`,
+		tokenID, sessionUUID, playerName, playerCity)
+
+	if err != nil {
+		log.Printf("Error creating active session: %v", err)
 	}
 
 	// Redirect to upload page

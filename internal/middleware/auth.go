@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
+	"id-100/internal/utils"
 )
 
 // Store is the session store
@@ -20,8 +21,40 @@ func InitSessionStore(secret string, isProduction bool) {
 		MaxAge:   86400 * 30, // 30 days
 		HttpOnly: true,
 		Secure:   isProduction, // Enable in production with HTTPS
-		SameSite: 0,
+		SameSite: 4,            // Strict mode for CSRF protection (4 = http.SameSiteStrictMode)
 	}
+}
+
+// GetOrCreateSessionUUID gets or creates a session UUID for this browser
+func GetOrCreateSessionUUID(session *sessions.Session) (string, error) {
+	if uuid, ok := session.Values["session_uuid"].(string); ok && uuid != "" {
+		return uuid, nil
+	}
+
+	// Generate new session UUID
+	uuid, err := utils.GenerateSessionUUID()
+	if err != nil {
+		return "", err
+	}
+
+	session.Values["session_uuid"] = uuid
+	return uuid, nil
+}
+
+// GetOrCreateCSRFToken gets or creates a CSRF token for this session
+func GetOrCreateCSRFToken(session *sessions.Session) (string, error) {
+	if token, ok := session.Values["csrf_token"].(string); ok && token != "" {
+		return token, nil
+	}
+
+	// Generate new CSRF token
+	token, err := utils.GenerateCSRFToken()
+	if err != nil {
+		return "", err
+	}
+
+	session.Values["csrf_token"] = token
+	return token, nil
 }
 
 // BasicAuth provides basic authentication middleware for admin routes

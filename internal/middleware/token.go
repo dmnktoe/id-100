@@ -66,12 +66,14 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		var maxUploads, totalUploads, totalSessions int
 		var currentPlayer, currentPlayerCity, bagName string
 		var sessionStartedAt time.Time
+		var dbSessionUUID *string // Session UUID bound to this token
 
 		err = database.DB.QueryRow(context.Background(),
 			`SELECT id, is_active, max_uploads, total_uploads, total_sessions,
-			 COALESCE(current_player, ''), COALESCE(current_player_city, ''), COALESCE(bag_name, ''), COALESCE(session_started_at, created_at)
+			 COALESCE(current_player, ''), COALESCE(current_player_city, ''), COALESCE(bag_name, ''), COALESCE(session_started_at, created_at),
+			 session_uuid
 			 FROM upload_tokens WHERE token = $1`,
-			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &currentPlayerCity, &bagName, &sessionStartedAt)
+			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &currentPlayerCity, &bagName, &sessionStartedAt, &dbSessionUUID)
 
 		if err != nil {
 			log.Printf("Token validation error: %v", err)
@@ -83,10 +85,50 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			}))
 		}
 
+		// Get or create session UUID for this browser
+		sessionUUID, err := GetOrCreateSessionUUID(session)
+		if err != nil {
+			log.Printf("Failed to create session UUID: %v", err)
+			return c.String(http.StatusInternalServerError, "Session initialization failed")
+		}
+
+		// Check for session conflict (another browser is using this token)
+		if dbSessionUUID != nil && *dbSessionUUID != "" && *dbSessionUUID != sessionUUID {
+			// Token is already bound to a different session
+			// Check if this session has an active invitation
+			var invitationExists bool
+			err = database.DB.QueryRow(context.Background(),
+				`SELECT EXISTS(
+					SELECT 1 FROM invitations 
+					WHERE token_id = $1 
+					AND (accepted_by_session_uuid = $2 OR created_by_session_uuid = $2)
+					AND is_active = true
+					AND expires_at > NOW()
+				)`,
+				tokenID, sessionUUID).Scan(&invitationExists)
+
+			if err != nil {
+				log.Printf("Failed to check invitation: %v", err)
+			}
+
+			if !invitationExists {
+				// Return 409 Conflict - bag is in use by another device
+				return c.Render(http.StatusConflict, "layout", mergeTemplateData(map[string]interface{}{
+					"Title":           "Werkzeug wird bereits verwendet",
+					"ContentTemplate": "bag_in_use.content",
+					"CurrentPath":     c.Request().URL.Path,
+					"CurrentYear":     time.Now().Year(),
+					"BagName":         bagName,
+					"CurrentPlayer":   currentPlayer,
+				}))
+			}
+		}
+
 		// Save token in session for subsequent requests
 		session.Values["token"] = token
 		session.Values["token_id"] = tokenID
 		session.Values["bag_name"] = bagName
+		session.Values["session_uuid"] = sessionUUID
 
 		// session freshness: ensure session_number and session_started_at exist and match DB
 		sessNumVal := session.Values["session_number"]
@@ -140,10 +182,10 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 			// Check if name is in session
 			if sessName, ok := session.Values["player_name"].(string); ok && sessName != "" {
-				// Update DB with name from session
+				// Update DB with name from session and bind session_uuid
 				result, err := database.DB.Exec(context.Background(),
-					"UPDATE upload_tokens SET current_player = $1, session_started_at = NOW() WHERE id = $2",
-					sessName, tokenID)
+					"UPDATE upload_tokens SET current_player = $1, session_started_at = NOW(), session_uuid = $2 WHERE id = $3",
+					sessName, sessionUUID, tokenID)
 
 				if err != nil {
 					log.Printf("Failed to update current_player for token_id=%d with name=%s: %v", tokenID, sessName, err)
@@ -191,6 +233,16 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		c.Set("session_number", totalSessions)
 		c.Set("uploads_remaining", maxUploads-totalUploads)
 		c.Set("current_player_city", currentPlayerCity)
+		c.Set("session_uuid", sessionUUID)
+
+		// Generate CSRF token for this session
+		csrfToken, err := GetOrCreateCSRFToken(session)
+		if err != nil {
+			log.Printf("Failed to create CSRF token: %v", err)
+		} else {
+			c.Set("csrf_token", csrfToken)
+			session.Save(c.Request(), c.Response())
+		}
 
 		// Check if token is active
 		if !isActive {

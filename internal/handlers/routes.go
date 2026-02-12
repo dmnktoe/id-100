@@ -31,6 +31,15 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 	e.POST("/upload", app.UploadPostHandler, middleware.TokenWithSession)
 	e.POST("/upload/set-name", app.SetPlayerNameHandler, middleware.TokenWithSession)
 	e.POST("/upload/contributions/:id/delete", app.UserDeleteContributionHandler, middleware.TokenWithSession)
+	
+	// Session management routes
+	e.POST("/upload/release", app.ReleaseBagHandler, middleware.TokenWithSession)
+	e.GET("/upload/sessions", app.ListActiveSessionsHandler, middleware.TokenWithSession)
+	e.POST("/upload/sessions/:session_uuid/revoke", app.RevokeSessionHandler, middleware.TokenWithSession)
+	
+	// Invitation routes
+	e.POST("/upload/invitations/generate", app.GenerateInvitationHandler, middleware.TokenWithSession)
+	e.POST("/upload/invitations/accept", app.AcceptInvitationHandler)
 
 	e.GET("/leitfaden", app.RulesHandler)
 	e.GET("/impressum", app.ImpressumHandler)
