@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/models"
@@ -26,6 +28,12 @@ func AdminDashboardHandler(c echo.Context) error {
 	recentContribs, err := repository.GetRecentContributions(context.Background(), 20)
 	if err != nil {
 		log.Printf("Failed to fetch recent contributions: %v", err)
+		if hub := sentryecho.GetHubFromContext(c); hub != nil {
+			hub.WithScope(func(scope *sentry.Scope) {
+				scope.SetLevel(sentry.LevelWarning)
+				hub.CaptureException(err)
+			})
+		}
 		recentContribs = []models.RecentContrib{}
 	}
 
@@ -45,6 +53,12 @@ func AdminDashboardHandler(c echo.Context) error {
 	openCount, handledCount, err := repository.GetBagRequestCounts(context.Background())
 	if err != nil {
 		log.Printf("Failed to fetch bag request counts: %v", err)
+		if hub := sentryecho.GetHubFromContext(c); hub != nil {
+			hub.WithScope(func(scope *sentry.Scope) {
+				scope.SetLevel(sentry.LevelWarning)
+				hub.CaptureException(err)
+			})
+		}
 		openCount, handledCount = 0, 0
 	}
 
@@ -52,6 +66,12 @@ func AdminDashboardHandler(c echo.Context) error {
 	bagRequests, err := repository.GetBagRequests(context.Background(), status, 50)
 	if err != nil {
 		log.Printf("Failed to fetch bag requests: %v", err)
+		if hub := sentryecho.GetHubFromContext(c); hub != nil {
+			hub.WithScope(func(scope *sentry.Scope) {
+				scope.SetLevel(sentry.LevelWarning)
+				hub.CaptureException(err)
+			})
+		}
 		bagRequests = []models.BagRequest{}
 	}
 

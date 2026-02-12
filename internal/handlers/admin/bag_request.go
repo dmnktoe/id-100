@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/repository"
@@ -22,6 +23,9 @@ func AdminBagRequestCompleteHandler(c echo.Context) error {
 	rowsAffected, err := repository.MarkBagRequestHandled(context.Background(), id)
 	if err != nil {
 		log.Printf("Failed to mark bag_request handled: %v", err)
+		if hub := sentryecho.GetHubFromContext(c); hub != nil {
+			hub.CaptureException(err)
+		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "server error"})
 	}
 
