@@ -55,6 +55,7 @@ func UploadGetHandler(c echo.Context) error {
 
 	token, _ := c.Get("token").(string)
 	currentPlayer, _ := c.Get("current_player").(string)
+	csrfToken, _ := c.Get("csrf_token").(string)
 
 	// Build a map[string]bool of derive numbers that were uploaded in THIS session/token
 	uploadedNumbers := make(map[string]bool)
@@ -85,6 +86,7 @@ func UploadGetHandler(c echo.Context) error {
 		"CurrentPlayer":   currentPlayer,
 		"UploadedNumbers": uploadedNumbers,
 		"TotalPoints":     totalPoints,
+		"CSRFToken":       csrfToken,
 	}))
 }
 

@@ -251,6 +251,8 @@ func ListActiveSessionsHandler(c echo.Context) error {
 		})
 	}
 
+	csrfToken, _ := c.Get("csrf_token").(string)
+
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
 		"Title":           "Aktive Sitzungen",
 		"ContentTemplate": "active_sessions.content",
@@ -258,6 +260,7 @@ func ListActiveSessionsHandler(c echo.Context) error {
 		"CurrentYear":     time.Now().Year(),
 		"Sessions":        sessions,
 		"BagName":         bagName,
+		"CSRFToken":       csrfToken,
 	}))
 }
 

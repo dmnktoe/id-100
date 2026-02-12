@@ -130,6 +130,13 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		session.Values["bag_name"] = bagName
 		session.Values["session_uuid"] = sessionUUID
 
+		// Generate CSRF token for this session (needed for forms)
+		csrfToken, err := GetOrCreateCSRFToken(session)
+		if err != nil {
+			log.Printf("Failed to create CSRF token: %v", err)
+			csrfToken = ""
+		}
+
 		// session freshness: ensure session_number and session_started_at exist and match DB
 		sessNumVal := session.Values["session_number"]
 		if existing, ok := GetSessionNumber(sessNumVal); ok {
@@ -197,6 +204,7 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 						"CurrentYear":     time.Now().Year(),
 						"BagName":         bagName,
 						"Token":           token,
+						"CSRFToken":       csrfToken,
 					}))
 				}
 
@@ -216,6 +224,7 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 					"CurrentYear":     time.Now().Year(),
 					"BagName":         bagName,
 					"Token":           token,
+					"CSRFToken":       csrfToken,
 				}))
 			}
 		} else {
@@ -234,15 +243,8 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		c.Set("uploads_remaining", maxUploads-totalUploads)
 		c.Set("current_player_city", currentPlayerCity)
 		c.Set("session_uuid", sessionUUID)
-
-		// Generate CSRF token for this session
-		csrfToken, err := GetOrCreateCSRFToken(session)
-		if err != nil {
-			log.Printf("Failed to create CSRF token: %v", err)
-		} else {
-			c.Set("csrf_token", csrfToken)
-			session.Save(c.Request(), c.Response())
-		}
+		c.Set("csrf_token", csrfToken)
+		session.Save(c.Request(), c.Response())
 
 		// Check if token is active
 		if !isActive {

@@ -30,6 +30,7 @@
                                 </div>
                                 {{if not .is_current}}
                                 <form method="POST" action="/upload/sessions/{{.uuid}}/revoke" class="mb-0">
+                                    {{if $.CSRFToken}}<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">{{end}}
                                     <button type="submit" class="btn btn-sm btn-danger" 
                                             onclick="return confirm('Möchtest du diese Sitzung wirklich widerrufen?')">
                                         Zugriff widerrufen

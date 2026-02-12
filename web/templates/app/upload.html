@@ -5,6 +5,7 @@
 
   <form action="/upload?token={{.Token}}" method="POST" enctype="multipart/form-data" id="uploadForm">
       <input type="hidden" name="token" value="{{.Token}}">
+      {{if .CSRFToken}}<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">{{end}}
       <div class="form-group">
         <label for="deriveInput">Aufgabe</label>
         <select name="derive_number" id="deriveInput" class="autocomplete-input" required>
@@ -45,6 +46,7 @@
         ➕ Andere einladen
       </button>
       <form action="/upload/release" method="POST" style="margin: 0;" onsubmit="return confirm('Möchtest du das Werkzeug wirklich zurückgeben? Du musst danach den QR-Code erneut scannen.');">
+        {{if .CSRFToken}}<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">{{end}}
         <button type="submit" class="btn btn-outline-danger w-100">
           🔓 Werkzeug zurückgeben
         </button>
@@ -206,10 +208,12 @@
     // Generate invitation code
     async function generateInvitation() {
       try {
+        const csrfToken = '{{.CSRFToken}}';
         const response = await fetch('/upload/invitations/generate', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
           }
         });
 
