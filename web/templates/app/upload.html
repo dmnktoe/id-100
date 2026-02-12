@@ -34,6 +34,24 @@
       <button type="submit" class="btn-black submit-btn" id="submitBtn">hochladen</button>
     </form>
 
+  <!-- Session Management -->
+  <div class="session-management mt-4">
+    <h3>Werkzeug-Verwaltung</h3>
+    <div class="btn-group-vertical d-grid gap-2">
+      <a href="/upload/sessions" class="btn btn-outline-primary">
+        👥 Aktive Sitzungen anzeigen
+      </a>
+      <button type="button" class="btn btn-outline-success" onclick="generateInvitation()">
+        ➕ Andere einladen
+      </button>
+      <form action="/upload/release" method="POST" style="margin: 0;" onsubmit="return confirm('Möchtest du das Werkzeug wirklich zurückgeben? Du musst danach den QR-Code erneut scannen.');">
+        <button type="submit" class="btn btn-outline-danger w-100">
+          🔓 Werkzeug zurückgeben
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- Punktzahl -->
   <div class="score-display">
     <p class="score-text">Deine Punktzahl: <strong class="score-value">{{.TotalPoints}}</strong></p>
@@ -182,6 +200,38 @@
         }
       } catch (err) {
         alert('Fehler: ' + err.message);
+      }
+    }
+
+    // Generate invitation code
+    async function generateInvitation() {
+      try {
+        const response = await fetch('/upload/invitations/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Fehler beim Erstellen der Einladung');
+        }
+
+        const data = await response.json();
+        const code = data.invitation_code;
+        const expiresAt = new Date(data.expires_at).toLocaleString('de-DE');
+        
+        const message = `Einladungscode: ${code}\n\nGültig bis: ${expiresAt}\n\nTeile diesen Code mit anderen, damit sie dieses Werkzeug mitbenutzen können.`;
+        
+        // Copy to clipboard
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(code);
+          alert(message + '\n\n✅ Code wurde in die Zwischenablage kopiert!');
+        } else {
+          prompt(message + '\n\nCode kopieren:', code);
+        }
+      } catch (err) {
+        alert('Fehler beim Erstellen der Einladung: ' + err.message);
       }
     }
 

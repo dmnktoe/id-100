@@ -38,6 +38,7 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 	e.POST("/upload/sessions/:session_uuid/revoke", app.RevokeSessionHandler, middleware.TokenWithSession)
 	
 	// Invitation routes
+	e.GET("/einladung-annehmen", app.AcceptInvitationPageHandler)
 	e.POST("/upload/invitations/generate", app.GenerateInvitationHandler, middleware.TokenWithSession)
 	e.POST("/upload/invitations/accept", app.AcceptInvitationHandler)
 
