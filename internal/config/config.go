@@ -15,7 +15,7 @@ type Config struct {
 	Port          string
 	AdminUsername string
 	AdminPassword string
-	SentryDSN     string
+	SentryDSN     string // SentryDSN is the Data Source Name for Sentry error tracking
 }
 
 // Load loads configuration from environment variables

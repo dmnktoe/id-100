@@ -39,10 +39,12 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	// Add Sentry middleware
-	e.Use(sentryecho.New(sentryecho.Options{
-		Repanic: true,
-	}))
+	// Add Sentry middleware if configured
+	if cfg.SentryDSN != "" {
+		e.Use(sentryecho.New(sentryecho.Options{
+			Repanic: true,
+		}))
+	}
 
 	// Load and set up templates
 	t := templates.New()
