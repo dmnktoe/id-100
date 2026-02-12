@@ -306,6 +306,21 @@ main {
   padding-bottom: 0;
 }
 
+/* Leitfaden - inline CTA styling */
+.leitfaden-cta {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 2px;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+}
+.leitfaden-cta:focus {
+  outline: 3px solid rgba(0,0,0,0.08);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .container.rules h2 {
   padding-bottom: 0;
 }
@@ -1704,8 +1719,11 @@ img.blur-up.loaded {
     border: none;
     border-bottom: 1px solid currentColor;
     border-radius: 0;
-    background-image: none;
-    padding-right: 0;
+    /* show a small chevron on mobile (keeps visual affordance) */
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    padding-right: 1.8rem;
     text-decoration: underline;
     text-underline-offset: 0.2em;
     cursor: pointer;
