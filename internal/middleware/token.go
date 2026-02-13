@@ -19,6 +19,8 @@ const (
 // TokenWithSession is a middleware with session support for token validation
 func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		log.Printf("=== TokenWithSession START: %s %s ===", c.Request().Method, c.Request().URL.Path)
+		
 		// Get session
 		session, err := Store.Get(c.Request(), "id-100-session")
 		sessionDecodeError := err != nil
@@ -29,6 +31,13 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			if err != nil {
 				log.Printf("Failed to create new session: %v", err)
 				return c.String(http.StatusInternalServerError, "Session initialization failed")
+			}
+		} else {
+			// Log current session UUID if it exists
+			if existingUUID, ok := session.Values["session_uuid"].(string); ok {
+				log.Printf("Existing session_uuid in cookie: '%s'", existingUUID)
+			} else {
+				log.Printf("No session_uuid in cookie yet")
 			}
 		}
 
@@ -166,6 +175,7 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		if currentPlayer == "" {
 			// If this is a POST to /upload/set-name, let the handler process it
 			if c.Request().Method == "POST" && c.Request().URL.Path == "/upload/set-name" {
+				log.Printf("Middleware: Passing POST /upload/set-name to handler with sessionUUID='%s'", sessionUUID)
 				// Set session_uuid in context so handler can use it
 				c.Set("session_uuid", sessionUUID)
 				// Save session before passing to handler so session_uuid is in cookie
@@ -173,6 +183,7 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 					log.Printf("Failed to save session before handler: %v", err)
 					// Continue anyway as handler will try to save again
 				}
+				log.Printf("Middleware: Session saved, calling handler")
 				return next(c)
 			}
 
@@ -219,7 +230,12 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		} else {
 			// currentPlayer is set - check for session conflict
 			// Only check if another browser is using this token when player is already set
+			log.Printf("Conflict check: currentPlayer='%s', dbSessionUUID='%v', sessionUUID='%s'", 
+				currentPlayer, dbSessionUUID, sessionUUID)
+			
 			if dbSessionUUID != nil && *dbSessionUUID != "" && *dbSessionUUID != sessionUUID {
+				log.Printf("Session UUID mismatch detected: DB has '%s', cookie has '%s'", *dbSessionUUID, sessionUUID)
+				
 				// Token is already bound to a different session
 				// Check if this session has an active invitation
 				var invitationExists bool
@@ -237,8 +253,11 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 					log.Printf("Failed to check invitation: %v", err)
 				}
 
+				log.Printf("Invitation check: invitationExists=%v", invitationExists)
+
 				if !invitationExists {
 					// Return 409 Conflict - bag is in use by another device
+					log.Printf("Returning 409 Conflict: bag in use by another session")
 					return c.Render(http.StatusConflict, "layout", mergeTemplateData(map[string]interface{}{
 						"Title":           "Werkzeug wird bereits verwendet",
 						"ContentTemplate": "bag_in_use.content",
@@ -248,6 +267,8 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 						"CurrentPlayer":   currentPlayer,
 					}))
 				}
+			} else {
+				log.Printf("No conflict: session UUIDs match or no DB UUID set")
 			}
 
 			// Save player name and city in session if not already there

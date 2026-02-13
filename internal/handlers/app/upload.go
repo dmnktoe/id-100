@@ -261,10 +261,12 @@ func SetPlayerNameHandler(c echo.Context) error {
 
 	// Get session UUID from context (set by middleware) - don't create a new one!
 	sessionUUID, ok := c.Get("session_uuid").(string)
+	log.Printf("SetPlayerName: Getting session_uuid from context, ok=%v, uuid='%s'", ok, sessionUUID)
 	if !ok || sessionUUID == "" {
 		// Fallback: try to get from session if not in context
 		var err error
 		sessionUUID, err = middleware.GetOrCreateSessionUUID(session)
+		log.Printf("SetPlayerName: Fallback GetOrCreateSessionUUID, err=%v, uuid='%s'", err, sessionUUID)
 		if err != nil {
 			log.Printf("Failed to get session UUID: %v", err)
 			return c.String(http.StatusInternalServerError, "Session initialization failed")
@@ -273,6 +275,7 @@ func SetPlayerNameHandler(c echo.Context) error {
 
 	// Ensure session_uuid is saved in session
 	session.Values["session_uuid"] = sessionUUID
+	log.Printf("SetPlayerName: Saving session with uuid='%s'", sessionUUID)
 	// Save session - errors are logged but not fatal as middleware also saves
 	if err := session.Save(c.Request(), c.Response()); err != nil {
 		log.Printf("Warning: Failed to save session in handler (non-fatal): %v", err)
@@ -289,6 +292,7 @@ func SetPlayerNameHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "Token nicht gefunden")
 	}
 
+	log.Printf("SetPlayerName: Updating DB with playerName='%s', sessionUUID='%s', token_id=%d", playerName, sessionUUID, tokenID)
 	// Update database with session binding
 	_, err = database.DB.Exec(context.Background(),
 		"UPDATE upload_tokens SET current_player = $1, current_player_city = $2, session_started_at = NOW(), session_uuid = $3 WHERE token = $4",
@@ -296,6 +300,8 @@ func SetPlayerNameHandler(c echo.Context) error {
 
 	if err != nil {
 		log.Printf("Error setting player name: %v", err)
+	} else {
+		log.Printf("SetPlayerName: Successfully updated DB with session_uuid='%s'", sessionUUID)
 	}
 
 	// Create or update active session record
