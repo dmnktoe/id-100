@@ -18,6 +18,11 @@ func main() {
 	// Load configuration
 	cfg := config.Load()
 
+	// Initialize Datadog tracing
+	ddCfg := config.LoadDatadogConfig()
+	appMiddleware.InitDatadog(ddCfg)
+	defer appMiddleware.StopDatadog()
+
 	// Initialize database
 	database.Init()
 	defer database.Close()
@@ -29,6 +34,11 @@ func main() {
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+
+	// Add Datadog tracing middleware if enabled
+	if ddCfg.Enabled {
+		e.Use(appMiddleware.DatadogMiddleware(ddCfg.ServiceName))
+	}
 
 	// Load and set up templates
 	t := templates.New()
