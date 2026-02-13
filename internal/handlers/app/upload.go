@@ -314,6 +314,10 @@ func SetPlayerNameHandler(c echo.Context) error {
 		log.Printf("Error creating active session: %v", err)
 	}
 
-	// Redirect to upload page
+	// Redirect to upload page with cache-busting parameter
+	// Add cache control headers to prevent browser from using cached version
+	c.Response().Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Response().Header().Set("Pragma", "no-cache")
+	c.Response().Header().Set("Expires", "0")
 	return c.Redirect(http.StatusSeeOther, "/upload?token="+token)
 }

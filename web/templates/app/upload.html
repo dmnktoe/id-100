@@ -62,6 +62,44 @@
     <p class="score-text">Deine Punktzahl: <strong class="score-value">{{.TotalPoints}}</strong></p>
   </div>
 
+  <!-- Invitation Modal -->
+  <div id="invitationModal" class="invitation-modal">
+    <div class="invitation-modal-content">
+      <div class="invitation-modal-header">
+        <h3 class="invitation-modal-title">✉️ Einladung erstellt!</h3>
+        <button class="invitation-modal-close" onclick="closeInvitationModal()">×</button>
+      </div>
+      <div class="invitation-modal-body">
+        <div class="invitation-info-item">
+          <span class="invitation-info-label">Einladungscode</span>
+          <span class="invitation-info-value" id="invitationCode"></span>
+        </div>
+        <div class="invitation-info-item">
+          <span class="invitation-info-label">Link zum Einlösen</span>
+          <span class="invitation-info-value" id="invitationLink"></span>
+        </div>
+        <div class="invitation-info-item">
+          <span class="invitation-info-label">Gültig bis</span>
+          <span class="invitation-info-value" id="invitationExpiry"></span>
+        </div>
+      </div>
+      <div class="invitation-actions">
+        <button class="invitation-btn invitation-btn-primary" id="copyCodeBtn" onclick="copyInvitationCode()">
+          📋 Code kopieren
+        </button>
+        <button class="invitation-btn invitation-btn-primary" id="copyLinkBtn" onclick="copyInvitationLink()">
+          🔗 Link kopieren
+        </button>
+        <button class="invitation-btn invitation-btn-primary" id="copyBothBtn" onclick="copyBoth()">
+          📋 Code und Link kopieren
+        </button>
+        <button class="invitation-btn invitation-btn-secondary" id="shareBtn" onclick="shareInvitation()" style="display: none;">
+          📤 Teilen
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const dz = document.getElementById('drop-zone');
     const fi = document.getElementById('fileInput');
@@ -208,7 +246,9 @@
       }
     }
 
-    // Generate invitation code
+    // Generate invitation code and show modal
+    let currentInvitation = {};
+    
     async function generateInvitation() {
       try {
         const csrfToken = '{{.CSRFToken}}';
@@ -227,22 +267,102 @@
         const data = await response.json();
         const code = data.invitation_code;
         const expiresAt = new Date(data.expires_at).toLocaleString('de-DE');
-        
         const inviteLink = window.location.origin + '/einladung-annehmen';
-        const fullMessage = `Einladungscode: ${code}\n\nGültig bis: ${expiresAt}\n\nLink zum Einlösen:\n${inviteLink}\n\nTeile diesen Code und Link mit anderen, damit sie dieses Werkzeug mitbenutzen können.`;
         
-        // Copy code and link to clipboard
-        const clipboardText = `Einladungscode: ${code}\nLink: ${inviteLink}`;
-        if (navigator.clipboard) {
-          await navigator.clipboard.writeText(clipboardText);
-          alert(fullMessage + '\n\n✅ Code und Link wurden in die Zwischenablage kopiert!');
-        } else {
-          prompt(fullMessage + '\n\nCode und Link kopieren:', clipboardText);
+        // Store invitation data
+        currentInvitation = { code, inviteLink, expiresAt };
+        
+        // Update modal content
+        document.getElementById('invitationCode').textContent = code;
+        document.getElementById('invitationLink').textContent = inviteLink;
+        document.getElementById('invitationExpiry').textContent = expiresAt;
+        
+        // Show share button if Web Share API is available
+        if (navigator.share) {
+          document.getElementById('shareBtn').style.display = 'flex';
         }
+        
+        // Show modal
+        document.getElementById('invitationModal').classList.add('active');
       } catch (err) {
         alert('Fehler beim Erstellen der Einladung: ' + err.message);
       }
     }
+    
+    function closeInvitationModal() {
+      document.getElementById('invitationModal').classList.remove('active');
+      // Reset button states
+      resetButtonStates();
+    }
+    
+    function resetButtonStates() {
+      ['copyCodeBtn', 'copyLinkBtn', 'copyBothBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        btn.classList.remove('copied');
+        btn.textContent = btn.textContent.replace('✅ ', '').replace('📋 ', '📋 ').replace('🔗 ', '🔗 ');
+      });
+    }
+    
+    async function copyInvitationCode() {
+      try {
+        await navigator.clipboard.writeText(currentInvitation.code);
+        showCopiedState('copyCodeBtn', '✅ Code kopiert!');
+      } catch (err) {
+        // Fallback
+        prompt('Code kopieren:', currentInvitation.code);
+      }
+    }
+    
+    async function copyInvitationLink() {
+      try {
+        await navigator.clipboard.writeText(currentInvitation.inviteLink);
+        showCopiedState('copyLinkBtn', '✅ Link kopiert!');
+      } catch (err) {
+        prompt('Link kopieren:', currentInvitation.inviteLink);
+      }
+    }
+    
+    async function copyBoth() {
+      const text = `Einladungscode: ${currentInvitation.code}\nLink: ${currentInvitation.inviteLink}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        showCopiedState('copyBothBtn', '✅ Kopiert!');
+      } catch (err) {
+        prompt('Code und Link kopieren:', text);
+      }
+    }
+    
+    async function shareInvitation() {
+      try {
+        await navigator.share({
+          title: 'ID-100 Werkzeug Einladung',
+          text: `Hier ist der Einladungscode: ${currentInvitation.code}\n\nVerwende diesen Link zum Einlösen:`,
+          url: currentInvitation.inviteLink
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Fehler beim Teilen:', err);
+        }
+      }
+    }
+    
+    function showCopiedState(buttonId, text) {
+      const btn = document.getElementById(buttonId);
+      btn.classList.add('copied');
+      const originalText = btn.textContent;
+      btn.textContent = text;
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.textContent = originalText;
+      }, 2000);
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('invitationModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeInvitationModal();
+      }
+    });
 
   </script>
 
