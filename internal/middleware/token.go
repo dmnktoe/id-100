@@ -173,22 +173,15 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Check if player name is set (first-time user flow)
 		if currentPlayer == "" {
-			// If this is a POST to /upload/set-name, let the handler process it
+			// If this is a POST to /upload/set-name, set context and skip to handler call at line 330
 			if c.Request().Method == "POST" && c.Request().URL.Path == "/upload/set-name" {
 				log.Printf("Middleware: Passing POST /upload/set-name to handler with sessionUUID='%s'", sessionUUID)
 				// Set session_uuid in context so handler can use it
 				c.Set("session_uuid", sessionUUID)
-				// Save session before passing to handler so session_uuid is in cookie
-				if err := session.Save(c.Request(), c.Response()); err != nil {
-					log.Printf("Failed to save session before handler: %v", err)
-					// Continue anyway as handler will try to save again
-				}
-				log.Printf("Middleware: Session saved, calling handler")
-				return next(c)
-			}
-
-			// Check if name is in session
-			if sessName, ok := session.Values["player_name"].(string); ok && sessName != "" {
+				// Skip the rest of the currentPlayer=="" block and go to line 330
+				// This ensures session is saved at line 335 after handler executes
+			} else if sessName, ok := session.Values["player_name"].(string); ok && sessName != "" {
+				// Check if name is in session
 				// Update DB with name from session and bind session_uuid
 				result, err := database.DB.Exec(context.Background(),
 					"UPDATE upload_tokens SET current_player = $1, session_started_at = NOW(), session_uuid = $2 WHERE id = $3",
