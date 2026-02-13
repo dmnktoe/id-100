@@ -259,11 +259,16 @@ func SetPlayerNameHandler(c echo.Context) error {
 	session.Values["player_name"] = playerName
 	session.Values["player_city"] = playerCity
 
-	// Get or create session UUID
-	sessionUUID, err := middleware.GetOrCreateSessionUUID(session)
-	if err != nil {
-		log.Printf("Failed to create session UUID: %v", err)
-		return c.String(http.StatusInternalServerError, "Session initialization failed")
+	// Get session UUID from context (set by middleware) - don't create a new one!
+	sessionUUID, ok := c.Get("session_uuid").(string)
+	if !ok || sessionUUID == "" {
+		// Fallback: try to get from session if not in context
+		var err error
+		sessionUUID, err = middleware.GetOrCreateSessionUUID(session)
+		if err != nil {
+			log.Printf("Failed to get session UUID: %v", err)
+			return c.String(http.StatusInternalServerError, "Session initialization failed")
+		}
 	}
 
 	// Ensure session_uuid is saved in session
@@ -275,7 +280,7 @@ func SetPlayerNameHandler(c echo.Context) error {
 
 	// Get token ID
 	var tokenID int
-	err = database.DB.QueryRow(context.Background(),
+	err := database.DB.QueryRow(context.Background(),
 		"SELECT id FROM upload_tokens WHERE token = $1",
 		token).Scan(&tokenID)
 
