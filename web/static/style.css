@@ -1271,6 +1271,96 @@ input[type="text"]:focus {
 }
 
 /* ========================================
+   SESSION MANAGEMENT
+   ======================================== */
+.session-management {
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  border: var(--border-light);
+}
+
+.session-management .section-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: var(--gray-900);
+  letter-spacing: var(--letter-spacing-tighter);
+}
+
+.management-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.management-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: var(--letter-spacing-tighter);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  width: 100%;
+  text-align: center;
+}
+
+.management-btn .btn-icon {
+  font-size: 1.1rem;
+}
+
+.management-btn .btn-text {
+  flex: 1;
+  text-align: left;
+}
+
+.btn-sessions {
+  background: var(--black);
+  color: var(--white);
+}
+
+.btn-sessions:hover {
+  background: var(--gray-800);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-invite {
+  background: var(--black);
+  color: var(--white);
+}
+
+.btn-invite:hover {
+  background: var(--gray-800);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-release {
+  background: linear-gradient(135deg, #d32f2f 0%, #7b1fa2 100%);
+  color: var(--white);
+}
+
+.btn-release:hover {
+  background: linear-gradient(135deg, #c62828 0%, #6a1b9a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+}
+
+.release-form {
+  margin: 0;
+  width: 100%;
+}
+
+/* ========================================
    DERIVE DETAIL
    ======================================== */
 .detail-container {

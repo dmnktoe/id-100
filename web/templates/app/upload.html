@@ -36,19 +36,22 @@
     </form>
 
   <!-- Session Management -->
-  <div class="session-management mt-4">
-    <h3>Werkzeug-Verwaltung</h3>
-    <div class="btn-group-vertical d-grid gap-2">
-      <a href="/upload/sessions" class="btn btn-outline-primary">
-        👥 Aktive Sitzungen anzeigen
+  <div class="session-management">
+    <h3 class="section-title">Werkzeug-Verwaltung</h3>
+    <div class="management-buttons">
+      <a href="/upload/sessions" class="management-btn btn-sessions">
+        <span class="btn-icon">👥</span>
+        <span class="btn-text">Aktive Sitzungen anzeigen</span>
       </a>
-      <button type="button" class="btn btn-outline-success" onclick="generateInvitation()">
-        ➕ Andere einladen
+      <button type="button" class="management-btn btn-invite" onclick="generateInvitation()">
+        <span class="btn-icon">➕</span>
+        <span class="btn-text">Andere einladen</span>
       </button>
-      <form action="/upload/release" method="POST" style="margin: 0;" onsubmit="return confirm('Möchtest du das Werkzeug wirklich zurückgeben? Du musst danach den QR-Code erneut scannen.');">
+      <form action="/upload/release" method="POST" class="release-form" onsubmit="return confirm('Möchtest du das Werkzeug wirklich zurückgeben? Du musst danach den QR-Code erneut scannen.');">
         {{if .CSRFToken}}<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">{{end}}
-        <button type="submit" class="btn btn-outline-danger w-100">
-          🔓 Werkzeug zurückgeben
+        <button type="submit" class="management-btn btn-release">
+          <span class="btn-icon">🔓</span>
+          <span class="btn-text">Werkzeug zurückgeben</span>
         </button>
       </form>
     </div>
