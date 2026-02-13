@@ -22,7 +22,14 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		// Get session
 		session, err := Store.Get(c.Request(), "id-100-session")
 		if err != nil {
-			log.Printf("Session error: %v", err)
+			log.Printf("Session error (creating new session): %v", err)
+			// Create a new session when old session can't be decoded
+			// This handles cases where old cookies exist from before gob.Register fix
+			session, err = Store.New(c.Request(), "id-100-session")
+			if err != nil {
+				log.Printf("Failed to create new session: %v", err)
+				return c.String(http.StatusInternalServerError, "Session initialization failed")
+			}
 		}
 
 		// Get token from query param (QR code), POST form (only for form-encoded or explicit routes), or session
