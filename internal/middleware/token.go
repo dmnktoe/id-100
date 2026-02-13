@@ -330,10 +330,17 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		// Save session AFTER handler executes to capture any changes made by the handler
 		// This is critical for POST /upload/set-name which modifies session before redirecting
 		// We save even if handler returned error, as session changes (like CSRF tokens) should persist
+		if uuid, ok := session.Values["session_uuid"].(string); ok {
+			log.Printf("Middleware: Saving session after handler with session_uuid='%s'", uuid)
+		} else {
+			log.Printf("Middleware: Saving session after handler (NO session_uuid in session.Values!)")
+		}
 		if saveErr := session.Save(c.Request(), c.Response()); saveErr != nil {
 			log.Printf("ERROR: Failed to save session after handler (session changes may be lost): %v", saveErr)
 			// Don't override handler's error - let it propagate
 			// Session save failures are logged but non-fatal to avoid breaking user flow
+		} else {
+			log.Printf("Middleware: Session saved successfully after handler")
 		}
 		
 		return err
