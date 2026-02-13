@@ -23,9 +23,13 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		session, err := Store.Get(c.Request(), "id-100-session")
 		sessionDecodeError := err != nil
 		if err != nil {
-			log.Printf("Session decode error (will create new after token check): %v", err)
-			// Don't create new session yet - need to check if token exists first
-			// If token exists and has a session_uuid bound, we need to preserve it
+			log.Printf("Session decode error (creating new session): %v", err)
+			// Create new session immediately to avoid accessing invalid session
+			session, err = Store.New(c.Request(), "id-100-session")
+			if err != nil {
+				log.Printf("Failed to create new session: %v", err)
+				return c.String(http.StatusInternalServerError, "Session initialization failed")
+			}
 		}
 
 		// Get token from query param (QR code), POST form (only for form-encoded or explicit routes), or session
@@ -88,20 +92,11 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			}))
 		}
 
-		// Handle session decode error now that we have the token
-		if sessionDecodeError {
-			log.Printf("Creating new session (old cookie from before gob fix)")
-			session, err = Store.New(c.Request(), "id-100-session")
-			if err != nil {
-				log.Printf("Failed to create new session: %v", err)
-				return c.String(http.StatusInternalServerError, "Session initialization failed")
-			}
-			// If token has a session_uuid bound in DB, restore it to the new session
-			// This prevents conflict errors when user returns after setting their name
-			if dbSessionUUID != nil && *dbSessionUUID != "" {
-				log.Printf("Restoring session_uuid from database to new session")
-				session.Values["session_uuid"] = *dbSessionUUID
-			}
+		// If we had a session decode error, restore session_uuid from DB if it exists
+		// This prevents conflict errors when user returns after setting their name
+		if sessionDecodeError && dbSessionUUID != nil && *dbSessionUUID != "" {
+			log.Printf("Restoring session_uuid from database to new session")
+			session.Values["session_uuid"] = *dbSessionUUID
 		}
 
 		// Get or create session UUID for this browser
