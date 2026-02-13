@@ -28,7 +28,7 @@ func InitSessionStore(secret string, isProduction bool) {
 		MaxAge:   86400 * 30, // 30 days
 		HttpOnly: true,
 		Secure:   isProduction, // Enable in production with HTTPS
-		SameSite: 4,            // Strict mode for CSRF protection (4 = http.SameSiteStrictMode)
+		SameSite: 3,            // Lax mode - allows cookies on safe top-level navigation (3 = http.SameSiteLaxMode)
 	}
 }
 
