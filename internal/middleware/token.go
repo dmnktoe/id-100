@@ -152,6 +152,8 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		if currentPlayer == "" {
 			// If this is a POST to /upload/set-name, let the handler process it
 			if c.Request().Method == "POST" && c.Request().URL.Path == "/upload/set-name" {
+				// Save session before passing to handler so session_uuid is in cookie
+				session.Save(c.Request(), c.Response())
 				return next(c)
 			}
 
