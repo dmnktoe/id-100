@@ -153,7 +153,10 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			// If this is a POST to /upload/set-name, let the handler process it
 			if c.Request().Method == "POST" && c.Request().URL.Path == "/upload/set-name" {
 				// Save session before passing to handler so session_uuid is in cookie
-				session.Save(c.Request(), c.Response())
+				if err := session.Save(c.Request(), c.Response()); err != nil {
+					log.Printf("Failed to save session before handler: %v", err)
+					// Continue anyway as handler will try to save again
+				}
 				return next(c)
 			}
 
