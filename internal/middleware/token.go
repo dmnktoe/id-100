@@ -331,6 +331,16 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 		}
 
-		return next(c)
+		// Call the next handler
+		err = next(c)
+		
+		// Save session AFTER handler executes to capture any changes made by the handler
+		// This is critical for POST /upload/set-name which modifies session before redirecting
+		if saveErr := session.Save(c.Request(), c.Response()); saveErr != nil {
+			log.Printf("Failed to save session after handler: %v", saveErr)
+			// Don't return error - let the response go through
+		}
+		
+		return err
 	}
 }

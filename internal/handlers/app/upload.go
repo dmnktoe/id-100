@@ -274,12 +274,10 @@ func SetPlayerNameHandler(c echo.Context) error {
 	}
 
 	// Ensure session_uuid is saved in session
+	// NOTE: Don't call session.Save() here - middleware will save AFTER handler returns
+	// This ensures Set-Cookie header is added after redirect is configured
 	session.Values["session_uuid"] = sessionUUID
-	log.Printf("SetPlayerName: Saving session with uuid='%s'", sessionUUID)
-	// Save session - errors are logged but not fatal as middleware also saves
-	if err := session.Save(c.Request(), c.Response()); err != nil {
-		log.Printf("Warning: Failed to save session in handler (non-fatal): %v", err)
-	}
+	log.Printf("SetPlayerName: Session values set with uuid='%s' (middleware will save after return)", sessionUUID)
 
 	// Get token ID
 	var tokenID int
