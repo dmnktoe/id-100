@@ -173,13 +173,13 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Check if player name is set (first-time user flow)
 		if currentPlayer == "" {
-			// If this is a POST to /upload/set-name, set context and skip to handler call at line 330
+			// If this is a POST to /upload/set-name, set context and continue to handler execution
 			if c.Request().Method == "POST" && c.Request().URL.Path == "/upload/set-name" {
 				log.Printf("Middleware: Passing POST /upload/set-name to handler with sessionUUID='%s'", sessionUUID)
 				// Set session_uuid in context so handler can use it
 				c.Set("session_uuid", sessionUUID)
-				// Skip the rest of the currentPlayer=="" block and go to line 330
-				// This ensures session is saved at line 335 after handler executes
+				// Skip the rest of the currentPlayer=="" block and continue to handler call below
+				// This ensures session is saved after handler executes and captures all changes
 			} else if sessName, ok := session.Values["player_name"].(string); ok && sessName != "" {
 				// Check if name is in session
 				// Update DB with name from session and bind session_uuid
