@@ -228,14 +228,16 @@
         const code = data.invitation_code;
         const expiresAt = new Date(data.expires_at).toLocaleString('de-DE');
         
-        const message = `Einladungscode: ${code}\n\nGültig bis: ${expiresAt}\n\nTeile diesen Code mit anderen, damit sie dieses Werkzeug mitbenutzen können.`;
+        const inviteLink = window.location.origin + '/einladung-annehmen';
+        const fullMessage = `Einladungscode: ${code}\n\nGültig bis: ${expiresAt}\n\nLink zum Einlösen:\n${inviteLink}\n\nTeile diesen Code und Link mit anderen, damit sie dieses Werkzeug mitbenutzen können.`;
         
-        // Copy to clipboard
+        // Copy code and link to clipboard
+        const clipboardText = `Einladungscode: ${code}\nLink: ${inviteLink}`;
         if (navigator.clipboard) {
-          await navigator.clipboard.writeText(code);
-          alert(message + '\n\n✅ Code wurde in die Zwischenablage kopiert!');
+          await navigator.clipboard.writeText(clipboardText);
+          alert(fullMessage + '\n\n✅ Code und Link wurden in die Zwischenablage kopiert!');
         } else {
-          prompt(message + '\n\nCode kopieren:', code);
+          prompt(fullMessage + '\n\nCode und Link kopieren:', clipboardText);
         }
       } catch (err) {
         alert('Fehler beim Erstellen der Einladung: ' + err.message);
