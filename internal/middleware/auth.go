@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"crypto/subtle"
+	"encoding/gob"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
@@ -15,6 +17,11 @@ var Store *sessions.CookieStore
 
 // InitSessionStore initializes the session store with the provided secret
 func InitSessionStore(secret string, isProduction bool) {
+	// Register time.Time with gob so it can be stored in sessions
+	// This is required because sessions use gob encoding and time.Time
+	// values are stored as interface{} in session.Values
+	gob.Register(time.Time{})
+	
 	Store = sessions.NewCookieStore([]byte(secret))
 	Store.Options = &sessions.Options{
 		Path:     "/",
