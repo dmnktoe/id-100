@@ -13,8 +13,14 @@ import (
 // RulesHandler displays the rules page
 func RulesHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
+	
+	// Generate SEO metadata
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	seoMeta := utils.GetPageSEOMetadata("leitfaden", baseURL)
+	
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
-		"Title":           "Leitfaden - 🏠🆔💯",
+		"Title":           seoMeta.Title,
+		"SEO":             seoMeta,
 		"ContentTemplate": "leitfaden.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
@@ -25,8 +31,14 @@ func RulesHandler(c echo.Context) error {
 // ImpressumHandler displays the impressum page
 func ImpressumHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
+	
+	// Generate SEO metadata
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	seoMeta := utils.GetPageSEOMetadata("impressum", baseURL)
+	
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
-		"Title":           "Impressum - 🏠🆔💯",
+		"Title":           seoMeta.Title,
+		"SEO":             seoMeta,
 		"ContentTemplate": "impressum.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
@@ -37,8 +49,14 @@ func ImpressumHandler(c echo.Context) error {
 // DatenschutzHandler displays the privacy policy page
 func DatenschutzHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
+	
+	// Generate SEO metadata
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	seoMeta := utils.GetPageSEOMetadata("datenschutz", baseURL)
+	
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
-		"Title":           "Datenschutzerklärung - 🏠🆔💯",
+		"Title":           seoMeta.Title,
+		"SEO":             seoMeta,
 		"ContentTemplate": "datenschutz.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),

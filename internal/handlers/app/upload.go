@@ -71,8 +71,13 @@ func UploadGetHandler(c echo.Context) error {
 		}
 	}
 
+	// Generate SEO metadata
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	seoMeta := utils.GetPageSEOMetadata("upload", baseURL)
+
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
-		"Title":           "Beweis hochladen - 🏠🆔💯",
+		"Title":           seoMeta.Title,
+		"SEO":             seoMeta,
 		"Deriven":         list,
 		"ContentTemplate": "upload.content",
 		"CurrentPath":     c.Request().URL.Path,
@@ -231,8 +236,20 @@ func SetPlayerNameHandler(c echo.Context) error {
 	consent := c.FormValue("agree_privacy")
 	if consent == "" {
 		bagName, _ := repository.GetBagNameByToken(context.Background(), token)
+		
+		// Generate SEO metadata
+		baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+		seoMeta := utils.NewSEOMetadata(
+			"Willkommen bei Innenstadt ID - 100",
+			"Willkommen bei der urbanen Stadtrallye. Registriere dich und starte deine Entdeckungsreise.",
+			"",
+			baseURL+"/upload/set-name",
+			"website",
+		)
+		
 		return c.Render(http.StatusBadRequest, "layout", templates.MergeTemplateData(map[string]interface{}{
-			"Title":           "Willkommen bei ID-100!",
+			"Title":           seoMeta.Title,
+			"SEO":             seoMeta,
 			"ContentTemplate": "enter_name.content",
 			"Token":           token,
 			"BagName":         bagName,

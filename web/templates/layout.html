@@ -1,10 +1,34 @@
 {{define "layout"}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}}</title>
+    
+    <!-- SEO Meta Tags -->
+    {{if .SEO}}
+    <meta name="description" content="{{.SEO.Description}}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="{{.SEO.Type}}">
+    <meta property="og:url" content="{{.SEO.URL}}">
+    <meta property="og:title" content="{{.SEO.Title}}">
+    <meta property="og:description" content="{{.SEO.Description}}">
+    {{if .SEO.ImageURL}}
+    <meta property="og:image" content="{{.SEO.ImageURL}}">
+    {{end}}
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{.SEO.URL}}">
+    <meta name="twitter:title" content="{{.SEO.Title}}">
+    <meta name="twitter:description" content="{{.SEO.Description}}">
+    {{if .SEO.ImageURL}}
+    <meta name="twitter:image" content="{{.SEO.ImageURL}}">
+    {{end}}
+    {{end}}
+    
     <link rel="stylesheet" href="/static/style.css">
     {{if .AdditionalCSS}}
     <link rel="stylesheet" href="/static/{{.AdditionalCSS}}">

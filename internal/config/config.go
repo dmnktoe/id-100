@@ -51,3 +51,12 @@ func Load() *Config {
 		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
 	}
 }
+
+// GetBaseURL returns the base URL from environment or default
+func GetBaseURL() string {
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
+	return baseURL
+}
