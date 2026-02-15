@@ -15,10 +15,7 @@ func RulesHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	
 	// Generate SEO metadata
-	baseURL := c.Request().Header.Get("X-Forwarded-Host")
-	if baseURL == "" {
-		baseURL = c.Scheme() + "://" + c.Request().Host
-	}
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	seoMeta := utils.GetPageSEOMetadata("leitfaden", baseURL)
 	
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
@@ -36,10 +33,7 @@ func ImpressumHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	
 	// Generate SEO metadata
-	baseURL := c.Request().Header.Get("X-Forwarded-Host")
-	if baseURL == "" {
-		baseURL = c.Scheme() + "://" + c.Request().Host
-	}
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	seoMeta := utils.GetPageSEOMetadata("impressum", baseURL)
 	
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
@@ -57,10 +51,7 @@ func DatenschutzHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	
 	// Generate SEO metadata
-	baseURL := c.Request().Header.Get("X-Forwarded-Host")
-	if baseURL == "" {
-		baseURL = c.Scheme() + "://" + c.Request().Host
-	}
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	seoMeta := utils.GetPageSEOMetadata("datenschutz", baseURL)
 	
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{

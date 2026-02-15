@@ -72,10 +72,7 @@ func UploadGetHandler(c echo.Context) error {
 	}
 
 	// Generate SEO metadata
-	baseURL := c.Request().Header.Get("X-Forwarded-Host")
-	if baseURL == "" {
-		baseURL = c.Scheme() + "://" + c.Request().Host
-	}
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	seoMeta := utils.GetPageSEOMetadata("upload", baseURL)
 
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
@@ -241,10 +238,7 @@ func SetPlayerNameHandler(c echo.Context) error {
 		bagName, _ := repository.GetBagNameByToken(context.Background(), token)
 		
 		// Generate SEO metadata
-		baseURL := c.Request().Header.Get("X-Forwarded-Host")
-		if baseURL == "" {
-			baseURL = c.Scheme() + "://" + c.Request().Host
-		}
+		baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 		seoMeta := utils.NewSEOMetadata(
 			"Willkommen bei Innenstadt ID - 100",
 			"Willkommen bei der urbanen Stadtrallye. Registriere dich und starte deine Entdeckungsreise.",

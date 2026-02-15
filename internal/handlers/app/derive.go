@@ -99,10 +99,7 @@ func DerivenHandler(c echo.Context) error {
 	}
 
 	// Generate SEO metadata
-	baseURL := c.Request().Header.Get("X-Forwarded-Host")
-	if baseURL == "" {
-		baseURL = c.Scheme() + "://" + c.Request().Host
-	}
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	seoMeta := utils.GetDefaultSEOMetadata(baseURL)
 
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
@@ -172,15 +169,13 @@ func DeriveHandler(c echo.Context) error {
 	}
 
 	// Generate SEO metadata for the ID detail page
-	baseURL := c.Request().Header.Get("X-Forwarded-Host")
-	if baseURL == "" {
-		baseURL = c.Scheme() + "://" + c.Request().Host
-	}
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	
 	// Create custom SEO metadata for this specific ID
 	pageURL := fmt.Sprintf("%s/id/%s", baseURL, num)
 	pageTitle := fmt.Sprintf("ID #%d - Innenstadt ID - 100", d.Number)
-	pageDescription := d.Description
+	// Clean the description from emojis and derive references
+	pageDescription := utils.CleanSEOText(d.Description)
 	if pageDescription == "" {
 		pageDescription = fmt.Sprintf("Entdecke ID #%d aus der urbanen Stadtrallye und sieh dir die Beiträge der Teilnehmer*innen an.", d.Number)
 	}

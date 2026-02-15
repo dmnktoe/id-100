@@ -54,6 +54,16 @@ func CleanSEOText(s string) string {
 	return cleaned
 }
 
+// GetBaseURLFromRequest extracts the base URL from an HTTP request
+// It checks for X-Forwarded-Host header (when behind a proxy) and falls back to the request host
+func GetBaseURLFromRequest(scheme, host, forwardedHost string) string {
+	if forwardedHost != "" {
+		// When behind a proxy, use the forwarded host with https
+		return "https://" + forwardedHost
+	}
+	return scheme + "://" + host
+}
+
 // NewSEOMetadata creates a new SEOMetadata instance with cleaned text
 func NewSEOMetadata(title, description, imageURL, url, pageType string) *SEOMetadata {
 	return &SEOMetadata{
@@ -70,7 +80,7 @@ func GetDefaultSEOMetadata(baseURL string) *SEOMetadata {
 	return &SEOMetadata{
 		Title:       "Innenstadt ID - 100",
 		Description: "Eine urbane Stadtrallye zur Dokumentation und Wahrnehmung des Stadtraums. Entdecke 100 IDs und teile deine Perspektive auf die Innenstadt.",
-		ImageURL:    baseURL + "/static/assets/images/og-image.png", // We'll need to add this
+		ImageURL:    baseURL + "/static/assets/images/og-image.png",
 		URL:         baseURL,
 		Type:        "website",
 	}

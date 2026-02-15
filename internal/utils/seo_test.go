@@ -208,3 +208,52 @@ func TestGetPageSEOMetadata(t *testing.T) {
 		})
 	}
 }
+
+func TestGetBaseURLFromRequest(t *testing.T) {
+	tests := []struct {
+		name          string
+		scheme        string
+		host          string
+		forwardedHost string
+		expected      string
+	}{
+		{
+			name:          "Direct request without proxy",
+			scheme:        "http",
+			host:          "localhost:8080",
+			forwardedHost: "",
+			expected:      "http://localhost:8080",
+		},
+		{
+			name:          "HTTPS request without proxy",
+			scheme:        "https",
+			host:          "example.com",
+			forwardedHost: "",
+			expected:      "https://example.com",
+		},
+		{
+			name:          "Request behind proxy with X-Forwarded-Host",
+			scheme:        "http",
+			host:          "internal-server:8080",
+			forwardedHost: "example.com",
+			expected:      "https://example.com",
+		},
+		{
+			name:          "Request behind proxy with subdomain",
+			scheme:        "http",
+			host:          "backend",
+			forwardedHost: "subdomain.example.com",
+			expected:      "https://subdomain.example.com",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetBaseURLFromRequest(tt.scheme, tt.host, tt.forwardedHost)
+			if result != tt.expected {
+				t.Errorf("GetBaseURLFromRequest(%q, %q, %q) = %q; want %q", 
+					tt.scheme, tt.host, tt.forwardedHost, result, tt.expected)
+			}
+		})
+	}
+}

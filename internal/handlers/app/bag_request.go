@@ -19,10 +19,7 @@ func RequestBagHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	
 	// Generate SEO metadata
-	baseURL := c.Request().Header.Get("X-Forwarded-Host")
-	if baseURL == "" {
-		baseURL = c.Scheme() + "://" + c.Request().Host
-	}
+	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	seoMeta := utils.GetPageSEOMetadata("request_bag", baseURL)
 	
 	if c.QueryParam("partial") == "1" {
