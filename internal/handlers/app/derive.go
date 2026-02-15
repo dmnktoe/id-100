@@ -98,8 +98,16 @@ func DerivenHandler(c echo.Context) error {
 		pages = append(pages, models.PageNumber{Number: totalPages, IsCurrent: page == totalPages})
 	}
 
+	// Generate SEO metadata
+	baseURL := c.Request().Header.Get("X-Forwarded-Host")
+	if baseURL == "" {
+		baseURL = c.Scheme() + "://" + c.Request().Host
+	}
+	seoMeta := utils.GetDefaultSEOMetadata(baseURL)
+
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
-		"Title":           "Innenstadt (🏠) ID (🆔) - 100 (💯)",
+		"Title":           seoMeta.Title,
+		"SEO":             seoMeta,
 		"Deriven":         deriven,
 		"CurrentPage":     page,
 		"TotalPages":      totalPages,
@@ -163,8 +171,31 @@ func DeriveHandler(c echo.Context) error {
 		})
 	}
 
+	// Generate SEO metadata for the ID detail page
+	baseURL := c.Request().Header.Get("X-Forwarded-Host")
+	if baseURL == "" {
+		baseURL = c.Scheme() + "://" + c.Request().Host
+	}
+	
+	// Create custom SEO metadata for this specific ID
+	pageURL := fmt.Sprintf("%s/id/%s", baseURL, num)
+	pageTitle := fmt.Sprintf("ID #%d - Innenstadt ID - 100", d.Number)
+	pageDescription := d.Description
+	if pageDescription == "" {
+		pageDescription = fmt.Sprintf("Entdecke ID #%d aus der urbanen Stadtrallye und sieh dir die Beiträge der Teilnehmer*innen an.", d.Number)
+	}
+	
+	seoMeta := utils.NewSEOMetadata(
+		pageTitle,
+		pageDescription,
+		utils.EnsureFullImageURL(d.ImageUrl),
+		pageURL,
+		"article",
+	)
+
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
-		"Title":           fmt.Sprintf("#%d %s", d.Number, d.Title),
+		"Title":           seoMeta.Title,
+		"SEO":             seoMeta,
 		"Derive":          d,
 		"Contributions":   contribs,
 		"PageParam":       pageParam,

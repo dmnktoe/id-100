@@ -17,6 +17,14 @@ import (
 // RequestBagHandler displays the bag request form
 func RequestBagHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
+	
+	// Generate SEO metadata
+	baseURL := c.Request().Header.Get("X-Forwarded-Host")
+	if baseURL == "" {
+		baseURL = c.Scheme() + "://" + c.Request().Host
+	}
+	seoMeta := utils.GetPageSEOMetadata("request_bag", baseURL)
+	
 	if c.QueryParam("partial") == "1" {
 		return c.Render(http.StatusOK, "request_bag.content", map[string]interface{}{
 			"CurrentPath": c.Request().URL.Path,
@@ -26,7 +34,8 @@ func RequestBagHandler(c echo.Context) error {
 		})
 	}
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
-		"Title":           "Werkzeug anfordern - 🏠🆔💯",
+		"Title":           seoMeta.Title,
+		"SEO":             seoMeta,
 		"ContentTemplate": "request_bag.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
