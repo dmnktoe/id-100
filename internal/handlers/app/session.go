@@ -185,14 +185,16 @@ func AcceptInvitationHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "Fehler beim Annehmen der Einladung")
 	}
 
-	// Store token in session
+	// Store token and invitation flag in session
 	session.Values["token"] = token
 	session.Values["token_id"] = tokenID
 	session.Values["bag_name"] = bagName
 	session.Values["session_uuid"] = sessionUUID
+	session.Values["from_invitation"] = true  // Flag to indicate this user came from an invitation
 	session.Save(c.Request(), c.Response())
 
-	// Redirect to upload page
+	// Redirect to name entry page so user can enter their name
+	// The TokenWithSession middleware will recognize they have a valid token from invitation
 	return c.Redirect(http.StatusSeeOther, "/upload?token="+token)
 }
 

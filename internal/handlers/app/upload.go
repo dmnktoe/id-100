@@ -314,6 +314,12 @@ func SetPlayerNameHandler(c echo.Context) error {
 		log.Printf("Error creating active session: %v", err)
 	}
 
+	// Save session explicitly before redirecting to ensure cookie is set
+	// This is critical - we need the session saved BEFORE the redirect response is sent
+	if saveErr := session.Save(c.Request(), c.Response()); saveErr != nil {
+		log.Printf("WARNING: Failed to save session before redirect: %v", saveErr)
+	}
+	
 	// Redirect to upload page with cache-busting parameter
 	// Add cache control headers to prevent browser from using cached version
 	c.Response().Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
