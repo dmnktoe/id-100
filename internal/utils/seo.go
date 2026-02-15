@@ -19,9 +19,10 @@ var (
 	emojiRegex = regexp.MustCompile(`[\x{1F600}-\x{1F64F}]|[\x{1F300}-\x{1F5FF}]|[\x{1F680}-\x{1F6FF}]|[\x{1F1E0}-\x{1F1FF}]|[\x{2600}-\x{26FF}]|[\x{2700}-\x{27BF}]|[\x{1F900}-\x{1F9FF}]|[\x{1FA00}-\x{1FA6F}]|[\x{1FA70}-\x{1FAFF}]|[\x{1F004}-\x{1F0CF}]|[\x{1F170}-\x{1F251}]`)
 	
 	// Regex patterns to match derive-related terminology
+	// Matches: derive, derives, deriven (German plural), derived
 	derivePatterns = []*regexp.Regexp{
-		regexp.MustCompile(`(?i)\bderive[sn]?\b`),
-		regexp.MustCompile(`(?i)\bderived?\b`),
+		regexp.MustCompile(`(?i)\bderive[ns]?\b`), // matches derive, derives, deriven
+		regexp.MustCompile(`(?i)\bderived\b`),     // matches derived
 	}
 )
 

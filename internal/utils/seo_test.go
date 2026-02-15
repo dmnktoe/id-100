@@ -81,6 +81,11 @@ func TestRemoveDeriveReferences(t *testing.T) {
 			input:    "This is a test",
 			expected: "This is a test",
 		},
+		{
+			name:     "Replace deriven (German plural)",
+			input:    "These deriven are cool",
+			expected: "These ID are cool",
+		},
 	}
 
 	for _, tt := range tests {
