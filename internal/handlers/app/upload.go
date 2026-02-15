@@ -19,6 +19,7 @@ import (
 	"github.com/chai2010/webp"
 	"github.com/labstack/echo/v4"
 
+	"id-100/internal/database"
 	"id-100/internal/imgutil"
 	"id-100/internal/middleware"
 	"id-100/internal/repository"
@@ -54,6 +55,7 @@ func UploadGetHandler(c echo.Context) error {
 
 	token, _ := c.Get("token").(string)
 	currentPlayer, _ := c.Get("current_player").(string)
+	csrfToken, _ := c.Get("csrf_token").(string)
 
 	// Build a map[string]bool of derive numbers that were uploaded in THIS session/token
 	uploadedNumbers := make(map[string]bool)
@@ -84,6 +86,7 @@ func UploadGetHandler(c echo.Context) error {
 		"CurrentPlayer":   currentPlayer,
 		"UploadedNumbers": uploadedNumbers,
 		"TotalPoints":     totalPoints,
+		"CSRFToken":       csrfToken,
 	}))
 }
 
@@ -227,6 +230,12 @@ func SetPlayerNameHandler(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Name und Token erforderlich")
 	}
 
+	// Sanitize player name to prevent XSS
+	playerName = strings.TrimSpace(playerName)
+	if len(playerName) > 50 {
+		playerName = playerName[:50]
+	}
+
 	// Consent checkbox (required)
 	consent := c.FormValue("agree_privacy")
 	if consent == "" {
@@ -241,19 +250,80 @@ func SetPlayerNameHandler(c echo.Context) error {
 	}
 
 	playerCity := strings.TrimSpace(c.FormValue("player_city"))
+	if len(playerCity) > 100 {
+		playerCity = playerCity[:100]
+	}
 
 	// Save name and city in session
 	session, _ := middleware.Store.Get(c.Request(), "id-100-session")
 	session.Values["player_name"] = playerName
 	session.Values["player_city"] = playerCity
-	session.Save(c.Request(), c.Response())
 
-	// Update database
-	err := repository.UpdatePlayerNameAndCity(context.Background(), playerName, playerCity, token)
-	if err != nil {
-		log.Printf("Error setting player name: %v", err)
+	// Get session UUID from context (set by middleware) - don't create a new one!
+	sessionUUID, ok := c.Get("session_uuid").(string)
+	log.Printf("SetPlayerName: Getting session_uuid from context, ok=%v, uuid='%s'", ok, sessionUUID)
+	if !ok || sessionUUID == "" {
+		// Fallback: try to get from session if not in context
+		var err error
+		sessionUUID, err = middleware.GetOrCreateSessionUUID(session)
+		log.Printf("SetPlayerName: Fallback GetOrCreateSessionUUID, err=%v, uuid='%s'", err, sessionUUID)
+		if err != nil {
+			log.Printf("Failed to get session UUID: %v", err)
+			return c.String(http.StatusInternalServerError, "Session initialization failed")
+		}
 	}
 
-	// Redirect to upload page
+	// Ensure session_uuid is saved in session
+	// NOTE: Don't call session.Save() here - middleware will save AFTER handler returns
+	// This ensures Set-Cookie header is added after redirect is configured
+	session.Values["session_uuid"] = sessionUUID
+	log.Printf("SetPlayerName: Session values set with uuid='%s' (middleware will save after return)", sessionUUID)
+
+	// Get token ID
+	var tokenID int
+	err := database.DB.QueryRow(context.Background(),
+		"SELECT id FROM upload_tokens WHERE token = $1",
+		token).Scan(&tokenID)
+
+	if err != nil {
+		log.Printf("Error getting token ID: %v", err)
+		return c.String(http.StatusInternalServerError, "Token nicht gefunden")
+	}
+
+	log.Printf("SetPlayerName: Updating DB with playerName='%s', sessionUUID='%s', token_id=%d", playerName, sessionUUID, tokenID)
+	// Update database with session binding
+	_, err = database.DB.Exec(context.Background(),
+		"UPDATE upload_tokens SET current_player = $1, current_player_city = $2, session_started_at = NOW(), session_uuid = $3 WHERE token = $4",
+		playerName, playerCity, sessionUUID, token)
+
+	if err != nil {
+		log.Printf("Error setting player name: %v", err)
+	} else {
+		log.Printf("SetPlayerName: Successfully updated DB with session_uuid='%s'", sessionUUID)
+	}
+
+	// Create or update active session record
+	_, err = database.DB.Exec(context.Background(),
+		`INSERT INTO active_sessions (token_id, session_uuid, player_name, player_city, started_at, last_activity_at, is_active)
+		 VALUES ($1, $2, $3, $4, NOW(), NOW(), true)
+		 ON CONFLICT (token_id, session_uuid) 
+		 DO UPDATE SET player_name = $3, player_city = $4, last_activity_at = NOW(), is_active = true`,
+		tokenID, sessionUUID, playerName, playerCity)
+
+	if err != nil {
+		log.Printf("Error creating active session: %v", err)
+	}
+
+	// Save session explicitly before redirecting to ensure cookie is set
+	// This is critical - we need the session saved BEFORE the redirect response is sent
+	if saveErr := session.Save(c.Request(), c.Response()); saveErr != nil {
+		log.Printf("WARNING: Failed to save session before redirect: %v", saveErr)
+	}
+	
+	// Redirect to upload page with cache-busting parameter
+	// Add cache control headers to prevent browser from using cached version
+	c.Response().Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Response().Header().Set("Pragma", "no-cache")
+	c.Response().Header().Set("Expires", "0")
 	return c.Redirect(http.StatusSeeOther, "/upload?token="+token)
 }

@@ -9,6 +9,7 @@
 
   <form action="/upload/set-name?token={{.Token}}" method="POST" id="nameForm" novalidate>
     <input type="hidden" name="token" value="{{.Token}}">
+    {{if .CSRFToken}}<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">{{end}}
     
     <div class="form-group">
       <label for="playerName">Dein Name</label>

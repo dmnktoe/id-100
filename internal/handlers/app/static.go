@@ -45,3 +45,15 @@ func DatenschutzHandler(c echo.Context) error {
 		"FooterStats":     stats,
 	}))
 }
+
+// AcceptInvitationPageHandler displays the invitation acceptance form
+func AcceptInvitationPageHandler(c echo.Context) error {
+	stats := utils.GetFooterStats()
+	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
+		"Title":           "Einladung annehmen - 🏠🆔💯",
+		"ContentTemplate": "accept_invitation.content",
+		"CurrentPath":     c.Request().URL.Path,
+		"CurrentYear":     time.Now().Year(),
+		"FooterStats":     stats,
+	}))
+}

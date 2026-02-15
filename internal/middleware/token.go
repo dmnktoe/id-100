@@ -19,10 +19,26 @@ const (
 // TokenWithSession is a middleware with session support for token validation
 func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		log.Printf("=== TokenWithSession START: %s %s ===", c.Request().Method, c.Request().URL.Path)
+		
 		// Get session
 		session, err := Store.Get(c.Request(), "id-100-session")
+		sessionDecodeError := err != nil
 		if err != nil {
-			log.Printf("Session error: %v", err)
+			log.Printf("Session decode error (creating new session): %v", err)
+			// Create new session immediately to avoid accessing invalid session
+			session, err = Store.New(c.Request(), "id-100-session")
+			if err != nil {
+				log.Printf("Failed to create new session: %v", err)
+				return c.String(http.StatusInternalServerError, "Session initialization failed")
+			}
+		} else {
+			// Log current session UUID if it exists
+			if existingUUID, ok := session.Values["session_uuid"].(string); ok {
+				log.Printf("Existing session_uuid in cookie: '%s'", existingUUID)
+			} else {
+				log.Printf("No session_uuid in cookie yet")
+			}
 		}
 
 		// Get token from query param (QR code), POST form (only for form-encoded or explicit routes), or session
@@ -66,12 +82,14 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		var maxUploads, totalUploads, totalSessions int
 		var currentPlayer, currentPlayerCity, bagName string
 		var sessionStartedAt time.Time
+		var dbSessionUUID *string // Session UUID bound to this token
 
 		err = database.DB.QueryRow(context.Background(),
 			`SELECT id, is_active, max_uploads, total_uploads, total_sessions,
-			 COALESCE(current_player, ''), COALESCE(current_player_city, ''), COALESCE(bag_name, ''), COALESCE(session_started_at, created_at)
+			 COALESCE(current_player, ''), COALESCE(current_player_city, ''), COALESCE(bag_name, ''), COALESCE(session_started_at, created_at),
+			 session_uuid
 			 FROM upload_tokens WHERE token = $1`,
-			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &currentPlayerCity, &bagName, &sessionStartedAt)
+			token).Scan(&tokenID, &isActive, &maxUploads, &totalUploads, &totalSessions, &currentPlayer, &currentPlayerCity, &bagName, &sessionStartedAt, &dbSessionUUID)
 
 		if err != nil {
 			log.Printf("Token validation error: %v", err)
@@ -83,10 +101,32 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			}))
 		}
 
+		// If we had a session decode error, restore session_uuid from DB if it exists
+		// This prevents conflict errors when user returns after setting their name
+		if sessionDecodeError && dbSessionUUID != nil && *dbSessionUUID != "" {
+			log.Printf("Restoring session_uuid from database to new session")
+			session.Values["session_uuid"] = *dbSessionUUID
+		}
+
+		// Get or create session UUID for this browser
+		sessionUUID, err := GetOrCreateSessionUUID(session)
+		if err != nil {
+			log.Printf("Failed to create session UUID: %v", err)
+			return c.String(http.StatusInternalServerError, "Session initialization failed")
+		}
+
 		// Save token in session for subsequent requests
 		session.Values["token"] = token
 		session.Values["token_id"] = tokenID
 		session.Values["bag_name"] = bagName
+		session.Values["session_uuid"] = sessionUUID
+
+		// Generate CSRF token for this session (needed for forms)
+		csrfToken, err := GetOrCreateCSRFToken(session)
+		if err != nil {
+			log.Printf("Failed to create CSRF token: %v", err)
+			csrfToken = ""
+		}
 
 		// session freshness: ensure session_number and session_started_at exist and match DB
 		sessNumVal := session.Values["session_number"]
@@ -133,17 +173,19 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Check if player name is set (first-time user flow)
 		if currentPlayer == "" {
-			// If this is a POST to /upload/set-name, let the handler process it
+			// If this is a POST to /upload/set-name, set context and continue to handler execution
 			if c.Request().Method == "POST" && c.Request().URL.Path == "/upload/set-name" {
-				return next(c)
-			}
-
-			// Check if name is in session
-			if sessName, ok := session.Values["player_name"].(string); ok && sessName != "" {
-				// Update DB with name from session
+				log.Printf("Middleware: Passing POST /upload/set-name to handler with sessionUUID='%s'", sessionUUID)
+				// Set session_uuid in context so handler can use it
+				c.Set("session_uuid", sessionUUID)
+				// Skip the rest of the currentPlayer=="" block and continue to handler call below
+				// This ensures session is saved after handler executes and captures all changes
+			} else if sessName, ok := session.Values["player_name"].(string); ok && sessName != "" {
+				// Check if name is in session
+				// Update DB with name from session and bind session_uuid
 				result, err := database.DB.Exec(context.Background(),
-					"UPDATE upload_tokens SET current_player = $1, session_started_at = NOW() WHERE id = $2",
-					sessName, tokenID)
+					"UPDATE upload_tokens SET current_player = $1, session_started_at = NOW(), session_uuid = $2 WHERE id = $3",
+					sessName, sessionUUID, tokenID)
 
 				if err != nil {
 					log.Printf("Failed to update current_player for token_id=%d with name=%s: %v", tokenID, sessName, err)
@@ -155,6 +197,7 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 						"CurrentYear":     time.Now().Year(),
 						"BagName":         bagName,
 						"Token":           token,
+						"CSRFToken":       csrfToken,
 					}))
 				}
 
@@ -174,9 +217,53 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 					"CurrentYear":     time.Now().Year(),
 					"BagName":         bagName,
 					"Token":           token,
+					"CSRFToken":       csrfToken,
 				}))
 			}
 		} else {
+			// currentPlayer is set - check for session conflict
+			// Only check if another browser is using this token when player is already set
+			log.Printf("Conflict check: currentPlayer='%s', dbSessionUUID='%v', sessionUUID='%s'", 
+				currentPlayer, dbSessionUUID, sessionUUID)
+			
+			if dbSessionUUID != nil && *dbSessionUUID != "" && *dbSessionUUID != sessionUUID {
+				log.Printf("Session UUID mismatch detected: DB has '%s', cookie has '%s'", *dbSessionUUID, sessionUUID)
+				
+				// Token is already bound to a different session
+				// Check if this session has an active invitation
+				var invitationExists bool
+				err = database.DB.QueryRow(context.Background(),
+					`SELECT EXISTS(
+						SELECT 1 FROM invitations 
+						WHERE token_id = $1 
+						AND (accepted_by_session_uuid = $2 OR created_by_session_uuid = $2)
+						AND is_active = true
+						AND expires_at > NOW()
+					)`,
+					tokenID, sessionUUID).Scan(&invitationExists)
+
+				if err != nil {
+					log.Printf("Failed to check invitation: %v", err)
+				}
+
+				log.Printf("Invitation check: invitationExists=%v", invitationExists)
+
+				if !invitationExists {
+					// Return 409 Conflict - bag is in use by another device
+					log.Printf("Returning 409 Conflict: bag in use by another session")
+					return c.Render(http.StatusConflict, "layout", mergeTemplateData(map[string]interface{}{
+						"Title":           "Werkzeug wird bereits verwendet",
+						"ContentTemplate": "bag_in_use.content",
+						"CurrentPath":     c.Request().URL.Path,
+						"CurrentYear":     time.Now().Year(),
+						"BagName":         bagName,
+						"CurrentPlayer":   currentPlayer,
+					}))
+				}
+			} else {
+				log.Printf("No conflict: session UUIDs match or no DB UUID set")
+			}
+
 			// Save player name and city in session if not already there
 			session.Values["player_name"] = currentPlayer
 			session.Values["player_city"] = currentPlayerCity
@@ -191,6 +278,9 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 		c.Set("session_number", totalSessions)
 		c.Set("uploads_remaining", maxUploads-totalUploads)
 		c.Set("current_player_city", currentPlayerCity)
+		c.Set("session_uuid", sessionUUID)
+		c.Set("csrf_token", csrfToken)
+		session.Save(c.Request(), c.Response())
 
 		// Check if token is active
 		if !isActive {
@@ -234,6 +324,25 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 		}
 
-		return next(c)
+		// Call the next handler
+		err = next(c)
+		
+		// Save session AFTER handler executes to capture any changes made by the handler
+		// This is critical for POST /upload/set-name which modifies session before redirecting
+		// We save even if handler returned error, as session changes (like CSRF tokens) should persist
+		if uuid, ok := session.Values["session_uuid"].(string); ok {
+			log.Printf("Middleware: Saving session after handler with session_uuid='%s'", uuid)
+		} else {
+			log.Printf("Middleware: Saving session after handler (NO session_uuid in session.Values!)")
+		}
+		if saveErr := session.Save(c.Request(), c.Response()); saveErr != nil {
+			log.Printf("ERROR: Failed to save session after handler (session changes may be lost): %v", saveErr)
+			// Don't override handler's error - let it propagate
+			// Session save failures are logged but non-fatal to avoid breaking user flow
+		} else {
+			log.Printf("Middleware: Session saved successfully after handler")
+		}
+		
+		return err
 	}
 }

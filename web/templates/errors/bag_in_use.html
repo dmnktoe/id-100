@@ -1,0 +1,34 @@
+{{define "bag_in_use.content"}}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body text-center p-5">
+                    <h1 class="display-4 mb-4">🔒</h1>
+                    <h2 class="mb-3">Werkzeug wird bereits verwendet</h2>
+                    <p class="lead">
+                        Das Werkzeug "{{.BagName}}" wird bereits von einem anderen Gerät verwendet.
+                    </p>
+                    {{if .CurrentPlayer}}
+                    <p>
+                        <strong>Aktueller Spieler:</strong> {{.CurrentPlayer}}
+                    </p>
+                    {{end}}
+                    <hr class="my-4">
+                    <p>
+                        Um dieses Werkzeug nutzen zu können, gibt es folgende Möglichkeiten:
+                    </p>
+                    <ul class="text-start">
+                        <li>Warte, bis der aktuelle Nutzer das Werkzeug zurückgibt</li>
+                        <li>Bitte den aktuellen Nutzer, dir eine Einladung zu senden</li>
+                        <li>Verwende das ursprüngliche Gerät, auf dem du das Werkzeug gescannt hast</li>
+                    </ul>
+                    <div class="mt-4">
+                        <a href="/" class="btn btn-primary">Zur Startseite</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{{end}}
