@@ -131,7 +131,7 @@ func UploadPostHandler(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "WebP-Kodierung fehlgeschlagen")
 	}
 
-	cfg, _ := config.LoadDefaultConfig(context.TODO(),
+	cfg, _ := config.LoadDefaultConfig(c.Request().Context(),
 		config.WithRegion(os.Getenv("S3_REGION")),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			os.Getenv("S3_ACCESS_KEY"),
@@ -148,7 +148,7 @@ func UploadPostHandler(c echo.Context) error {
 
 	fileName := fmt.Sprintf("derive_%s_%d.webp", deriveNumberStr, time.Now().Unix())
 
-	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+	_, err = s3Client.PutObject(c.Request().Context(), &s3.PutObjectInput{
 		Bucket:      aws.String(os.Getenv("S3_BUCKET")),
 		Key:         aws.String(fileName),
 		Body:        bytes.NewReader(buf.Bytes()),

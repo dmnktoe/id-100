@@ -23,10 +23,10 @@ func EnsureFullImageURL(raw string) string {
 	}
 
 	// Get MinIO configuration
-	// Use S3_PUBLIC_URL for browser-accessible endpoint, fallback to S3_ENDPOINT
+	// Use S3_PUBLIC_URL for browser-accessible endpoint
 	s3PublicURL := strings.TrimRight(os.Getenv("S3_PUBLIC_URL"), "/")
 	if s3PublicURL == "" {
-		// Fallback to S3_ENDPOINT for backward compatibility
+		// Fall back to S3_ENDPOINT if S3_PUBLIC_URL not configured
 		s3PublicURL = strings.TrimRight(os.Getenv("S3_ENDPOINT"), "/")
 		if s3PublicURL == "" {
 			// Default to localhost for browser access

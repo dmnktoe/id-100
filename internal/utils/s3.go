@@ -45,7 +45,7 @@ func extractFileNameFromURL(imageURL string) (string, error) {
 }
 
 // DeleteFromS3 extracts the file key from the image URL and deletes it from S3/MinIO
-func DeleteFromS3(imageURL string) error {
+func DeleteFromS3(ctx context.Context, imageURL string) error {
 	// Extract the filename from the URL path
 	// Example: http://minio:9000/id100-images/derive_1_1234567890.webp
 	// or: http://localhost:9000/id100-images/derive_1_1234567890.webp
@@ -55,7 +55,7 @@ func DeleteFromS3(imageURL string) error {
 	}
 
 	// Create S3 client
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
+	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(os.Getenv("S3_REGION")),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			os.Getenv("S3_ACCESS_KEY"),
@@ -75,7 +75,7 @@ func DeleteFromS3(imageURL string) error {
 	})
 
 	// Delete the object from S3
-	_, err = s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+	_, err = s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(os.Getenv("S3_BUCKET")),
 		Key:    aws.String(fileName),
 	})
