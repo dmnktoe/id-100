@@ -36,8 +36,12 @@ func InitWithOptions(opts InitOptions) error {
 		Release:          opts.Release,
 		TracesSampleRate: opts.TracesSampleRate,
 		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
-			// Filter out events in development if needed
-			// Or add additional context/filtering here
+			// Add tags to distinguish backend from frontend
+			if event.Tags == nil {
+				event.Tags = make(map[string]string)
+			}
+			event.Tags["layer"] = "backend"
+			event.Tags["platform"] = "go"
 			return event
 		},
 	})

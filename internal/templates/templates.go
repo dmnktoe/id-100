@@ -66,6 +66,7 @@ func Load() *Renderer {
 		"eq":        func(a, b string) bool { return a == b },
 		"or":        func(a, b bool) bool { return a || b },
 		"hasprefix": func(s, prefix string) bool { return strings.HasPrefix(s, prefix) },
+		"cssClass":  GetCSSClass, // Maps CSS class names to their hashed versions
 	}
 	tmpl := template.New("").Funcs(funcs)
 	tmpls, err := tmpl.ParseFiles(files...)

@@ -50,3 +50,12 @@ id-100-app
 # Test coverage
 coverage/
 .nyc_output/
+
+# Build artifacts
+web/static/dist/
+web/static/manifest.json
+web/static/css-modules.json
+web/static/main.js
+web/static/main.js.map
+web/static/main.css
+web/static/main.css.map

@@ -31,6 +31,10 @@ export function initDatadog(): void {
       defaultPrivacyLevel: 'mask-user-input',
     });
 
+    // Set global context to distinguish frontend
+    datadogRum.setGlobalContextProperty('layer', 'frontend');
+    datadogRum.setGlobalContextProperty('platform', 'browser');
+
     console.log('Datadog RUM initialized successfully');
   } catch (error) {
     console.error('Failed to initialize Datadog RUM:', error);

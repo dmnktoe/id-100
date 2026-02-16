@@ -31,6 +31,14 @@ export function initSentry(): void {
       environment: window.ENVIRONMENT || 'development',
       release: window.APP_VERSION || 'dev',
       
+      // Add default tags to distinguish frontend from backend
+      initialScope: {
+        tags: {
+          layer: 'frontend',
+          platform: 'browser',
+        },
+      },
+      
       beforeSend(event) {
         // Filter out development errors in production
         if (window.ENVIRONMENT === 'development') {

@@ -29,7 +29,7 @@
     {{end}}
     {{end}}
     
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{.AssetMainCSS}}">
     {{if .AdditionalCSS}}
     <link rel="stylesheet" href="/static/{{.AdditionalCSS}}">
     {{end}}
@@ -59,7 +59,7 @@
   window.DATADOG_APP_ID = '{{.DatadogAppID}}';
   window.DATADOG_CLIENT_TOKEN = '{{.DatadogClientToken}}';
 </script>
-<script src="/static/main.js"></script>
+<script src="{{.AssetMainJS}}"></script>
 </body>
 </html>
 {{end}}

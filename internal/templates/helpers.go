@@ -16,6 +16,8 @@ func GetGlobalTemplateData() map[string]interface{} {
 		"DatadogClientToken":  config.GetDatadogClientToken(),
 		"AppVersion":          version.Version,
 		"BaseURL":             config.GetBaseURL(),
+		"AssetMainCSS":        GetAssetPath("main.css"),
+		"AssetMainJS":         GetAssetPath("main.js"),
 	}
 }
 
