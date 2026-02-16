@@ -77,3 +77,13 @@ func GetEnvironment() string {
 	}
 	return "development"
 }
+
+// GetDatadogAppID returns the Datadog Application ID from environment
+func GetDatadogAppID() string {
+	return os.Getenv("DATADOG_APP_ID")
+}
+
+// GetDatadogClientToken returns the Datadog Client Token from environment
+func GetDatadogClientToken() string {
+	return os.Getenv("DATADOG_CLIENT_TOKEN")
+}

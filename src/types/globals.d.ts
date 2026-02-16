@@ -7,4 +7,6 @@ interface Window {
   MEILI_SEARCH_KEY: string;
   SENTRY_DSN?: string;
   ENVIRONMENT?: string;
+  DATADOG_APP_ID?: string;
+  DATADOG_CLIENT_TOKEN?: string;
 }

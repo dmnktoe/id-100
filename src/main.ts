@@ -4,6 +4,7 @@
  */
 
 import { initSentry } from "./lib/sentry";
+import { initDatadog } from "./lib/datadog";
 import { initBrandAnimation } from "./lib/brand-animation";
 import { initDrawer } from "./lib/drawer";
 import { initLazyImages } from "./lib/lazy-images";
@@ -15,8 +16,9 @@ import "./lib/favicon-emoji";
 
 // Initialize all modules when DOM is ready
 (() => {
-  // Initialize Sentry first to catch early errors
+  // Initialize monitoring first to catch early errors
   initSentry();
+  initDatadog();
 
   // Brand animation logic
   initBrandAnimation();
