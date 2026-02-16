@@ -6,11 +6,15 @@
 .PHONY: docker-dev-up docker-dev-down docker-dev-restart docker-dev-logs docker-dev-clean docker-dev-rebuild
 
 # Default target - show help
+
+# derive version from git tag when available; falls back to commit-ish
+VERSION ?= $(shell git describe --tags --always --dirty)
+
 help:
 	@echo "Available targets:"
 	@echo "  Development:"
 	@echo "    run              - Run the app locally (requires local Postgres)"
-	@echo "    build            - Build the Go binary"
+	@echo "    build            - Build the Go binary (injects VERSION=$(VERSION))"
 	@echo "    build-frontend   - Build TypeScript frontend"
 	@echo "    build-all        - Build frontend + backend"
 	@echo "    test             - Run Go tests"
@@ -19,7 +23,7 @@ help:
 	@echo "    clean            - Remove build artifacts"
 	@echo ""
 	@echo "  Docker Compose (Production):"
-	@echo "    docker-build     - Build Docker images"
+	@echo "    docker-build     - Build Docker images (passes APP_VERSION=$(VERSION))"
 	@echo "    docker-up        - Start all services"
 	@echo "    docker-down      - Stop all services"
 	@echo "    docker-restart   - Restart all services"
@@ -40,7 +44,8 @@ run:
 	go run ./cmd/id-100
 
 build:
-	go build -o bin/id-100 ./cmd/id-100
+	@echo "building $(VERSION)"
+	go build -ldflags "-X 'id-100/internal/version.Version=$(VERSION)'" -o bin/id-100 ./cmd/id-100
 
 build-frontend:
 	npm run build
@@ -63,7 +68,7 @@ clean:
 
 # Docker Compose targets (Production)
 docker-build:
-	docker compose build --no-cache
+	docker compose build --no-cache --build-arg APP_VERSION=$(VERSION)
 
 docker-up:
 	docker compose up -d

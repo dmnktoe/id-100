@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 
 	"id-100/internal/models"
 	"id-100/internal/repository"
+	"id-100/internal/seo"
 	"id-100/internal/templates"
 	"id-100/internal/utils"
 )
@@ -98,8 +98,14 @@ func DerivenHandler(c echo.Context) error {
 		pages = append(pages, models.PageNumber{Number: totalPages, IsCurrent: page == totalPages})
 	}
 
+	// Generate SEO metadata
+	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	builder := seo.NewBuilder(baseURL)
+	seoMeta := builder.Default()
+
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
-		"Title":           "Innenstadt (🏠) ID (🆔) - 100 (💯)",
+		"Title":           seoMeta.Title,
+		"SEO":             seoMeta,
 		"Deriven":         deriven,
 		"CurrentPage":     page,
 		"TotalPages":      totalPages,
@@ -163,8 +169,16 @@ func DeriveHandler(c echo.Context) error {
 		})
 	}
 
+	// Generate SEO metadata for the ID detail page
+	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	
+	// Create custom SEO metadata for this specific ID
+	builder := seo.NewBuilder(baseURL)
+	seoMeta := builder.ForID(d.Number, d.Title, d.Description, utils.EnsureFullImageURL(d.ImageUrl))
+
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
-		"Title":           fmt.Sprintf("#%d %s", d.Number, d.Title),
+		"Title":           seoMeta.Title,
+		"SEO":             seoMeta,
 		"Derive":          d,
 		"Contributions":   contribs,
 		"PageParam":       pageParam,

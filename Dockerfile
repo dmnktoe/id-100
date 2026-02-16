@@ -20,6 +20,7 @@ RUN npm run build
 # Build stage for Go backend
 FROM golang:1.24-alpine AS backend-builder
 
+ARG APP_VERSION=dev
 WORKDIR /app
 
 # Install build dependencies
@@ -36,7 +37,7 @@ COPY cmd ./cmd
 COPY internal ./internal
 
 # Build the application with CGO enabled
-RUN CGO_ENABLED=1 GOOS=linux go build -o /app/bin/id-100 ./cmd/id-100
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags "-X 'id-100/internal/version.Version=${APP_VERSION}'" -o /app/bin/id-100 ./cmd/id-100
 
 # Final stage
 FROM alpine:latest

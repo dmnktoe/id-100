@@ -53,3 +53,12 @@ func Load() *Config {
 		SentryDSN:     os.Getenv("SENTRY_DSN"),
 	}
 }
+
+// GetBaseURL returns the base URL from environment or default
+func GetBaseURL() string {
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
+	return baseURL
+}

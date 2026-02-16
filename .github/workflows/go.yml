@@ -35,7 +35,10 @@ jobs:
         run: npm test
 
       - name: Build backend
-        run: go build -v ./...
+        run: |
+          VERSION=$(git describe --tags --always --dirty)
+          echo "Building backend (version=$VERSION)"
+          go build -ldflags "-X 'id-100/internal/version.Version=${VERSION}'" -o bin/id-100 ./cmd/id-100
 
       - name: Test Go
         run: go test -v ./...
