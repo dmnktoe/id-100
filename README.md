@@ -171,6 +171,56 @@ npm run watch
 
 Build Output liegt in [web/static/main.js](web/static/main.js).
 
+## Testing
+
+Das Projekt nutzt [Vitest](https://vitest.dev/) fuer TypeScript/JavaScript Tests mit umfassender Coverage.
+
+### Tests ausfuehren
+
+```bash
+# Alle Tests ausfuehren
+npm test
+
+# Tests im Watch-Mode
+npm run test:watch
+
+# Tests mit UI
+npm run test:ui
+
+# Tests mit Coverage Report
+npm run test:coverage
+```
+
+### Coverage
+
+Der Coverage Report zeigt die Testabdeckung fuer alle TypeScript Module:
+
+```bash
+npm run test:coverage
+```
+
+Aktuelle Coverage-Ziele:
+- **Statements**: 80%
+- **Branches**: 80%
+- **Functions**: 80%
+- **Lines**: 80%
+
+Der HTML Coverage Report wird in `coverage/` generiert und kann im Browser geoeffnet werden.
+
+### Test Struktur
+
+Tests befinden sich in `src/__tests__/`:
+- `admin-dashboard.test.ts` - Admin Dashboard Funktionalitaet (22 Tests)
+- `upload.test.ts` - Upload Seite Funktionalitaet (17 Tests)
+- `form-handler.test.ts` - Formular Handler (7 Tests)
+- `city-autocomplete.test.ts` - Stadt Autocomplete (4 Tests)
+- `lazy-images.test.ts` - Lazy Loading Images (8 Tests)
+- `brand-animation.test.ts` - Marken Animation (5 Tests)
+- `favicon-emoji.test.ts` - Favicon Emoji (5 Tests)
+- `utils.test.ts` - Hilfsfunktionen (2 Tests)
+
+**Gesamt: 70 Tests**
+
 ## Projektstruktur
 
 ```

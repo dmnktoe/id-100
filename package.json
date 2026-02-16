@@ -9,7 +9,8 @@
     "watch": "esbuild src/main.ts --bundle --sourcemap --watch --outfile=web/static/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +20,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.0.18",
     "esbuild": "^0.27.2",
     "happy-dom": "^20.5.0",

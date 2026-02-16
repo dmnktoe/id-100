@@ -412,11 +412,13 @@ export function initFormValidation(): void {
       const cityValid = citySelected;
       const allValid = nameValid && privacyAccepted && cityValid;
       
-      if (!allValid) {
-        e.preventDefault();
-        alert("Bitte fülle alle Felder korrekt aus und wähle eine Stadt aus der Liste!");
-        return false;
+      if (allValid) {
+        return true;
       }
+      
+      e.preventDefault();
+      alert("Bitte fülle alle Felder korrekt aus und wähle eine Stadt aus der Liste!");
+      return false;
     });
   }
   

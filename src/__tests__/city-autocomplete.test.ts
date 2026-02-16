@@ -43,7 +43,7 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     // Setup DOM with complete structure matching enter_name.html
     container = document.createElement("div");
     container.innerHTML = `
-      <form id="set-name-form" novalidate>
+      <form id="nameForm" novalidate>
         <input type="text" id="playerName" name="player_name" />
         <input type="text" id="playerCity" name="player_city" />
         <input type="checkbox" id="privacyCheckbox" name="agree_privacy" />
@@ -155,5 +155,72 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     // Now button should be enabled
     expect(submitBtn.disabled).toBe(false);
     expect(submitBtn.classList.contains("disabled")).toBe(false);
+  });
+
+  it("should allow form submission when validation passes", async () => {
+    const form = document.getElementById("nameForm") as HTMLFormElement;
+    const submitBtn = document.getElementById("submitNameBtn") as HTMLButtonElement;
+    const nameInput = document.getElementById("playerName") as HTMLInputElement;
+    const cityInput = document.getElementById("playerCity") as HTMLInputElement;
+    const privacyCheckbox = document.getElementById(
+      "privacyCheckbox"
+    ) as HTMLInputElement;
+
+    initCityAutocomplete();
+    initFormValidation();
+
+    // Fill in name
+    nameInput.value = "Max Mustermann";
+    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+    
+    // Simulate city selection
+    cityInput.value = "Ber";
+    cityInput.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    
+    const dropdown = document.querySelector(".city-dropdown") as HTMLDivElement;
+    const firstItem = dropdown.querySelector(".city-dropdown-item") as HTMLDivElement;
+    firstItem?.click(); // This sets citySelected to true
+    
+    // Check privacy
+    privacyCheckbox.checked = true;
+    privacyCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+
+    // Submit the form
+    const submitEvent = new Event("submit", { bubbles: true, cancelable: true });
+    form.dispatchEvent(submitEvent);
+
+    // Form submission should be allowed (not prevented)
+    expect(submitEvent.defaultPrevented).toBe(false);
+    expect(submitBtn.disabled).toBe(false);
+  });
+
+  it("should prevent form submission and show alert when validation fails", () => {
+    // Mock window.alert before initialization
+    window.alert = vi.fn();
+
+    const form = document.getElementById("nameForm") as HTMLFormElement;
+    const nameInput = document.getElementById("playerName") as HTMLInputElement;
+    const privacyCheckbox = document.getElementById("privacyCheckbox") as HTMLInputElement;
+
+    initCityAutocomplete();
+    initFormValidation();
+
+    // Only fill in name, missing city and privacy
+    nameInput.value = "Max Mustermann";
+    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+    
+    // Don't select a city - citySelected should remain false
+    // Don't check privacy checkbox
+
+    // Try to submit the form
+    const submitEvent = new Event("submit", { bubbles: true, cancelable: true });
+    form.dispatchEvent(submitEvent);
+
+    // Form submission should be prevented
+    expect(submitEvent.defaultPrevented).toBe(true);
+    expect(window.alert).toHaveBeenCalledWith(
+      "Bitte fülle alle Felder korrekt aus und wähle eine Stadt aus der Liste!"
+    );
   });
 });
