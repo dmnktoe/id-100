@@ -52,7 +52,7 @@ describe("City Autocomplete - Dropdown Rendering", () => {
         <div class="form-status">
           <ul id="validationStatus">
             <li id="statusName">❌ Name: Nicht ausgefüllt</li>
-            <li id="statusCity">❌ Stadt: Nicht ausgewählt</li>
+            <li id="statusCity">❌ Ort: Nicht ausgewählt</li>
             <li id="statusPrivacy">❌ Datenschutz: Nicht akzeptiert</li>
             <li id="statusButton">❌ Submit-Button: Deaktiviert</li>
           </ul>
@@ -220,7 +220,7 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     // Form submission should be prevented
     expect(submitEvent.defaultPrevented).toBe(true);
     expect(window.alert).toHaveBeenCalledWith(
-      "Bitte fülle alle Felder korrekt aus und wähle eine Stadt aus der Liste!"
+      "Bitte fülle alle Felder korrekt aus und wähle einen Ort aus der Liste!"
     );
   });
 });

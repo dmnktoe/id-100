@@ -27,8 +27,8 @@ const nameFormSchema = z.object({
     .min(2, "Name muss mindestens 2 Zeichen lang sein")
     .max(100, "Name darf maximal 100 Zeichen lang sein"),
   player_city: z.string()
-    .min(2, "Stadt muss mindestens 2 Zeichen lang sein")
-    .max(100, "Stadt darf maximal 100 Zeichen lang sein"),
+    .min(2, "Ort muss mindestens 2 Zeichen lang sein")
+    .max(100, "Ort darf maximal 100 Zeichen lang sein"),
   agree_privacy: z.literal(true, {
     errorMap: () => ({ 
       message: "Datenschutzerklärung muss akzeptiert werden" 
@@ -417,7 +417,7 @@ export function initFormValidation(): void {
       }
       
       e.preventDefault();
-      alert("Bitte fülle alle Felder korrekt aus und wähle eine Stadt aus der Liste!");
+      alert("Bitte fülle alle Felder korrekt aus und wähle einen Ort aus der Liste!");
       return false;
     });
   }
@@ -483,10 +483,10 @@ function updateStatusIndicators(): void {
   // Update city status
   if (statusCity) {
     if (citySelected) {
-      statusCity.innerHTML = '✅ Stadt: Ausgewählt';
+      statusCity.innerHTML = '✅ Ort: Ausgewählt';
       statusCity.style.color = 'green';
     } else {
-      statusCity.innerHTML = '❌ Stadt: Nicht ausgewählt';
+      statusCity.innerHTML = '❌ Ort: Nicht ausgewählt';
       statusCity.style.color = 'red';
     }
   }
