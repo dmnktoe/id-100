@@ -14,12 +14,12 @@ import (
 // RulesHandler displays the rules page
 func RulesHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
-	
+
 	// Generate SEO metadata
 	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	builder := seo.NewBuilder(baseURL)
 	seoMeta := builder.ForPage("leitfaden")
-	
+
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
 		"Title":           seoMeta.Title,
 		"SEO":             seoMeta,
@@ -33,12 +33,12 @@ func RulesHandler(c echo.Context) error {
 // ImpressumHandler displays the impressum page
 func ImpressumHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
-	
+
 	// Generate SEO metadata
 	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	builder := seo.NewBuilder(baseURL)
 	seoMeta := builder.ForPage("impressum")
-	
+
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
 		"Title":           seoMeta.Title,
 		"SEO":             seoMeta,
@@ -52,12 +52,12 @@ func ImpressumHandler(c echo.Context) error {
 // DatenschutzHandler displays the privacy policy page
 func DatenschutzHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
-	
+
 	// Generate SEO metadata
 	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	builder := seo.NewBuilder(baseURL)
 	seoMeta := builder.ForPage("datenschutz")
-	
+
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
 		"Title":           seoMeta.Title,
 		"SEO":             seoMeta,

@@ -171,7 +171,7 @@ func DeriveHandler(c echo.Context) error {
 
 	// Generate SEO metadata for the ID detail page
 	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
-	
+
 	// Create custom SEO metadata for this specific ID
 	builder := seo.NewBuilder(baseURL)
 	seoMeta := builder.ForID(d.Number, d.Title, d.Description, utils.EnsureFullImageURL(d.ImageUrl))

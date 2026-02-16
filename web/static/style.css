@@ -967,6 +967,27 @@ main {
   color: var(--gray-800);
   margin-bottom: 0.35rem;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.btn-end-session {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-end-session:hover {
+  background: #d32f2f;
+  transform: translateY(-1px);
 }
 
 .session-grid {

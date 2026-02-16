@@ -245,7 +245,7 @@ func SetPlayerNameHandler(c echo.Context) error {
 	consent := c.FormValue("agree_privacy")
 	if consent == "" {
 		bagName, _ := repository.GetBagNameByToken(context.Background(), token)
-		
+
 		// Generate SEO metadata
 		baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 		builder := seo.NewBuilder(baseURL)
@@ -256,7 +256,7 @@ func SetPlayerNameHandler(c echo.Context) error {
 			baseURL+"/upload/set-name",
 			"website",
 		)
-		
+
 		return c.Render(http.StatusBadRequest, "layout", templates.MergeTemplateData(map[string]interface{}{
 			"Title":           seoMeta.Title,
 			"SEO":             seoMeta,
@@ -283,4 +283,41 @@ func SetPlayerNameHandler(c echo.Context) error {
 
 	// Redirect to upload page
 	return c.Redirect(http.StatusSeeOther, "/upload?token="+token)
+}
+
+// EndSessionHandler allows a user to end their session and reset the bag for the next player
+func EndSessionHandler(c echo.Context) error {
+	tokenID, ok := c.Get("token_id").(int)
+	if !ok {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid token",
+		})
+	}
+
+	// Reset the token using the same function as admin
+	rows, err := repository.ResetToken(context.Background(), strconv.Itoa(tokenID))
+	if err != nil {
+		log.Printf("Database error in EndSessionHandler: %v", err)
+		sentryhelper.CaptureException(c, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Database error",
+		})
+	}
+
+	if rows == 0 {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "Token not found",
+		})
+	}
+
+	// Clear session data
+	session, _ := middleware.Store.Get(c.Request(), "id-100-session")
+	delete(session.Values, "player_name")
+	delete(session.Values, "player_city")
+	session.Save(c.Request(), c.Response())
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"status":  "success",
+		"message": "Session beendet. Das Werkzeug kann jetzt an den nächsten Spieler weitergegeben werden.",
+	})
 }
