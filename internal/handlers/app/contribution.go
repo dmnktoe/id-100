@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"strconv"
@@ -30,8 +29,10 @@ func UserDeleteContributionHandler(c echo.Context) error {
 
 	sessionNumber, _ := c.Get("session_number").(int)
 
+	ctx := c.Request().Context()
+
 	// Verify that this contribution belongs to the current user's session
-	imageURL, err := repository.GetContributionForDeletion(context.Background(), contributionID, tokenID, sessionNumber)
+	imageURL, err := repository.GetContributionForDeletion(ctx, contributionID, tokenID, sessionNumber)
 	if err != nil {
 		log.Printf("Failed to fetch contribution or ownership mismatch: %v", err)
 		sentryhelper.CaptureException(c, err)
@@ -39,7 +40,7 @@ func UserDeleteContributionHandler(c echo.Context) error {
 	}
 
 	// Delete from upload_logs first
-	err = repository.DeleteUploadLog(context.Background(), contributionID)
+	err = repository.DeleteUploadLog(ctx, contributionID)
 	if err != nil {
 		log.Printf("Failed to delete from upload_logs: %v", err)
 		sentryhelper.CaptureException(c, err)
@@ -47,7 +48,7 @@ func UserDeleteContributionHandler(c echo.Context) error {
 	}
 
 	// Delete from contributions table
-	rowsAffected, err := repository.DeleteContribution(context.Background(), contributionID)
+	rowsAffected, err := repository.DeleteContribution(ctx, contributionID)
 	if err != nil {
 		log.Printf("Failed to delete contribution: %v", err)
 		sentryhelper.CaptureException(c, err)
@@ -59,7 +60,7 @@ func UserDeleteContributionHandler(c echo.Context) error {
 	}
 
 	// Decrement the total_uploads counter
-	err = repository.DecrementTokenUploadCount(context.Background(), tokenID)
+	err = repository.DecrementTokenUploadCount(ctx, tokenID)
 	if err != nil {
 		log.Printf("Failed to decrement upload counter: %v", err)
 		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
@@ -67,7 +68,7 @@ func UserDeleteContributionHandler(c echo.Context) error {
 
 	// Delete from S3 storage
 	if imageURL != "" {
-		s3Err := utils.DeleteFromS3(context.Background(), imageURL)
+		s3Err := utils.DeleteFromS3(ctx, imageURL)
 		if s3Err != nil {
 			log.Printf("Failed to delete from S3 (continuing anyway): %v", s3Err)
 			sentryhelper.CaptureError(c, s3Err, sentry.LevelWarning)
