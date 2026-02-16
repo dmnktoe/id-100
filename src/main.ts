@@ -8,6 +8,8 @@ import { initDrawer } from "./lib/drawer";
 import { initLazyImages } from "./lib/lazy-images";
 import { initFormHandlers } from "./lib/form-handler";
 import { initCityAutocomplete, initFormValidation } from "./lib/city-autocomplete";
+import { initAdminDashboard } from "./lib/admin-dashboard";
+import { initUpload } from "./lib/upload";
 import "./lib/favicon-emoji";
 
 // Initialize all modules when DOM is ready
@@ -29,4 +31,10 @@ import "./lib/favicon-emoji";
 
   // Initialize lazy images on first paint
   initLazyImages();
+
+  // Admin dashboard functionality
+  initAdminDashboard();
+
+  // Upload page functionality
+  initUpload();
 })();
