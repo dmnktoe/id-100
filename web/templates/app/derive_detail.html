@@ -15,7 +15,7 @@
                 {{range .Contributions}}
                 <div class="id-card" role="article">
                     <div class="card-image-box">
-                        <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="Beweisfoto">
+                        <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="Beitrag von {{.UserName}}{{if .UserCity}} aus {{.UserCity}}{{end}}">
                     </div>
                     <div class="card-content">
                         <span class="card-number">Beitrag</span>

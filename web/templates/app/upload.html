@@ -4,7 +4,7 @@
     {{if .CurrentPlayer}}👤 {{.CurrentPlayer}}{{end}}
     {{if .CurrentPlayer}}<button class="btn-end-session" onclick="endSession()">Session beenden</button>{{end}}
   </div>
-  <h2 class="page-title">Beweisfoto hochladen</h2>
+  <h2 class="page-title">Dokumentation hochladen</h2>
 
   <form action="/upload?token={{.Token}}" method="POST" enctype="multipart/form-data" id="uploadForm">
       <input type="hidden" name="token" value="{{.Token}}">
@@ -16,7 +16,7 @@
           <option value="{{.Number}}" {{if index $.UploadedNumbers (printf "%d" .Number)}}disabled class="uploaded" title="Du hast bereits hochgeladen"{{end}} {{if eq $.SelectedNumber (printf "%d" .Number)}}selected{{end}}>🆔 {{.Number}}{{if index $.UploadedNumbers (printf "%d" .Number)}} (hast du schon bearbeitet){{end}}</option>
           {{end}}
         </select>
-        <small class="form-note">Für ausgegraute IDs existiert bereits ein Beweisfoto von dir.</small>
+        <small class="form-note">Für ausgegraute IDs existiert bereits eine Dokumentation von dir.</small>
       </div>
 
       <div class="form-group">
