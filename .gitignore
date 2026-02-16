@@ -46,3 +46,7 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 id-100-app
+
+# Test coverage
+coverage/
+.nyc_output/
