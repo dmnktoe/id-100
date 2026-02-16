@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/repository"
+	"id-100/internal/seo"
 	"id-100/internal/templates"
 	"id-100/internal/utils"
 )
@@ -17,6 +18,12 @@ import (
 // RequestBagHandler displays the bag request form
 func RequestBagHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
+	
+	// Generate SEO metadata
+	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	builder := seo.NewBuilder(baseURL)
+	seoMeta := builder.ForPage("request_bag")
+	
 	if c.QueryParam("partial") == "1" {
 		return c.Render(http.StatusOK, "request_bag.content", map[string]interface{}{
 			"CurrentPath": c.Request().URL.Path,
@@ -26,7 +33,8 @@ func RequestBagHandler(c echo.Context) error {
 		})
 	}
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
-		"Title":           "Werkzeug anfordern - 🏠🆔💯",
+		"Title":           seoMeta.Title,
+		"SEO":             seoMeta,
 		"ContentTemplate": "request_bag.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
