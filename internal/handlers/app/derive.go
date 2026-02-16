@@ -174,8 +174,7 @@ func DeriveHandler(c echo.Context) error {
 	// Create custom SEO metadata for this specific ID
 	pageURL := fmt.Sprintf("%s/id/%s", baseURL, num)
 	pageTitle := fmt.Sprintf("ID #%d - Innenstadt ID - 100", d.Number)
-	// Clean the description from emojis and derive references
-	pageDescription := utils.CleanSEOText(d.Description)
+	pageDescription := d.Description
 	if pageDescription == "" {
 		pageDescription = fmt.Sprintf("Entdecke ID #%d aus der urbanen Stadtrallye und sieh dir die Beiträge der Teilnehmer*innen an.", d.Number)
 	}
