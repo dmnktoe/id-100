@@ -271,8 +271,8 @@ func SetPlayerNameHandler(c echo.Context) error {
 
 	// Save name and city in session
 	session, _ := middleware.Store.Get(c.Request(), "id-100-session")
-	session.Values["player_name"] = playerName
-	session.Values["player_city"] = playerCity
+	session.Values[middleware.SessionKeyPlayerName] = playerName
+	session.Values[middleware.SessionKeyPlayerCity] = playerCity
 	session.Save(c.Request(), c.Response())
 
 	// Update database
@@ -311,10 +311,18 @@ func EndSessionHandler(c echo.Context) error {
 	}
 
 	// Clear session data
-	session, _ := middleware.Store.Get(c.Request(), "id-100-session")
-	delete(session.Values, "player_name")
-	delete(session.Values, "player_city")
-	session.Save(c.Request(), c.Response())
+	session, err := middleware.Store.Get(c.Request(), "id-100-session")
+	if err != nil {
+		log.Printf("Session error in EndSessionHandler: %v", err)
+		// Continue with token reset even if session clearing fails
+	} else {
+		delete(session.Values, middleware.SessionKeyPlayerName)
+		delete(session.Values, middleware.SessionKeyPlayerCity)
+		if err := session.Save(c.Request(), c.Response()); err != nil {
+			log.Printf("Failed to save session in EndSessionHandler: %v", err)
+			// Continue - session will be cleared on next request via middleware
+		}
+	}
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"status":  "success",
