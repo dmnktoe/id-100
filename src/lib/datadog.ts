@@ -24,8 +24,7 @@ export function initDatadog(): void {
       site: 'datadoghq.eu',
       service: 'id-100',
       env: environment,
-      // Version will be added later if needed
-      // version: '1.0.0',
+      version: window.APP_VERSION || 'dev',
       sessionSampleRate: 100,
       sessionReplaySampleRate: environment === 'production' ? 20 : 0, // No replay in dev
       trackBfcacheViews: true,

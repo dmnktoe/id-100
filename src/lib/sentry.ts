@@ -29,6 +29,7 @@ export function initSentry(): void {
       replaysOnErrorSampleRate: 1.0, // Sample 100% of sessions with errors
       
       environment: window.ENVIRONMENT || 'development',
+      release: window.APP_VERSION || 'dev',
       
       beforeSend(event) {
         // Filter out development errors in production
