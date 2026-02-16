@@ -5,4 +5,6 @@
 interface Window {
   GEOCODING_API_URL: string;
   MEILI_SEARCH_KEY: string;
+  SENTRY_DSN?: string;
+  ENVIRONMENT?: string;
 }

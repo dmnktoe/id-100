@@ -3,6 +3,8 @@
  * Handles form submissions (e.g., request bag form)
  */
 
+import { captureException, addBreadcrumb } from './sentry';
+
 export function initFormHandlers(): void {
   // Formular "werkzeug anfordern" submission handler
   document.addEventListener("submit", (e) => {
@@ -28,6 +30,8 @@ export function initFormHandlers(): void {
     btn.disabled = true;
     btn.innerText = "sende...";
     
+    addBreadcrumb('Bag request form submitted', 'form', { email });
+    
     fetch("/werkzeug-anfordern", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -45,7 +49,8 @@ export function initFormHandlers(): void {
           btn.innerText = "anfragen";
         }
       })
-      .catch((_err) => {
+      .catch((err) => {
+        captureException(err, { context: 'bag-request-form', email });
         resultDiv.style.display = "block";
         resultDiv.style.color = "#d32f2f";
         resultDiv.innerText = "Netzwerkfehler. Bitte versuche es erneut.";

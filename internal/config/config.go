@@ -12,6 +12,7 @@ type Config struct {
 	BaseURL       string
 	SessionSecret string
 	IsProduction  bool
+	Environment   string // "production" or "development"
 	Port          string
 	AdminUsername string
 	AdminPassword string
@@ -22,12 +23,7 @@ type Config struct {
 func Load() *Config {
 	godotenv.Load()
 
-	baseURL := os.Getenv("BASE_URL")
-	if baseURL == "" {
-		baseURL = "http://localhost:8080"
-	}
-
-	isProduction := os.Getenv("ENVIRONMENT") == "production"
+	isProduction := IsProduction()
 
 	sessionSecret := os.Getenv("SESSION_SECRET")
 	if sessionSecret == "" {
@@ -44,13 +40,14 @@ func Load() *Config {
 	}
 
 	return &Config{
-		BaseURL:       baseURL,
+		BaseURL:       GetBaseURL(),
 		SessionSecret: sessionSecret,
 		IsProduction:  isProduction,
+		Environment:   GetEnvironment(),
 		Port:          port,
 		AdminUsername: os.Getenv("ADMIN_USERNAME"),
 		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
-		SentryDSN:     os.Getenv("SENTRY_DSN"),
+		SentryDSN:     GetSentryDSN(),
 	}
 }
 
@@ -61,4 +58,22 @@ func GetBaseURL() string {
 		baseURL = "http://localhost:8080"
 	}
 	return baseURL
+}
+
+// GetSentryDSN returns the Sentry DSN from environment
+func GetSentryDSN() string {
+	return os.Getenv("SENTRY_DSN")
+}
+
+// IsProduction returns true if running in production environment
+func IsProduction() bool {
+	return os.Getenv("ENVIRONMENT") == "production"
+}
+
+// GetEnvironment returns the environment string ("production" or "development")
+func GetEnvironment() string {
+	if IsProduction() {
+		return "production"
+	}
+	return "development"
 }

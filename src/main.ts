@@ -3,6 +3,7 @@
  * Initializes all modules when the DOM is ready
  */
 
+import { initSentry } from "./lib/sentry";
 import { initBrandAnimation } from "./lib/brand-animation";
 import { initDrawer } from "./lib/drawer";
 import { initLazyImages } from "./lib/lazy-images";
@@ -14,6 +15,9 @@ import "./lib/favicon-emoji";
 
 // Initialize all modules when DOM is ready
 (() => {
+  // Initialize Sentry first to catch early errors
+  initSentry();
+
   // Brand animation logic
   initBrandAnimation();
 

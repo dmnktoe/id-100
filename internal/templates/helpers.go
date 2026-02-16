@@ -10,6 +10,8 @@ func GetGlobalTemplateData() map[string]interface{} {
 	return map[string]interface{}{
 		"GeocodingURL": config.GetGeocodingURL(),
 		"MeiliKey":     config.GetMeiliSearchKey(),
+		"SentryDSN":    config.GetSentryDSN(),
+		"Environment":  config.GetEnvironment(),
 		"AppVersion":   version.Version,
 		"BaseURL":      config.GetBaseURL(),
 	}

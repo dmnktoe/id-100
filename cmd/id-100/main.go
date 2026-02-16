@@ -19,11 +19,16 @@ import (
 )
 
 func main() {
-	// Load configuration
+	// Load configuration (validates and caches config values)
 	cfg := config.Load()
 
 	// Initialize Sentry
-	if err := appSentry.Init(cfg.SentryDSN); err != nil {
+	if err := appSentry.InitWithOptions(appSentry.InitOptions{
+		DSN:              cfg.SentryDSN,
+		Environment:      cfg.Environment,
+		Release:          version.Version,
+		TracesSampleRate: 0.1,
+	}); err != nil {
 		log.Printf("Failed to initialize Sentry error tracking, continuing without it. Please verify SENTRY_DSN configuration: %v", err)
 	}
 	defer sentry.Flush(2 * time.Second)
