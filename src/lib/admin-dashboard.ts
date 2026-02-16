@@ -132,7 +132,7 @@ export async function updateQuota(id: number): Promise<void> {
 /**
  * Download QR code
  */
-export function downloadQR(id: number, name: string, format: 'svg' | 'png'): void {
+export function downloadQR(id: number, _name: string, format: 'svg' | 'png'): void {
   const url = `/admin/tokens/${id}/qr?format=${format}`;
   window.open(url, '_blank');
 }
@@ -140,7 +140,7 @@ export function downloadQR(id: number, name: string, format: 'svg' | 'png'): voi
 /**
  * Copy upload URL to clipboard
  */
-export async function copyUploadURL(token: string, name: string): Promise<void> {
+export async function copyUploadURL(token: string, _name: string): Promise<void> {
   const encodedToken = encodeURIComponent(token);
   const url = `${location.origin}/upload?token=${encodedToken}`;
   try {
@@ -230,7 +230,7 @@ function initBagRequestFilter(): void {
 /**
  * Delete contribution (admin)
  */
-export async function deleteContribution(id: number, btn: HTMLElement): Promise<void> {
+export async function deleteContribution(id: number, _btn: HTMLElement): Promise<void> {
   if (!confirm('Contribution wirklich löschen? Dies wird das Bild aus der Datenbank und dem Storage entfernen.')) return;
 
   try {

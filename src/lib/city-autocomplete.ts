@@ -417,6 +417,7 @@ export function initFormValidation(): void {
         alert("Bitte fülle alle Felder korrekt aus und wähle eine Stadt aus der Liste!");
         return false;
       }
+      return true;
     });
   }
   

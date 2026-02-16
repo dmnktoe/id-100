@@ -173,7 +173,7 @@ function handleUploadState(): void {
 /**
  * Delete a session upload
  */
-export async function deleteSessionUpload(id: number, btn: HTMLElement): Promise<void> {
+export async function deleteSessionUpload(id: number, _btn: HTMLElement): Promise<void> {
   if (!confirm('Upload wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
 
   try {
