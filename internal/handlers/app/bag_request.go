@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/repository"
+	"id-100/internal/seo"
 	"id-100/internal/templates"
 	"id-100/internal/utils"
 )
@@ -19,8 +20,9 @@ func RequestBagHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	
 	// Generate SEO metadata
-	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
-	seoMeta := utils.GetPageSEOMetadata("request_bag", baseURL)
+	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	builder := seo.NewBuilder(baseURL)
+	seoMeta := builder.ForPage("request_bag")
 	
 	if c.QueryParam("partial") == "1" {
 		return c.Render(http.StatusOK, "request_bag.content", map[string]interface{}{

@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 
 	"id-100/internal/models"
 	"id-100/internal/repository"
+	"id-100/internal/seo"
 	"id-100/internal/templates"
 	"id-100/internal/utils"
 )
@@ -99,8 +99,9 @@ func DerivenHandler(c echo.Context) error {
 	}
 
 	// Generate SEO metadata
-	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
-	seoMeta := utils.GetDefaultSEOMetadata(baseURL)
+	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	builder := seo.NewBuilder(baseURL)
+	seoMeta := builder.Default()
 
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
 		"Title":           seoMeta.Title,
@@ -169,23 +170,11 @@ func DeriveHandler(c echo.Context) error {
 	}
 
 	// Generate SEO metadata for the ID detail page
-	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	
 	// Create custom SEO metadata for this specific ID
-	pageURL := fmt.Sprintf("%s/id/%s", baseURL, num)
-	pageTitle := fmt.Sprintf("ID #%d - Innenstadt ID - 100", d.Number)
-	pageDescription := d.Description
-	if pageDescription == "" {
-		pageDescription = fmt.Sprintf("Entdecke ID #%d aus der urbanen Stadtrallye und sieh dir die Beiträge der Teilnehmer*innen an.", d.Number)
-	}
-	
-	seoMeta := utils.NewSEOMetadata(
-		pageTitle,
-		pageDescription,
-		utils.EnsureFullImageURL(d.ImageUrl),
-		pageURL,
-		"article",
-	)
+	builder := seo.NewBuilder(baseURL)
+	seoMeta := builder.ForID(d.Number, d.Title, d.Description, utils.EnsureFullImageURL(d.ImageUrl))
 
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
 		"Title":           seoMeta.Title,

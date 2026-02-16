@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"id-100/internal/seo"
 	"id-100/internal/templates"
 	"id-100/internal/utils"
 )
@@ -15,8 +16,9 @@ func RulesHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	
 	// Generate SEO metadata
-	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
-	seoMeta := utils.GetPageSEOMetadata("leitfaden", baseURL)
+	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	builder := seo.NewBuilder(baseURL)
+	seoMeta := builder.ForPage("leitfaden")
 	
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
 		"Title":           seoMeta.Title,
@@ -33,8 +35,9 @@ func ImpressumHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	
 	// Generate SEO metadata
-	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
-	seoMeta := utils.GetPageSEOMetadata("impressum", baseURL)
+	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	builder := seo.NewBuilder(baseURL)
+	seoMeta := builder.ForPage("impressum")
 	
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
 		"Title":           seoMeta.Title,
@@ -51,8 +54,9 @@ func DatenschutzHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
 	
 	// Generate SEO metadata
-	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
-	seoMeta := utils.GetPageSEOMetadata("datenschutz", baseURL)
+	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	builder := seo.NewBuilder(baseURL)
+	seoMeta := builder.ForPage("datenschutz")
 	
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
 		"Title":           seoMeta.Title,

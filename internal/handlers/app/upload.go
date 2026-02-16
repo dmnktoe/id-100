@@ -22,6 +22,7 @@ import (
 	"id-100/internal/imgutil"
 	"id-100/internal/middleware"
 	"id-100/internal/repository"
+	"id-100/internal/seo"
 	"id-100/internal/templates"
 	"id-100/internal/utils"
 )
@@ -72,8 +73,9 @@ func UploadGetHandler(c echo.Context) error {
 	}
 
 	// Generate SEO metadata
-	baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
-	seoMeta := utils.GetPageSEOMetadata("upload", baseURL)
+	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+	builder := seo.NewBuilder(baseURL)
+	seoMeta := builder.ForPage("upload")
 
 	return c.Render(http.StatusOK, "layout", templates.MergeTemplateData(map[string]interface{}{
 		"Title":           seoMeta.Title,
@@ -238,8 +240,9 @@ func SetPlayerNameHandler(c echo.Context) error {
 		bagName, _ := repository.GetBagNameByToken(context.Background(), token)
 		
 		// Generate SEO metadata
-		baseURL := utils.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
-		seoMeta := utils.NewSEOMetadata(
+		baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
+		builder := seo.NewBuilder(baseURL)
+		seoMeta := builder.Custom(
 			"Willkommen bei Innenstadt ID - 100",
 			"Willkommen bei der urbanen Stadtrallye. Registriere dich und starte deine Entdeckungsreise.",
 			"",
