@@ -84,7 +84,7 @@ Wichtige Variablen:
 | `POSTGRES_DB` | DB Name (Docker) |
 | `S3_ACCESS_KEY` | S3 Access Key (MinIO) |
 | `S3_SECRET_KEY` | S3 Secret Key (MinIO) |
-| `S3_BUCKET_NAME` | Bucket fuer Uploads |
+| `S3_BUCKET` | Bucket fuer Uploads |
 | `S3_ENDPOINT` | Interner S3 Endpoint (Container) |
 | `S3_PUBLIC_URL` | Externer S3 URL fuer Browser |
 | `MINIO_ROOT_USER` | MinIO Root User |

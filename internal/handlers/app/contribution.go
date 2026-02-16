@@ -67,7 +67,7 @@ func UserDeleteContributionHandler(c echo.Context) error {
 
 	// Delete from S3 storage
 	if imageURL != "" {
-		s3Err := utils.DeleteFromS3(imageURL)
+		s3Err := utils.DeleteFromS3(context.Background(), imageURL)
 		if s3Err != nil {
 			log.Printf("Failed to delete from S3 (continuing anyway): %v", s3Err)
 			sentryhelper.CaptureError(c, s3Err, sentry.LevelWarning)
