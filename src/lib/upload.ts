@@ -3,6 +3,8 @@
  * Handles file upload, drag & drop, preview, and session management
  */
 
+import { getErrorMessage } from './utils';
+
 /**
  * Initialize upload page functionality
  */
@@ -118,12 +120,13 @@ function handleUploadState(): void {
       // clear selection
       if (el) el.value = '';
       
-      // reset file input & preview
+      // reset file input and preview
       if (fileInput) {
         try { 
           fileInput.value = ''; 
         } catch(e) { 
-          /* ignore */ 
+          // File input reset may fail in some browsers
+          console.warn('Could not reset file input:', e);
         }
       }
       if (preview) {
@@ -194,8 +197,7 @@ export async function deleteSessionUpload(id: number, _btn: HTMLElement): Promis
       alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
     }
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler';
-    alert('Fehler: ' + errorMessage);
+    alert('Fehler: ' + getErrorMessage(err));
   }
 }
 
@@ -224,8 +226,7 @@ export async function endSession(): Promise<void> {
       alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
     }
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler';
-    alert('Fehler: ' + errorMessage);
+    alert('Fehler: ' + getErrorMessage(err));
   }
 }
 

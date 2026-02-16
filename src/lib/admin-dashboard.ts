@@ -3,6 +3,8 @@
  * Handles token management, bag requests, and contribution management
  */
 
+import { getErrorMessage } from './utils';
+
 /**
  * Initialize admin dashboard functionality
  */
@@ -79,8 +81,7 @@ export async function resetToken(id: number, name: string): Promise<void> {
     alert(data.message || 'Token wurde zurückgesetzt');
     location.reload();
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler';
-    alert('Fehler: ' + errorMessage);
+    alert('Fehler: ' + getErrorMessage(err));
   }
 }
 
@@ -96,8 +97,7 @@ export async function deactivateToken(id: number, name: string): Promise<void> {
     alert(data.status || 'Token wurde deaktiviert');
     location.reload();
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler';
-    alert('Fehler: ' + errorMessage);
+    alert('Fehler: ' + getErrorMessage(err));
   }
 }
 
@@ -124,8 +124,7 @@ export async function updateQuota(id: number): Promise<void> {
     alert(`✅ Kontingent auf ${data.max_uploads} aktualisiert`);
     location.reload();
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler';
-    alert('Fehler: ' + errorMessage);
+    alert('Fehler: ' + getErrorMessage(err));
   }
 }
 
@@ -174,8 +173,7 @@ export async function markBagRequestDone(id: number, btn: HTMLElement): Promise<
       alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
     }
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler';
-    alert('Fehler: ' + errorMessage);
+    alert('Fehler: ' + getErrorMessage(err));
   }
 }
 
@@ -250,8 +248,7 @@ export async function deleteContribution(id: number, _btn: HTMLElement): Promise
       alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
     }
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler';
-    alert('Fehler: ' + errorMessage);
+    alert('Fehler: ' + getErrorMessage(err));
   }
 }
 
