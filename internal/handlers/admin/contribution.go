@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/repository"
+	"id-100/internal/sentryhelper"
 	"id-100/internal/utils"
 )
 
@@ -30,6 +32,7 @@ func AdminDeleteContributionHandler(c echo.Context) error {
 	err = repository.DeleteUploadLog(context.Background(), contributionID)
 	if err != nil {
 		log.Printf("Failed to delete from upload_logs: %v", err)
+		sentryhelper.CaptureException(c, err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete upload log"})
 	}
 
@@ -37,6 +40,7 @@ func AdminDeleteContributionHandler(c echo.Context) error {
 	rowsAffected, err := repository.DeleteContribution(context.Background(), contributionID)
 	if err != nil {
 		log.Printf("Failed to delete contribution: %v", err)
+		sentryhelper.CaptureException(c, err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete contribution"})
 	}
 
@@ -48,6 +52,7 @@ func AdminDeleteContributionHandler(c echo.Context) error {
 	err = repository.DecrementTokenUploadCount(context.Background(), tokenID)
 	if err != nil {
 		log.Printf("Failed to decrement upload counter: %v", err)
+		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
 	}
 
 	// Delete from S3 storage if the image exists
@@ -55,6 +60,7 @@ func AdminDeleteContributionHandler(c echo.Context) error {
 		s3Err := utils.DeleteFromS3(imageURL)
 		if s3Err != nil {
 			log.Printf("Failed to delete from S3 (continuing anyway): %v", s3Err)
+			sentryhelper.CaptureError(c, s3Err, sentry.LevelWarning)
 		}
 	}
 

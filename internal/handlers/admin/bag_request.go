@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/repository"
+	"id-100/internal/sentryhelper"
 )
 
 // AdminBagRequestCompleteHandler marks a bag request as handled
@@ -22,6 +23,7 @@ func AdminBagRequestCompleteHandler(c echo.Context) error {
 	rowsAffected, err := repository.MarkBagRequestHandled(context.Background(), id)
 	if err != nil {
 		log.Printf("Failed to mark bag_request handled: %v", err)
+		sentryhelper.CaptureException(c, err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "server error"})
 	}
 

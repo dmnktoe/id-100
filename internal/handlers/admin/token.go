@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"id-100/internal/repository"
+	"id-100/internal/sentryhelper"
 	"id-100/internal/utils"
 )
 
@@ -19,6 +20,7 @@ func AdminTokenResetHandler(c echo.Context) error {
 	rows, err := repository.ResetToken(context.Background(), tokenID)
 	if err != nil {
 		log.Printf("Database error in AdminTokenResetHandler: %v", err)
+		sentryhelper.CaptureException(c, err)
 		return c.String(http.StatusInternalServerError, "Database error")
 	}
 
@@ -74,6 +76,7 @@ func AdminTokenAssignHandler(c echo.Context) error {
 	rows, err := repository.AssignTokenToPlayer(context.Background(), tokenID, req.PlayerName)
 	if err != nil {
 		log.Printf("Database error in AdminTokenAssignHandler: %v", err)
+		sentryhelper.CaptureException(c, err)
 		return c.String(http.StatusInternalServerError, "Database error")
 	}
 
@@ -128,6 +131,7 @@ func AdminCreateTokenHandler(c echo.Context, baseURL string) error {
 	token, err := utils.GenerateSecureToken(40)
 	if err != nil {
 		log.Printf("Failed to generate token: %v", err)
+		sentryhelper.CaptureException(c, err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Internal server error",
 		})
@@ -137,6 +141,7 @@ func AdminCreateTokenHandler(c echo.Context, baseURL string) error {
 	tokenID, err := repository.CreateToken(context.Background(), token, req.BagName, req.MaxUploads)
 	if err != nil {
 		log.Printf("Failed to create token: %v", err)
+		sentryhelper.CaptureException(c, err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Internal server error",
 		})
