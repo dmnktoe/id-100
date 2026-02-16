@@ -1,12 +1,10 @@
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/dmnktoe/id-100/go.yml?style=flat&logo=Github&labelColor=000&label=CI)
+![GitHub Release](https://img.shields.io/github/v/release/dmnktoe/id-100?style=flat&logo=Github&labelColor=000&label=Version)
+
 # Innenstadt ID 100 - Companion App
 
 Eine moderne Go-Webanwendung fuer kreative Dokumentationen mit Echo, PostgreSQL, MinIO (S3-kompatibel) und Meilisearch. Dieses Projekt ist ein nicht-kommerzielles künstlerisch-experimentelles Bachelorprojekt im Hochschulkontext der Universität Kassel. Teilnehmende laden im Rahmen von Aufgaben (Übungen zur urbanen Praxis und Innenstadtwahrnehmung) Fotos und Bilder hoch, um Wahrnehmungen des Stadtraums zu dokumentieren.
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/dmnktoe/id-100/go.yml?style=flat&logo=Github&labelColor=000&label=CI)
-![GitHub Release](https://img.shields.io/github/v/release/dmnktoe/id-100?style=flat&logo=Github&labelColor=000&label=Version)
-[![Go Version](https://img.shields.io/badge/Go-1.24-00ADD8?style=flat&logo=go&labelColor=000)](https://go.dev/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=flat&logo=postgresql&labelColor=000)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&labelColor=000)](https://www.docker.com/)
 [![Orte](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fid-100.online%2Fapi%2Fstats&query=$.total_cities&label=Orte&labelColor=000&color=9031aa)](https://id-100.online)
 [![Beitraege](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fid-100.online%2Fapi%2Fstats&query=$.total_contributions&label=Beitr%C3%A4ge&labelColor=000&color=613cb1)](https://id-100.online)
 [![Teilnehmer*innen](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fid-100.online%2Fapi%2Fstats&query=$.active_users&label=Teilnehmer*innen&labelColor=000&color=54b9d1)](https://id-100.online)
