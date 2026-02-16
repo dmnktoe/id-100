@@ -63,7 +63,7 @@ func TestGetPageSEOMetadata(t *testing.T) {
 		{"impressum", baseURL + "/impressum", "website", "Impressum - 🏠🆔💯"},
 		{"datenschutz", baseURL + "/datenschutz", "website", "Datenschutzerklärung - 🏠🆔💯"},
 		{"upload", baseURL + "/upload", "website", "Beweis hochladen - 🏠🆔💯"},
-		{"request_bag", baseURL + "/request-bag", "website", "Werkzeug anfordern - 🏠🆔💯"},
+		{"request_bag", baseURL + "/werkzeug-anfordern", "website", "Werkzeug anfordern - 🏠🆔💯"},
 		{"unknown", baseURL, "website", "Innenstadt (🏠) ID (🆔) - 100 (💯)"}, // Should return default
 	}
 

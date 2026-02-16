@@ -20,6 +20,9 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 	})
 
 	e.GET("/api/stats", StatsHandler)
+	
+	// Sitemap for SEO
+	e.GET("/sitemap.xml", SitemapHandler)
 
 	e.Static("/static", "web/static")
 
