@@ -37,5 +37,6 @@ return c.String(http.StatusInternalServerError, "Failed to generate sitemap")
 }
 
 // Set appropriate headers and return XML
-return c.XMLBlob(http.StatusOK, sitemapXML)
+c.Response().Header().Set("Content-Type", "application/xml; charset=utf-8")
+return c.Blob(http.StatusOK, "application/xml; charset=utf-8", sitemapXML)
 }
