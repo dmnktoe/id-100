@@ -18,12 +18,12 @@ import (
 // RequestBagHandler displays the bag request form
 func RequestBagHandler(c echo.Context) error {
 	stats := utils.GetFooterStats()
-	
+
 	// Generate SEO metadata
 	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	builder := seo.NewBuilder(baseURL)
 	seoMeta := builder.ForPage("request_bag")
-	
+
 	if c.QueryParam("partial") == "1" {
 		return c.Render(http.StatusOK, "request_bag.content", map[string]interface{}{
 			"CurrentPath": c.Request().URL.Path,

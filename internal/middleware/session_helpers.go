@@ -6,6 +6,17 @@ import (
 	"time"
 )
 
+// Session key constants
+const (
+	SessionKeyPlayerName  = "player_name"
+	SessionKeyPlayerCity  = "player_city"
+	SessionKeyToken       = "token"
+	SessionKeyTokenID     = "token_id"
+	SessionKeyBagName     = "bag_name"
+	SessionKeySessionNum  = "session_number"
+	SessionKeySessionStart = "session_started_at"
+)
+
 // GetSessionNumber safely converts a session value to int
 func GetSessionNumber(v interface{}) (int, bool) {
 	// Determine platform int bounds using strconv.IntSize

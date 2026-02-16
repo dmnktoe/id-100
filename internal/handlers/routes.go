@@ -20,7 +20,7 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 	})
 
 	e.GET("/api/stats", StatsHandler)
-	
+
 	// Sitemap for SEO
 	e.GET("/sitemap.xml", SitemapHandler)
 
@@ -33,6 +33,7 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 	e.GET("/upload", app.UploadGetHandler, middleware.TokenWithSession)
 	e.POST("/upload", app.UploadPostHandler, middleware.TokenWithSession)
 	e.POST("/upload/set-name", app.SetPlayerNameHandler, middleware.TokenWithSession)
+	e.POST("/upload/end-session", app.EndSessionHandler, middleware.TokenWithSession)
 	e.POST("/upload/contributions/:id/delete", app.UserDeleteContributionHandler, middleware.TokenWithSession)
 
 	e.GET("/leitfaden", app.RulesHandler)

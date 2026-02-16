@@ -1,6 +1,9 @@
 {{define "upload.content"}}
 <div class="container upload">
-  <div class="current-player">{{if .CurrentPlayer}}👤 {{.CurrentPlayer}}{{end}}</div>
+  <div class="current-player">
+    {{if .CurrentPlayer}}👤 {{.CurrentPlayer}}{{end}}
+    {{if .CurrentPlayer}}<button class="btn-end-session" onclick="endSession()">Session beenden</button>{{end}}
+  </div>
   <h2 class="page-title">Beweisfoto hochladen</h2>
 
   <form action="/upload?token={{.Token}}" method="POST" enctype="multipart/form-data" id="uploadForm">
@@ -177,6 +180,33 @@
         if (response.ok) {
           // Reload page to update uploaded numbers and points
           location.reload();
+        } else {
+          alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+        }
+      } catch (err) {
+        alert('Fehler: ' + err.message);
+      }
+    }
+
+    // End session - return bag for next player
+    async function endSession() {
+      if (!confirm('Session wirklich beenden? Das Werkzeug wird zurückgesetzt und kann an den nächsten Spieler weitergegeben werden.')) return;
+      
+      try {
+        const params = new URLSearchParams(location.search);
+        const token = params.get('token') || '';
+        const response = await fetch(`/upload/end-session?token=${encodeURIComponent(token)}`, { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+          alert(data.message || 'Session beendet');
+          // Redirect to upload page without token to force re-entry
+          location.href = '/upload?token=' + encodeURIComponent(token);
         } else {
           alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
         }
