@@ -1,10 +1,10 @@
 module.exports = {
   plugins: {
-    'postcss-import': {
-      path: ['src', 'web/static'],
+    "postcss-import": {
+      path: ["src", "web/static"],
       resolve: (id, basedir, importOptions) => {
         // Handle node_modules imports like 'swiper/css'
-        if (!id.startsWith('.') && !id.startsWith('/')) {
+        if (!id.startsWith(".") && !id.startsWith("/")) {
           try {
             return require.resolve(id, { paths: [basedir] });
           } catch (e) {
@@ -12,14 +12,17 @@ module.exports = {
           }
         }
         return id;
-      }
+      },
     },
     cssnano: {
-      preset: ['default', {
-        discardComments: {
-          removeAll: true
-        }
-      }]
-    }
-  }
+      preset: [
+        "default",
+        {
+          discardComments: {
+            removeAll: true,
+          },
+        },
+      ],
+    },
+  },
 };

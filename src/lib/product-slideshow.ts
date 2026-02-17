@@ -5,15 +5,11 @@
 
 import Swiper from 'swiper';
 import { Navigation, Pagination, Autoplay, EffectFade, Keyboard } from 'swiper/modules';
-import { initLazyImages } from './lazy-images';
 
 export function initProductSlideshow(): void {
   const swiperContainer = document.querySelector<HTMLElement>('.product-slideshow');
   
   if (!swiperContainer) return;
-
-  // Initialize lazy loading for slideshow images
-  initLazyImages(swiperContainer);
 
   // Initialize Swiper
   new Swiper('.product-slideshow', {

@@ -8,16 +8,16 @@ import (
 // GetGlobalTemplateData returns global data that should be available in all templates
 func GetGlobalTemplateData() map[string]interface{} {
 	return map[string]interface{}{
-		"GeocodingURL":        config.GetGeocodingURL(),
-		"MeiliKey":            config.GetMeiliSearchKey(),
-		"SentryDSN":           config.GetSentryDSN(),
-		"Environment":         config.GetEnvironment(),
-		"DatadogAppID":        config.GetDatadogAppID(),
-		"DatadogClientToken":  config.GetDatadogClientToken(),
-		"AppVersion":          version.Version,
-		"BaseURL":             config.GetBaseURL(),
-		"AssetMainCSS":        GetAssetPath("main.css"),
-		"AssetMainJS":         GetAssetPath("main.js"),
+		"GeocodingURL":       config.GetGeocodingURL(),
+		"MeiliKey":           config.GetMeiliSearchKey(),
+		"SentryDSN":          config.GetSentryDSN(),
+		"Environment":        config.GetEnvironment(),
+		"DatadogAppID":       config.GetDatadogAppID(),
+		"DatadogClientToken": config.GetDatadogClientToken(),
+		"AppVersion":         version.Version,
+		"BaseURL":            config.GetBaseURL(),
+		"AssetMainCSS":       GetAssetPath("main.css"),
+		"AssetMainJS":        GetAssetPath("main.js"),
 	}
 }
 
