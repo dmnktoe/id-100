@@ -70,12 +70,13 @@ func IsProduction() bool {
 	return os.Getenv("ENVIRONMENT") == "production"
 }
 
-// GetEnvironment returns the environment string ("production" or "development")
+// GetEnvironment returns the environment string (e.g., "production", "staging", "test", or "development")
 func GetEnvironment() string {
-	if IsProduction() {
-		return "production"
+	env := os.Getenv("ENVIRONMENT")
+	if env == "" {
+		return "development"
 	}
-	return "development"
+	return env
 }
 
 // GetDatadogAppID returns the Datadog Application ID from environment
