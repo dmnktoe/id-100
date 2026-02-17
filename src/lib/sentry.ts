@@ -15,6 +15,12 @@ export function initSentry(): void {
     return;
   }
 
+  // Skip Sentry initialization entirely in development
+  if (window.ENVIRONMENT === 'development') {
+    console.log('Skipping Sentry initialization in development environment');
+    return;
+  }
+
   try {
     Sentry.init({
       dsn: sentryDSN,
@@ -28,8 +34,8 @@ export function initSentry(): void {
       replaysSessionSampleRate: 0.1, // Sample 10% of sessions
       replaysOnErrorSampleRate: 1.0, // Sample 100% of sessions with errors
       
-      environment: window.ENVIRONMENT || 'development',
-      release: window.APP_VERSION || 'dev',
+      environment: window.ENVIRONMENT || 'production',
+      release: window.APP_VERSION || 'unknown',
       
       // Add default tags to distinguish frontend from backend
       initialScope: {
@@ -37,14 +43,6 @@ export function initSentry(): void {
           layer: 'frontend',
           platform: 'browser',
         },
-      },
-      
-      beforeSend(event) {
-        // Filter out development errors in production
-        if (window.ENVIRONMENT === 'development') {
-          return null;
-        }
-        return event;
       },
     });
 
