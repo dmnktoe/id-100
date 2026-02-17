@@ -17,7 +17,8 @@ vi.mock('swiper/modules', () => {
     Navigation: {},
     Pagination: {},
     Autoplay: {},
-    EffectFade: {}
+    EffectFade: {},
+    Keyboard: {}
   }
 })
 
