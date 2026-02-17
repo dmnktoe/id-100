@@ -1,0 +1,11 @@
+/* Main CSS Entry Point - Combines all stylesheets */
+
+/* Swiper CSS */
+@import "swiper/css";
+@import "swiper/css/navigation";
+@import "swiper/css/pagination";
+@import "swiper/css/effect-fade";
+
+/* Custom Styles */
+@import "style.css";
+@import "admin.styles.css";

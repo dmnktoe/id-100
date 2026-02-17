@@ -12,7 +12,11 @@ RUN npm install
 # Copy TypeScript source files
 COPY tsconfig.json ./
 COPY vitest.config.ts ./
+COPY postcss.config.js ./
 COPY src ./src
+COPY scripts ./scripts
+COPY web/static/style.css ./web/static/style.css
+COPY web/static/admin.styles.css ./web/static/admin.styles.css
 
 # Build frontend
 RUN npm run build
@@ -54,8 +58,8 @@ COPY --from=backend-builder /app/bin/id-100 /app/id-100
 COPY web /app/web
 
 # Copy built frontend from frontend-builder
-COPY --from=frontend-builder /app/web/static/main.js /app/web/static/main.js
-COPY --from=frontend-builder /app/web/static/main.js.map /app/web/static/main.js.map
+COPY --from=frontend-builder /app/web/static/dist /app/web/static/dist
+COPY --from=frontend-builder /app/web/static/manifest.json /app/web/static/manifest.json
 
 # Copy startup script
 COPY scripts/startup.sh /app/scripts/startup.sh

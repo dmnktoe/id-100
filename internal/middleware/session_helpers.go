@@ -8,12 +8,12 @@ import (
 
 // Session key constants
 const (
-	SessionKeyPlayerName  = "player_name"
-	SessionKeyPlayerCity  = "player_city"
-	SessionKeyToken       = "token"
-	SessionKeyTokenID     = "token_id"
-	SessionKeyBagName     = "bag_name"
-	SessionKeySessionNum  = "session_number"
+	SessionKeyPlayerName   = "player_name"
+	SessionKeyPlayerCity   = "player_city"
+	SessionKeyToken        = "token"
+	SessionKeyTokenID      = "token_id"
+	SessionKeyBagName      = "bag_name"
+	SessionKeySessionNum   = "session_number"
 	SessionKeySessionStart = "session_started_at"
 )
 

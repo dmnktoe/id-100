@@ -29,7 +29,7 @@
     {{end}}
     {{end}}
     
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{.AssetMainCSS}}">
     {{if .AdditionalCSS}}
     <link rel="stylesheet" href="/static/{{.AdditionalCSS}}">
     {{end}}
@@ -53,8 +53,13 @@
   // Global configuration
   window.GEOCODING_API_URL = '{{.GeocodingURL}}';
   window.MEILI_SEARCH_KEY = '{{.MeiliKey}}';
+  window.SENTRY_DSN = '{{.SentryDSN}}';
+  window.ENVIRONMENT = '{{.Environment}}';
+  window.APP_VERSION = '{{.AppVersion}}';
+  window.DATADOG_APP_ID = '{{.DatadogAppID}}';
+  window.DATADOG_CLIENT_TOKEN = '{{.DatadogClientToken}}';
 </script>
-<script src="/static/main.js"></script>
+<script src="{{.AssetMainJS}}"></script>
 </body>
 </html>
 {{end}}

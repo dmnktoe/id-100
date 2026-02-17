@@ -140,6 +140,9 @@ services:
       GEOCODING_API_URL: ${GEOCODING_API_URL}
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       MEILI_SEARCH_KEY: ${MEILI_SEARCH_KEY}
+      SENTRY_DSN: ${SENTRY_DSN}
+      DATADOG_APP_ID: ${DATADOG_APP_ID}
+      DATADOG_CLIENT_TOKEN: ${DATADOG_CLIENT_TOKEN}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
       interval: 30s
@@ -152,7 +155,10 @@ services:
       - id100-network
       - nginx-proxy
     volumes:
-      - ./web:/app/web
+      - ./web/templates:/app/web/templates
+      - ./web/static/assets:/app/web/static/assets
+      - ./web/static/admin.styles.css:/app/web/static/admin.styles.css
+      - ./web/static/style.css:/app/web/static/style.css
       - ./cmd:/app/cmd
       - ./internal:/app/internal
 

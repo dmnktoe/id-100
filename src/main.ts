@@ -3,6 +3,8 @@
  * Initializes all modules when the DOM is ready
  */
 
+import { initSentry } from "./lib/sentry";
+import { initDatadog } from "./lib/datadog";
 import { initBrandAnimation } from "./lib/brand-animation";
 import { initDrawer } from "./lib/drawer";
 import { initLazyImages } from "./lib/lazy-images";
@@ -10,10 +12,15 @@ import { initFormHandlers } from "./lib/form-handler";
 import { initCityAutocomplete, initFormValidation } from "./lib/city-autocomplete";
 import { initAdminDashboard } from "./lib/admin-dashboard";
 import { initUpload } from "./lib/upload";
+import { initProductSlideshow } from "./lib/product-slideshow";
 import "./lib/favicon-emoji";
 
 // Initialize all modules when DOM is ready
 (() => {
+  // Initialize monitoring first to catch early errors
+  initSentry();
+  initDatadog();
+
   // Brand animation logic
   initBrandAnimation();
 
@@ -31,6 +38,9 @@ import "./lib/favicon-emoji";
 
   // Initialize lazy images on first paint
   initLazyImages();
+
+  // Product slideshow
+  initProductSlideshow();
 
   // Admin dashboard functionality
   initAdminDashboard();

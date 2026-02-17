@@ -5,4 +5,9 @@
 interface Window {
   GEOCODING_API_URL: string;
   MEILI_SEARCH_KEY: string;
+  SENTRY_DSN?: string;
+  ENVIRONMENT?: string;
+  APP_VERSION?: string;
+  DATADOG_APP_ID?: string;
+  DATADOG_CLIENT_TOKEN?: string;
 }
