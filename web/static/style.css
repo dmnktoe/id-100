@@ -345,6 +345,134 @@ main {
   letter-spacing: var(--letter-spacing-tight);
 }
 
+/* ========================================
+   SWIPER (LEITFADEN)
+   ======================================== */
+.product-slideshow-wrapper {
+  margin: 2rem 0 2.5rem;
+  position: relative;
+}
+
+.product-slideshow {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--gray-50);
+  box-shadow: var(--shadow-md);
+}
+
+.product-slideshow .swiper-slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+}
+
+.product-slideshow img {
+  width: 100%;
+  height: min(60vh, 520px);
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* Navigation buttons in template use emojis */
+.product-slideshow .swiper-button-prev,
+.product-slideshow .swiper-button-next {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-badge);
+  backdrop-filter: var(--backdrop-blur-sm);
+  -webkit-backdrop-filter: var(--backdrop-blur-sm);
+  box-shadow: var(--shadow-sm);
+  color: var(--black);
+  font-size: 1.35rem;
+  font-weight: 400;
+  display: grid;
+  place-items: center;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.product-slideshow .swiper-button-prev:hover,
+.product-slideshow .swiper-button-next:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: var(--shadow-md);
+}
+
+.product-slideshow .swiper-button-prev:active,
+.product-slideshow .swiper-button-next:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Remove default SVG icons if Swiper injects them */
+svg.swiper-navigation-icon {
+  display: none !important;
+}
+
+/* Pagination: emoji bullets */
+.product-slideshow .swiper-pagination {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur-sm);
+  -webkit-backdrop-filter: var(--backdrop-blur-sm);
+}
+
+.product-slideshow .swiper-pagination-bullet {
+  width: 1.4rem;
+  height: 1.4rem;
+  margin: 0 !important;
+  background: transparent;
+  opacity: 0.5;
+  border: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+
+.product-slideshow .swiper-pagination-bullet::before {
+  content: "💯";
+}
+
+.product-slideshow .swiper-pagination-bullet-active {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.product-slideshow .swiper-pagination-bullet-active::before {
+  content: "🆔";
+}
+
+@media (max-width: 720px) {
+  .product-slideshow img {
+    height: 46vh;
+  }
+
+  .product-slideshow .swiper-button-prev,
+  .product-slideshow .swiper-button-next {
+    width: 2.4rem;
+    height: 2.4rem;
+    font-size: 1.1rem;
+  }
+
+  .product-slideshow .swiper-pagination {
+    bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .product-slideshow img {
+    height: 38vh;
+  }
+}
+
 .rules-list {
   display: flex;
   flex-direction: column;
