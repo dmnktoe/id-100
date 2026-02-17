@@ -55,6 +55,40 @@ function getFileHash(filePath) {
     .substring(0, 8);
 }
 
+// Move CSS sourcemap if exists and update sourceMappingURL before hashing
+const cssSourceMapPath = path.join(DIST_DIR, "main.tmp.css.map");
+let cssMapFileName = null;
+if (fs.existsSync(cssSourceMapPath)) {
+  const cssMapHash = getFileHash(cssSourceMapPath);
+  cssMapFileName = `main.${cssMapHash}.css.map`;
+  fs.renameSync(cssSourceMapPath, path.join(DIST_DIR, cssMapFileName));
+
+  const cssTmpPath = path.join(DIST_DIR, "main.tmp.css");
+  const cssContent = fs.readFileSync(cssTmpPath, "utf8");
+  const updatedCssContent = cssContent.replace(
+    /\/\*# sourceMappingURL=main\.tmp\.css\.map \*\//,
+    `/*# sourceMappingURL=${cssMapFileName} */`,
+  );
+  fs.writeFileSync(cssTmpPath, updatedCssContent);
+}
+
+// Move JS sourcemap if exists and update sourceMappingURL before hashing
+const sourceMapPath = path.join(DIST_DIR, "main.tmp.js.map");
+let jsMapFileName = null;
+if (fs.existsSync(sourceMapPath)) {
+  const jsMapHash = getFileHash(sourceMapPath);
+  jsMapFileName = `main.${jsMapHash}.js.map`;
+  fs.renameSync(sourceMapPath, path.join(DIST_DIR, jsMapFileName));
+
+  const jsTmpPath = path.join(DIST_DIR, "main.tmp.js");
+  const jsContent = fs.readFileSync(jsTmpPath, "utf8");
+  const updatedJsContent = jsContent.replace(
+    /\/\/# sourceMappingURL=main\.tmp\.js\.map/,
+    `//# sourceMappingURL=${jsMapFileName}`,
+  );
+  fs.writeFileSync(jsTmpPath, updatedJsContent);
+}
+
 const cssHash = getFileHash(path.join(DIST_DIR, "main.tmp.css"));
 const jsHash = getFileHash(path.join(DIST_DIR, "main.tmp.js"));
 
@@ -71,36 +105,6 @@ fs.renameSync(
   path.join(DIST_DIR, "main.tmp.js"),
   path.join(DIST_DIR, jsFileName),
 );
-
-// Move CSS sourcemap if exists
-const cssSourceMapPath = path.join(DIST_DIR, "main.tmp.css.map");
-if (fs.existsSync(cssSourceMapPath)) {
-  const cssMapFileName = `main.${cssHash}.css.map`;
-  fs.renameSync(cssSourceMapPath, path.join(DIST_DIR, cssMapFileName));
-
-  // Update sourceMappingURL in CSS file
-  const cssContent = fs.readFileSync(path.join(DIST_DIR, cssFileName), "utf8");
-  const updatedCssContent = cssContent.replace(
-    /\/\*# sourceMappingURL=main\.tmp\.css\.map \*\//,
-    `/*# sourceMappingURL=${cssMapFileName} */`,
-  );
-  fs.writeFileSync(path.join(DIST_DIR, cssFileName), updatedCssContent);
-}
-
-// Move JS sourcemap if exists
-const sourceMapPath = path.join(DIST_DIR, "main.tmp.js.map");
-if (fs.existsSync(sourceMapPath)) {
-  const jsMapFileName = `main.${jsHash}.js.map`;
-  fs.renameSync(sourceMapPath, path.join(DIST_DIR, jsMapFileName));
-
-  // Update sourceMappingURL in JS file
-  const jsContent = fs.readFileSync(path.join(DIST_DIR, jsFileName), "utf8");
-  const updatedJsContent = jsContent.replace(
-    /\/\/# sourceMappingURL=main\.tmp\.js\.map/,
-    `//# sourceMappingURL=${jsMapFileName}`,
-  );
-  fs.writeFileSync(path.join(DIST_DIR, jsFileName), updatedJsContent);
-}
 
 // Generate manifest.json
 const manifest = {
