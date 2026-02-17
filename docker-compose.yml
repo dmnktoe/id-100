@@ -155,7 +155,10 @@ services:
       - id100-network
       - nginx-proxy
     volumes:
-      - ./web:/app/web
+      - ./web/templates:/app/web/templates
+      - ./web/static/assets:/app/web/static/assets
+      - ./web/static/admin.styles.css:/app/web/static/admin.styles.css
+      - ./web/static/style.css:/app/web/static/style.css
       - ./cmd:/app/cmd
       - ./internal:/app/internal
 
