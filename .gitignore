@@ -54,7 +54,6 @@ coverage/
 # Build artifacts
 web/static/dist/
 web/static/manifest.json
-web/static/css-modules.json
 web/static/main.js
 web/static/main.js.map
 web/static/main.css

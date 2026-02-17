@@ -1,9 +1,3 @@
-const fs = require('fs');
-const path = require('path');
-
-// Store for CSS Modules mappings
-const cssModules = {};
-
 module.exports = {
   plugins: {
     'postcss-import': {
@@ -18,19 +12,6 @@ module.exports = {
           }
         }
         return id;
-      }
-    },
-    'postcss-modules': {
-      // Generate scoped class names with hash
-      generateScopedName: '[name]__[local]___[hash:base64:5]',
-      // Callback to collect CSS module mappings
-      getJSON: (cssFileName, json, outputFileName) => {
-        // Merge all class mappings
-        Object.assign(cssModules, json);
-        
-        // Write to file when processing is done
-        const outputPath = path.join(__dirname, 'web/static/css-modules.json');
-        fs.writeFileSync(outputPath, JSON.stringify(cssModules, null, 2));
       }
     },
     cssnano: {

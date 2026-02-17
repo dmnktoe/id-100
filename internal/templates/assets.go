@@ -10,8 +10,6 @@ import (
 var (
 	assetManifest     map[string]string
 	assetManifestOnce sync.Once
-	cssModules        map[string]string
-	cssModulesOnce    sync.Once
 )
 
 // LoadAssetManifest loads the asset manifest from disk
@@ -52,38 +50,4 @@ func GetAssetPath(assetName string) string {
 	}
 	// Fallback to the asset name itself
 	return "/static/" + assetName
-}
-
-// LoadCSSModules loads the CSS modules mappings from disk
-func LoadCSSModules() map[string]string {
-	cssModulesOnce.Do(func() {
-		modulesPath := "web/static/css-modules.json"
-		data, err := os.ReadFile(modulesPath)
-		if err != nil {
-			log.Printf("Warning: Could not load CSS modules from %s: %v", modulesPath, err)
-			cssModules = make(map[string]string)
-			return
-		}
-
-		if err := json.Unmarshal(data, &cssModules); err != nil {
-			log.Printf("Warning: Could not parse CSS modules: %v", err)
-			cssModules = make(map[string]string)
-			return
-		}
-
-		log.Printf("Loaded CSS modules with %d class mappings", len(cssModules))
-	})
-
-	return cssModules
-}
-
-// GetCSSClass returns the hashed CSS class name for a given class
-// If the class is not found in modules, returns the original class name
-func GetCSSClass(className string) string {
-	modules := LoadCSSModules()
-	if hashedClass, ok := modules[className]; ok {
-		return hashedClass
-	}
-	// Fallback to original class name if not found
-	return className
 }

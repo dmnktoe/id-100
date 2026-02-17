@@ -60,7 +60,6 @@ COPY web /app/web
 # Copy built frontend from frontend-builder
 COPY --from=frontend-builder /app/web/static/dist /app/web/static/dist
 COPY --from=frontend-builder /app/web/static/manifest.json /app/web/static/manifest.json
-COPY --from=frontend-builder /app/web/static/css-modules.json /app/web/static/css-modules.json
 
 # Copy startup script
 COPY scripts/startup.sh /app/scripts/startup.sh
