@@ -1,46 +1,65 @@
-{{define "enter_name.content"}}
-<div class="container upload">
-  <h2 class="page-title">Willkommen bei ID-100!</h2>
-  
-  <p class="welcome-text">
-    Du hast <strong>{{.BagName}}</strong> gescannt.<br>
-    Bitte gib deinen Namen ein, um fortzufahren.
-  </p>
+{{ define "enter_name.content" }}
+  <div class="container upload">
+    <h2 class="page-title">Willkommen bei ID-100!</h2>
 
-  <form action="/upload/set-name?token={{.Token}}" method="POST" id="nameForm" novalidate>
-    <input type="hidden" name="token" value="{{.Token}}">
-    
-    <div class="form-group">
-      <label for="playerName">Dein Name</label>
-      <input type="text" name="player_name" id="playerName" class="autocomplete-input" 
-             placeholder="z.B. Max Mustermann" minlength="2" maxlength="100">
-    </div>
+    <p class="welcome-text">
+      Du hast <strong>{{ .BagName }}</strong> gescannt.<br />
+      Bitte gib deinen Namen ein, um fortzufahren.
+    </p>
 
-    <div class="form-group">
-      <label for="playerCity">Ort</label>
-      <input type="text" name="player_city" id="playerCity" class="autocomplete-input"
-             placeholder="z.B. Wittenberg" maxlength="100" autocomplete="off">
-      <small class="form-hint">Beginne zu tippen, um Orte aus Deutschland auszuwählen</small>
-    </div>
+    <form action="/upload/set-name?token={{ .Token }}" method="POST" id="nameForm" novalidate>
+      <input type="hidden" name="token" value="{{ .Token }}" />
 
-    <div class="form-group checkbox-row">
-      <input type="checkbox" id="privacyCheckbox" name="agree_privacy">
-      <label for="privacyCheckbox">Ich bestätige, dass ich nur Bilder hochlade, die keine erkennbaren Personen ohne Einwilligung zeigen, und stimme der <a href="/datenschutz">Datenschutzerklärung</a> zu.</label>
-    </div>
-    {{if .FormError}}<div class="form-error">{{.FormError}}</div>{{end}}
+      <div class="form-group">
+        <label for="playerName">Dein Name</label>
+        <input
+          type="text"
+          name="player_name"
+          id="playerName"
+          class="autocomplete-input"
+          placeholder="z.B. Max Mustermann"
+          minlength="2"
+          maxlength="100"
+        />
+      </div>
 
-    <button type="submit" class="btn-black submit-btn" id="submitBtn">Weiter zum Upload</button>
-    
-    <!-- Validation Status Section -->
-    <div class="form-status">
-      <h4>Formular-Status:</h4>
-      <ul id="validationStatus">
-        <li id="statusName">Name: Nicht ausgefüllt</li>
-        <li id="statusCity">Ort: Nicht ausgewählt</li>
-        <li id="statusPrivacy">Datenschutz: Nicht akzeptiert</li>
-        <li id="statusButton">Submit-Button: Deaktiviert</li>
-      </ul>
-    </div>
-  </form> 
-</div>
-{{end}}
+      <div class="form-group">
+        <label for="playerCity">Ort</label>
+        <input
+          type="text"
+          name="player_city"
+          id="playerCity"
+          class="autocomplete-input"
+          placeholder="z.B. Wittenberg"
+          maxlength="100"
+          autocomplete="off"
+        />
+        <small class="form-hint">Beginne zu tippen, um Orte aus Deutschland auszuwählen</small>
+      </div>
+
+      <div class="form-group checkbox-row">
+        <input type="checkbox" id="privacyCheckbox" name="agree_privacy" />
+        <label for="privacyCheckbox"
+          >Ich bestätige, dass ich nur Bilder hochlade, die keine erkennbaren Personen ohne
+          Einwilligung zeigen, und stimme der
+          <a href="/datenschutz">Datenschutzerklärung</a> zu.</label
+        >
+      </div>
+      {{ if .FormError }}<div class="form-error">{{ .FormError }}</div>{{ end }}
+
+
+      <button type="submit" class="btn-black submit-btn" id="submitBtn">Weiter zum Upload</button>
+
+      <!-- Validation Status Section -->
+      <div class="form-status">
+        <h4>Formular-Status:</h4>
+        <ul id="validationStatus">
+          <li id="statusName">Name: Nicht ausgefüllt</li>
+          <li id="statusCity">Ort: Nicht ausgewählt</li>
+          <li id="statusPrivacy">Datenschutz: Nicht akzeptiert</li>
+          <li id="statusButton">Submit-Button: Deaktiviert</li>
+        </ul>
+      </div>
+    </form>
+  </div>
+{{ end }}

@@ -6,7 +6,7 @@
 export function initLazyImages(root?: Document | HTMLElement): void {
   const container = root || document;
   const images = Array.from(container.querySelectorAll<HTMLImageElement>("img.lazy"));
-  
+
   if (images.length === 0) return;
 
   const setPlaceholder = (img: HTMLImageElement): void => {
@@ -37,7 +37,7 @@ export function initLazyImages(root?: Document | HTMLElement): void {
         img.classList.add("loaded");
       }
     };
-    
+
     const onError = (): void => {
       // show placeholder even on error
       img.classList.add("loaded");

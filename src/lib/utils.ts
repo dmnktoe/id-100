@@ -8,5 +8,5 @@
  * @returns Error message string
  */
 export function getErrorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : 'Unbekannter Fehler';
+  return err instanceof Error ? err.message : "Unbekannter Fehler";
 }

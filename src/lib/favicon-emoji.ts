@@ -5,10 +5,10 @@
 
 // Curated emoji selection matching the 🏠🆔💯 theme
 const EMOJI_POOL = [
-  '🏠', // house
-  '🆔', // ID
-  '💯', // 100
-  '🚨' // Alert
+  "🏠", // house
+  "🆔", // ID
+  "💯", // 100
+  "🚨", // Alert
 ];
 
 /**
@@ -35,7 +35,7 @@ function getRandomEmoji(): string {
  */
 export function setRandomEmojiFavicon(): void {
   // Guard against non-DOM environments (SSR, tests)
-  if (typeof document === 'undefined' || !document.head) {
+  if (typeof document === "undefined" || !document.head) {
     return;
   }
 
@@ -44,10 +44,10 @@ export function setRandomEmojiFavicon(): void {
 
   // Find existing favicon or create new one
   let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
-  
+
   if (!link) {
-    link = document.createElement('link');
-    link.rel = 'icon';
+    link = document.createElement("link");
+    link.rel = "icon";
     document.head.appendChild(link);
   }
 

@@ -75,14 +75,8 @@ export function initDrawer(): void {
     }
 
     if (pushState) {
-      const url = pageParam
-        ? `/id/${number}?page=${pageParam}`
-        : `/id/${number}`;
-      history.pushState(
-        { drawer: true, number: number, page: pageParam } as DrawerState,
-        "",
-        url
-      );
+      const url = pageParam ? `/id/${number}?page=${pageParam}` : `/id/${number}`;
+      history.pushState({ drawer: true, number: number, page: pageParam } as DrawerState, "", url);
       panel.dataset.drawerPushed = "true";
     } else {
       // record that we did not push history for this drawer instance
@@ -98,8 +92,7 @@ export function initDrawer(): void {
     if (!card) return;
     e.preventDefault();
     const href =
-      card.getAttribute("href") ||
-      card.querySelector<HTMLAnchorElement>("a")?.getAttribute("href");
+      card.getAttribute("href") || card.querySelector<HTMLAnchorElement>("a")?.getAttribute("href");
     if (!href) return;
 
     // extract number and page parameter from href /id/:number?page=X
@@ -111,9 +104,7 @@ export function initDrawer(): void {
     const url = new URL(href, window.location.origin);
     const pageParam = url.searchParams.get("page");
 
-    const fetchUrl = pageParam
-      ? `/id/${num}?partial=1&page=${pageParam}`
-      : `/id/${num}?partial=1`;
+    const fetchUrl = pageParam ? `/id/${num}?partial=1&page=${pageParam}` : `/id/${num}?partial=1`;
 
     fetch(fetchUrl)
       .then((r) => {

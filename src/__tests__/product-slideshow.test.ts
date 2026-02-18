@@ -1,44 +1,44 @@
 /**
  * Tests for product-slideshow module
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { initProductSlideshow } from '../lib/product-slideshow'
-import Swiper from 'swiper'
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { initProductSlideshow } from "../lib/product-slideshow";
+import Swiper from "swiper";
 
 // Mock Swiper
-vi.mock('swiper', () => {
+vi.mock("swiper", () => {
   return {
-    default: vi.fn()
-  }
-})
+    default: vi.fn(),
+  };
+});
 
-vi.mock('swiper/modules', () => {
+vi.mock("swiper/modules", () => {
   return {
     Navigation: {},
     Pagination: {},
     Autoplay: {},
     EffectFade: {},
-    Keyboard: {}
-  }
-})
+    Keyboard: {},
+  };
+});
 
-vi.mock('swiper/css', () => ({}))
-vi.mock('swiper/css/navigation', () => ({}))
-vi.mock('swiper/css/pagination', () => ({}))
-vi.mock('swiper/css/effect-fade', () => ({}))
+vi.mock("swiper/css", () => ({}));
+vi.mock("swiper/css/navigation", () => ({}));
+vi.mock("swiper/css/pagination", () => ({}));
+vi.mock("swiper/css/effect-fade", () => ({}));
 
-describe('initProductSlideshow', () => {
+describe("initProductSlideshow", () => {
   beforeEach(() => {
-    document.body.innerHTML = ''
-    vi.clearAllMocks()
-  })
+    document.body.innerHTML = "";
+    vi.clearAllMocks();
+  });
 
-  it('should handle missing slideshow container gracefully', () => {
-    expect(() => initProductSlideshow()).not.toThrow()
-    expect(Swiper).not.toHaveBeenCalled()
-  })
+  it("should handle missing slideshow container gracefully", () => {
+    expect(() => initProductSlideshow()).not.toThrow();
+    expect(Swiper).not.toHaveBeenCalled();
+  });
 
-  it('should initialize Swiper when container exists', () => {
+  it("should initialize Swiper when container exists", () => {
     document.body.innerHTML = `
       <div class="swiper product-slideshow">
         <div class="swiper-wrapper">
@@ -53,24 +53,24 @@ describe('initProductSlideshow', () => {
         <div class="swiper-button-next"></div>
         <div class="swiper-pagination"></div>
       </div>
-    `
-    
-    initProductSlideshow()
-    
+    `;
+
+    initProductSlideshow();
+
     // Should initialize Swiper
     expect(Swiper).toHaveBeenCalledWith(
-      '.product-slideshow',
+      ".product-slideshow",
       expect.objectContaining({
         loop: true,
-        effect: 'fade',
+        effect: "fade",
         autoplay: expect.objectContaining({
-          delay: 4000
-        })
+          delay: 4000,
+        }),
       })
-    )
-  })
+    );
+  });
 
-  it('should configure navigation and pagination', () => {
+  it("should configure navigation and pagination", () => {
     document.body.innerHTML = `
       <div class="swiper product-slideshow">
         <div class="swiper-wrapper">
@@ -80,46 +80,46 @@ describe('initProductSlideshow', () => {
         <div class="swiper-button-next"></div>
         <div class="swiper-pagination"></div>
       </div>
-    `
-    
-    initProductSlideshow()
-    
+    `;
+
+    initProductSlideshow();
+
     expect(Swiper).toHaveBeenCalledWith(
-      '.product-slideshow',
+      ".product-slideshow",
       expect.objectContaining({
         navigation: {
-          nextEl: '.swiper-button-next',
-          prevEl: '.swiper-button-prev'
+          nextEl: ".swiper-button-next",
+          prevEl: ".swiper-button-prev",
         },
         pagination: {
-          el: '.swiper-pagination',
+          el: ".swiper-pagination",
           clickable: true,
-          dynamicBullets: true
-        }
+          dynamicBullets: true,
+        },
       })
-    )
-  })
+    );
+  });
 
-  it('should configure accessibility options', () => {
+  it("should configure accessibility options", () => {
     document.body.innerHTML = `
       <div class="swiper product-slideshow">
         <div class="swiper-wrapper">
           <div class="swiper-slide"><img src="/photo.jpg" alt="Photo"></div>
         </div>
       </div>
-    `
-    
-    initProductSlideshow()
-    
+    `;
+
+    initProductSlideshow();
+
     expect(Swiper).toHaveBeenCalledWith(
-      '.product-slideshow',
+      ".product-slideshow",
       expect.objectContaining({
         a11y: {
-          prevSlideMessage: 'Vorheriges Bild',
-          nextSlideMessage: 'Nächstes Bild',
-          paginationBulletMessage: 'Gehe zu Bild {{index}}'
-        }
+          prevSlideMessage: "Vorheriges Bild",
+          nextSlideMessage: "Nächstes Bild",
+          paginationBulletMessage: "Gehe zu Bild {{index}}",
+        },
       })
-    )
-  })
-})
+    );
+  });
+});

@@ -1,16 +1,25 @@
-{{define "request_bag.content"}}
-<div class="container content-page">
-  {{if .IsPartial}}<button class="drawer-close" aria-label="close">✕</button>{{end}}
-  <h2>✨ Ich möchte auch spielen!</h2>
-  <p>Interessiert? Hinterlasse deine E‑Mail und wir geben Bescheid, sobald ein Werkzeug frei ist.</p>
+{{ define "request_bag.content" }}
+  <div class="container content-page">
+    {{ if .IsPartial }}<button class="drawer-close" aria-label="close">✕</button>{{ end }}
+    <h2>✨ Ich möchte auch spielen!</h2>
+    <p>
+      Interessiert? Hinterlasse deine E‑Mail und wir geben Bescheid, sobald ein Werkzeug frei ist.
+    </p>
 
-  <form id="requestBagForm" class="request-form">
-    <div class="form-group">
-      <label for="requestEmail">Deine E‑Mail</label>
-      <input type="email" name="email" id="requestEmail" required placeholder="du@beispiel.de" class="autocomplete-input">
-    </div>
-    <button type="submit" class="btn-black submit-btn">anfragen</button>
-    <div id="requestResult" class="request-result"></div>
-  </form>
-</div>
-{{end}}
+    <form id="requestBagForm" class="request-form">
+      <div class="form-group">
+        <label for="requestEmail">Deine E‑Mail</label>
+        <input
+          type="email"
+          name="email"
+          id="requestEmail"
+          required
+          placeholder="du@beispiel.de"
+          class="autocomplete-input"
+        />
+      </div>
+      <button type="submit" class="btn-black submit-btn">anfragen</button>
+      <div id="requestResult" class="request-result"></div>
+    </form>
+  </div>
+{{ end }}

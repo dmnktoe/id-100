@@ -3,7 +3,7 @@
  * Handles form submissions (e.g., request bag form)
  */
 
-import { captureException, addBreadcrumb } from './sentry';
+import { captureException, addBreadcrumb } from "./sentry";
 
 export function initFormHandlers(): void {
   // Formular "werkzeug anfordern" submission handler
@@ -11,27 +11,27 @@ export function initFormHandlers(): void {
     const form = e.target as HTMLFormElement;
     if (!form || form.id !== "requestBagForm") return;
     e.preventDefault();
-    
+
     const emailInput = form.querySelector<HTMLInputElement>('input[name="email"]');
     const btn = form.querySelector<HTMLButtonElement>("button[type=submit]");
     const resultDiv = form.querySelector<HTMLDivElement>("#requestResult");
-    
+
     if (!emailInput || !btn || !resultDiv) return;
-    
+
     const email = emailInput.value.trim();
-    
+
     if (!email || !email.includes("@")) {
       resultDiv.style.display = "block";
       resultDiv.style.color = "#d32f2f";
       resultDiv.innerText = "Bitte gib eine gültige E‑Mail an.";
       return;
     }
-    
+
     btn.disabled = true;
     btn.innerText = "sende...";
-    
-    addBreadcrumb('Bag request form submitted', 'form', { email });
-    
+
+    addBreadcrumb("Bag request form submitted", "form", { email });
+
     fetch("/werkzeug-anfordern", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -50,7 +50,7 @@ export function initFormHandlers(): void {
         }
       })
       .catch((err) => {
-        captureException(err, { context: 'bag-request-form', email });
+        captureException(err, { context: "bag-request-form", email });
         resultDiv.style.display = "block";
         resultDiv.style.color = "#d32f2f";
         resultDiv.innerText = "Netzwerkfehler. Bitte versuche es erneut.";

@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  initCityAutocomplete,
-  initFormValidation,
-  resetState,
-} from "../lib/city-autocomplete";
+import { initCityAutocomplete, initFormValidation, resetState } from "../lib/city-autocomplete";
 
 // Mock city data for testing
 const mockCities = [
@@ -17,7 +13,7 @@ const mockCities = [
 // Mock Meilisearch
 vi.mock("meilisearch", () => {
   return {
-    MeiliSearch: vi.fn().mockImplementation(function() {
+    MeiliSearch: vi.fn().mockImplementation(function () {
       return {
         index: vi.fn(() => ({
           search: vi.fn(async (query: string) => {
@@ -83,9 +79,7 @@ describe("City Autocomplete - Dropdown Rendering", () => {
   it("should hide dropdown initially", () => {
     initCityAutocomplete();
 
-    const dropdown = document.querySelector(
-      ".city-dropdown"
-    ) as HTMLDivElement;
+    const dropdown = document.querySelector(".city-dropdown") as HTMLDivElement;
     expect(dropdown).toBeTruthy();
     expect(dropdown?.style.display).toBe("none");
   });
@@ -93,12 +87,8 @@ describe("City Autocomplete - Dropdown Rendering", () => {
   it("should show dropdown when typing 2 or more characters", async () => {
     initCityAutocomplete();
 
-    const cityInput = document.getElementById(
-      "playerCity"
-    ) as HTMLInputElement;
-    const dropdown = document.querySelector(
-      ".city-dropdown"
-    ) as HTMLDivElement;
+    const cityInput = document.getElementById("playerCity") as HTMLInputElement;
+    const dropdown = document.querySelector(".city-dropdown") as HTMLDivElement;
 
     // Type less than 2 characters - dropdown should stay hidden
     cityInput.value = "B";
@@ -118,9 +108,7 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     const submitBtn = document.getElementById("submitNameBtn") as HTMLButtonElement;
     const nameInput = document.getElementById("playerName") as HTMLInputElement;
     const cityInput = document.getElementById("playerCity") as HTMLInputElement;
-    const privacyCheckbox = document.getElementById(
-      "privacyCheckbox"
-    ) as HTMLInputElement;
+    const privacyCheckbox = document.getElementById("privacyCheckbox") as HTMLInputElement;
 
     // Set button disabled initially (matches real implementation)
     submitBtn.disabled = true;
@@ -142,9 +130,7 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     await new Promise((resolve) => setTimeout(resolve, 350));
 
     const dropdown = document.querySelector(".city-dropdown") as HTMLDivElement;
-    const firstItem = dropdown.querySelector(
-      ".city-dropdown-item"
-    ) as HTMLDivElement;
+    const firstItem = dropdown.querySelector(".city-dropdown-item") as HTMLDivElement;
     firstItem?.click();
     expect(submitBtn.disabled).toBe(true); // Still disabled
 
@@ -162,9 +148,7 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     const submitBtn = document.getElementById("submitNameBtn") as HTMLButtonElement;
     const nameInput = document.getElementById("playerName") as HTMLInputElement;
     const cityInput = document.getElementById("playerCity") as HTMLInputElement;
-    const privacyCheckbox = document.getElementById(
-      "privacyCheckbox"
-    ) as HTMLInputElement;
+    const privacyCheckbox = document.getElementById("privacyCheckbox") as HTMLInputElement;
 
     initCityAutocomplete();
     initFormValidation();
@@ -172,16 +156,16 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     // Fill in name
     nameInput.value = "Max Mustermann";
     nameInput.dispatchEvent(new Event("input", { bubbles: true }));
-    
+
     // Simulate city selection
     cityInput.value = "Ber";
     cityInput.dispatchEvent(new Event("input", { bubbles: true }));
     await new Promise((resolve) => setTimeout(resolve, 350));
-    
+
     const dropdown = document.querySelector(".city-dropdown") as HTMLDivElement;
     const firstItem = dropdown.querySelector(".city-dropdown-item") as HTMLDivElement;
     firstItem?.click(); // This sets citySelected to true
-    
+
     // Check privacy
     privacyCheckbox.checked = true;
     privacyCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
@@ -208,7 +192,7 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     // Only fill in name, missing city and privacy
     nameInput.value = "Max Mustermann";
     nameInput.dispatchEvent(new Event("input", { bubbles: true }));
-    
+
     // Don't select a city - citySelected should remain false
     // Don't check privacy checkbox
 
@@ -238,16 +222,16 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     // Fill in name
     nameInput.value = "Max Mustermann";
     nameInput.dispatchEvent(new Event("input", { bubbles: true }));
-    
+
     // Select city
     cityInput.value = "Ber";
     cityInput.dispatchEvent(new Event("input", { bubbles: true }));
     await new Promise((resolve) => setTimeout(resolve, 350));
-    
+
     const dropdown = document.querySelector(".city-dropdown") as HTMLDivElement;
     const firstItem = dropdown.querySelector(".city-dropdown-item") as HTMLDivElement;
     firstItem?.click();
-    
+
     // Explicitly DO NOT check privacy checkbox
     privacyCheckbox.checked = false;
 

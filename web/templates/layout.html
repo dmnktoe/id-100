@@ -1,53 +1,57 @@
-{{define "layout"}}
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Title}}</title>
-    
-    <!-- SEO Meta Tags -->
-    {{if .SEO}}
-    <meta name="description" content="{{.SEO.Description}}">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="{{.SEO.Type}}">
-    <meta property="og:url" content="{{.SEO.URL}}">
-    <meta property="og:title" content="{{.SEO.Title}}">
-    <meta property="og:description" content="{{.SEO.Description}}">
-    {{if .SEO.ImageURL}}
-    <meta property="og:image" content="{{.SEO.ImageURL}}">
-    {{end}}
-    
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="{{.SEO.URL}}">
-    <meta name="twitter:title" content="{{.SEO.Title}}">
-    <meta name="twitter:description" content="{{.SEO.Description}}">
-    {{if .SEO.ImageURL}}
-    <meta name="twitter:image" content="{{.SEO.ImageURL}}">
-    {{end}}
-    {{end}}
-    
-    <link rel="stylesheet" href="{{.AssetMainCSS}}">
-    {{if .AdditionalCSS}}
-    <link rel="stylesheet" href="/static/{{.AdditionalCSS}}">
-    {{end}}
-</head>
-<body>
-    <div class="page-wrapper">
-        {{template "header" .}}
-        
+{{ define "layout" }}
+  <!doctype html>
+  <html lang="de">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>{{ .Title }}</title>
+
+      <!-- SEO Meta Tags -->
+      {{ if .SEO }}
+        <meta name="description" content="{{ .SEO.Description }}" />
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="{{ .SEO.Type }}" />
+        <meta property="og:url" content="{{ .SEO.URL }}" />
+        <meta property="og:title" content="{{ .SEO.Title }}" />
+        <meta property="og:description" content="{{ .SEO.Description }}" />
+        {{ if .SEO.ImageURL }}
+          <meta property="og:image" content="{{ .SEO.ImageURL }}" />
+        {{ end }}
+
+
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="{{ .SEO.URL }}" />
+        <meta name="twitter:title" content="{{ .SEO.Title }}" />
+        <meta name="twitter:description" content="{{ .SEO.Description }}" />
+        {{ if .SEO.ImageURL }}
+          <meta name="twitter:image" content="{{ .SEO.ImageURL }}" />
+        {{ end }}
+      {{ end }}
+
+
+      <link rel="stylesheet" href="{{ .AssetMainCSS }}" />
+      {{ if .AdditionalCSS }}
+        <link rel="stylesheet" href="/static/{{ .AdditionalCSS }}" />
+      {{ end }}
+    </head>
+    <body>
+      <div class="page-wrapper">
+        {{ template "header" . }}
+
+
         <main class="site-content">
-            {{.ContentHTML}}
+          {{ .ContentHTML }}
         </main>
 
-        {{template "footer" .}}
+        {{ template "footer" . }}
+
 
         <!-- Drawer elements (global) -->
         <div class="drawer-backdrop" id="drawer-backdrop" aria-hidden="true"></div>
         <aside class="drawer-panel" id="drawer-panel" aria-hidden="true"></aside>
-    </div>
+      </div>
 
 <script>
   // Global configuration
@@ -59,7 +63,7 @@
   window.DATADOG_APP_ID = '{{.DatadogAppID}}';
   window.DATADOG_CLIENT_TOKEN = '{{.DatadogClientToken}}';
 </script>
-<script src="{{.AssetMainJS}}"></script>
-</body>
-</html>
-{{end}}
+      <script src="{{ .AssetMainJS }}"></script>
+    </body>
+  </html>
+{{ end }}

@@ -4,8 +4,8 @@
  * Includes Zod schema validation for form data
  */
 
-import { MeiliSearch } from 'meilisearch';
-import { z } from 'zod';
+import { MeiliSearch } from "meilisearch";
+import { z } from "zod";
 
 interface CityHit {
   id: string;
@@ -23,15 +23,17 @@ export interface ValidationResult {
 
 // Zod schema for name form validation
 const nameFormSchema = z.object({
-  player_name: z.string()
+  player_name: z
+    .string()
     .min(2, "Name muss mindestens 2 Zeichen lang sein")
     .max(100, "Name darf maximal 100 Zeichen lang sein"),
-  player_city: z.string()
+  player_city: z
+    .string()
     .min(2, "Ort muss mindestens 2 Zeichen lang sein")
     .max(100, "Ort darf maximal 100 Zeichen lang sein"),
-  agree_privacy: z.literal(true, { 
-    message: "Datenschutzerklärung muss akzeptiert werden" 
-  })
+  agree_privacy: z.literal(true, {
+    message: "Datenschutzerklärung muss akzeptiert werden",
+  }),
 });
 
 /**
@@ -39,17 +41,17 @@ const nameFormSchema = z.object({
  */
 export function validateForm(data: unknown): ValidationResult {
   const result = nameFormSchema.safeParse(data);
-  
+
   if (result.success) {
     return {
       success: true,
-      errors: []
+      errors: [],
     };
   }
-  
+
   return {
     success: false,
-    errors: result.error.issues.map((err) => err.message)
+    errors: result.error.issues.map((err) => err.message),
   };
 }
 
@@ -111,11 +113,7 @@ function positionDropdown(input: HTMLInputElement, dropdown: HTMLDivElement): vo
 /**
  * Show dropdown with results
  */
-function showDropdown(
-  input: HTMLInputElement,
-  dropdown: HTMLDivElement,
-  cities: string[]
-): void {
+function showDropdown(input: HTMLInputElement, dropdown: HTMLDivElement, cities: string[]): void {
   if (cities.length === 0) {
     dropdown.style.display = "none";
     return;
@@ -125,10 +123,7 @@ function showDropdown(
   selectedIndex = -1;
 
   dropdown.innerHTML = cities
-    .map(
-      (city, index) =>
-        `<div class="city-dropdown-item" data-index="${index}">${city}</div>`
-    )
+    .map((city, index) => `<div class="city-dropdown-item" data-index="${index}">${city}</div>`)
     .join("");
 
   positionDropdown(input, dropdown);
@@ -154,11 +149,7 @@ function hideDropdown(dropdown: HTMLDivElement): void {
 /**
  * Select a city from dropdown
  */
-function selectCity(
-  input: HTMLInputElement,
-  dropdown: HTMLDivElement,
-  cityName: string
-): void {
+function selectCity(input: HTMLInputElement, dropdown: HTMLDivElement, cityName: string): void {
   input.value = cityName;
   citySelected = true;
   input.classList.add("city-selected");
@@ -171,11 +162,7 @@ function selectCity(
 /**
  * Handle keyboard navigation
  */
-function handleKeyboard(
-  e: KeyboardEvent,
-  input: HTMLInputElement,
-  dropdown: HTMLDivElement
-): void {
+function handleKeyboard(e: KeyboardEvent, input: HTMLInputElement, dropdown: HTMLDivElement): void {
   const items = dropdown.querySelectorAll(".city-dropdown-item");
 
   if (e.key === "ArrowDown") {
@@ -384,14 +371,14 @@ export function initFormValidation(): void {
 
     const allValid = nameValid && privacyAccepted && cityValid;
     submitBtn.disabled = !allValid;
-    
+
     // Update button appearance
     if (allValid) {
       submitBtn.classList.remove("disabled");
     } else {
       submitBtn.classList.add("disabled");
     }
-    
+
     updateStatusIndicators();
   };
 
@@ -401,7 +388,7 @@ export function initFormValidation(): void {
   // Set initial disabled state
   submitBtn.disabled = true;
   submitBtn.classList.add("disabled");
-  
+
   // Prevent form submission if not valid
   if (form) {
     form.addEventListener("submit", (e) => {
@@ -409,17 +396,17 @@ export function initFormValidation(): void {
       const privacyAccepted = privacyCheckbox.checked;
       const cityValid = citySelected;
       const allValid = nameValid && privacyAccepted && cityValid;
-      
+
       if (allValid) {
         return true;
       }
-      
+
       e.preventDefault();
       alert("Bitte fülle alle Felder korrekt aus und wähle einen Ort aus der Liste!");
       return false;
     });
   }
-  
+
   // Initialize status indicators
   updateStatusIndicators();
 }
@@ -437,10 +424,10 @@ function updateSubmitButton(submitBtn: HTMLButtonElement | null): void {
 
   const nameValid = nameInput.value.trim().length >= 2;
   const privacyAccepted = privacyCheckbox.checked;
-  
+
   const allValid = nameValid && privacyAccepted && citySelected;
   submitBtn.disabled = !allValid;
-  
+
   // Update button appearance
   if (allValid) {
     submitBtn.classList.remove("disabled");
@@ -456,58 +443,58 @@ function updateStatusIndicators(): void {
   const nameInput = document.getElementById("playerName") as HTMLInputElement;
   const privacyCheckbox = document.getElementById("privacyCheckbox") as HTMLInputElement;
   const submitBtn = document.querySelector(".submit-btn") as HTMLButtonElement;
-  
+
   const statusName = document.getElementById("statusName");
   const statusCity = document.getElementById("statusCity");
   const statusPrivacy = document.getElementById("statusPrivacy");
   const statusButton = document.getElementById("statusButton");
-  
+
   if (!nameInput || !privacyCheckbox || !submitBtn) return;
-  
+
   const nameValid = nameInput.value.trim().length >= 2;
   const privacyAccepted = privacyCheckbox.checked;
-  
+
   // Update name status
   if (statusName) {
     if (nameValid) {
-      statusName.innerHTML = '✅ Name: Gültig';
-      statusName.style.color = 'green';
+      statusName.innerHTML = "✅ Name: Gültig";
+      statusName.style.color = "green";
     } else {
-      statusName.innerHTML = '❌ Name: Nicht ausgefüllt';
-      statusName.style.color = 'red';
+      statusName.innerHTML = "❌ Name: Nicht ausgefüllt";
+      statusName.style.color = "red";
     }
   }
-  
+
   // Update city status
   if (statusCity) {
     if (citySelected) {
-      statusCity.innerHTML = '✅ Ort: Ausgewählt';
-      statusCity.style.color = 'green';
+      statusCity.innerHTML = "✅ Ort: Ausgewählt";
+      statusCity.style.color = "green";
     } else {
-      statusCity.innerHTML = '❌ Ort: Nicht ausgewählt';
-      statusCity.style.color = 'red';
+      statusCity.innerHTML = "❌ Ort: Nicht ausgewählt";
+      statusCity.style.color = "red";
     }
   }
-  
+
   // Update privacy status
   if (statusPrivacy) {
     if (privacyAccepted) {
-      statusPrivacy.innerHTML = '✅ Datenschutz: Akzeptiert';
-      statusPrivacy.style.color = 'green';
+      statusPrivacy.innerHTML = "✅ Datenschutz: Akzeptiert";
+      statusPrivacy.style.color = "green";
     } else {
-      statusPrivacy.innerHTML = '❌ Datenschutz: Nicht akzeptiert';
-      statusPrivacy.style.color = 'red';
+      statusPrivacy.innerHTML = "❌ Datenschutz: Nicht akzeptiert";
+      statusPrivacy.style.color = "red";
     }
   }
-  
+
   // Update button status
   if (statusButton) {
     if (!submitBtn.disabled) {
-      statusButton.innerHTML = '✅ Submit-Button: Aktiviert';
-      statusButton.style.color = 'green';
+      statusButton.innerHTML = "✅ Submit-Button: Aktiviert";
+      statusButton.style.color = "green";
     } else {
-      statusButton.innerHTML = '❌ Submit-Button: Deaktiviert';
-      statusButton.style.color = 'red';
+      statusButton.innerHTML = "❌ Submit-Button: Deaktiviert";
+      statusButton.style.color = "red";
     }
   }
 }
