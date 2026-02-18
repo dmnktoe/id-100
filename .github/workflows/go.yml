@@ -1,7 +1,7 @@
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Go
+name: CI — Frontend & Backend 🚀
 
 on:
   push:
@@ -10,35 +10,44 @@ on:
     branches: ["main"]
 
 jobs:
-  build:
+  frontend:
+    name: Frontend · Build & Test 🟦
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository ✅
+        uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.24"
-
-      - name: Set up Node.js
+      - name: Set up Node.js 🔧
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Install frontend dependencies
-        run: npm install
+      - name: Install dependencies 📦
+        run: npm ci
 
-      - name: Build frontend
+      - name: Build frontend 🏗️
         run: npm run build
 
-      - name: Test TypeScript
+      - name: Test TypeScript 🧪
         run: npm test
 
-      - name: Build backend
+  backend:
+    name: Backend · Build & Test 🐹
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository ✅
+        uses: actions/checkout@v4
+
+      - name: Set up Go 🐹
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
+
+      - name: Build backend 🏗️
         run: |
           VERSION=$(git describe --tags --always --dirty)
           echo "Building backend (version=$VERSION)"
           go build -ldflags "-X 'id-100/internal/version.Version=${VERSION}'" -o bin/id-100 ./cmd/id-100
 
-      - name: Test Go
+      - name: Test Go 🧪
         run: go test -v ./...
