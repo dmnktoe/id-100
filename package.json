@@ -11,7 +11,10 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "format": "prettier --write \"src/**/*.{ts,css,js}\" \"web/templates/**/*.html\""
+    "format": "prettier --write \"src/**/*.{ts,css,js}\" \"web/templates/**/*.html\"",
+    "format:check": "prettier --check \"src/**/*.{ts,css,js}\" \"web/templates/**/*.html\"",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run format:check"
   },
   "keywords": [],
   "author": "",

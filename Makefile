@@ -1,7 +1,7 @@
 # Makefile for id-100 development and Docker operations
 # Usage: make <target>
 
-.PHONY: help run build build-all build-frontend test fmt vet clean
+.PHONY: help run build build-all build-frontend test fmt vet check clean
 .PHONY: docker-build docker-up docker-down docker-restart docker-logs docker-clean
 .PHONY: docker-dev-up docker-dev-down docker-dev-restart docker-dev-logs docker-dev-clean docker-dev-rebuild
 
@@ -20,6 +20,7 @@ help:
 	@echo "    test             - Run Go tests"
 	@echo "    fmt              - Format Go code"
 	@echo "    vet              - Run Go vet"
+	@echo "    check            - Run TypeScript typecheck + Prettier check"
 	@echo "    clean            - Remove build artifacts"
 	@echo ""
 	@echo "  Docker Compose (Production):"
@@ -62,6 +63,9 @@ fmt:
 
 vet:
 	go vet ./...
+
+check:
+	npm run check
 
 clean:
 	rm -f bin/id-100
