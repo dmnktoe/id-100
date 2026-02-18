@@ -1,9 +1,16 @@
 {
-  "printWidth": 80,
+  "printWidth": 100,
   "tabWidth": 2,
   "useTabs": false,
   "singleQuote": false,
   "trailingComma": "es5",
-  "bracketSameLine": false,
-  "htmlWhitespaceSensitivity": "ignore"
+  "plugins": ["prettier-plugin-go-template"],
+  "overrides": [
+    {
+      "files": ["**/*.html"],
+      "options": {
+        "parser": "go-template"
+      }
+    }
+  ]
 }

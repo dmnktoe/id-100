@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "format": "prettier --write \"src/**/*.{ts,css,js}\" && js-beautify -r \"web/templates/**/*.html\" --indent-size 2"
+    "format": "prettier --write \"src/**/*.{ts,css,js}\" \"web/templates/**/*.html\""
   },
   "keywords": [],
   "author": "",
@@ -35,7 +35,7 @@
     "postcss-import": "^16.1.1",
     "typescript": "^5.3.0",
     "vitest": "^4.0.18",
-    "prettier": "^2.8.8",
-    "js-beautify": "^1.14.0"
+    "prettier": "^3.0.0",
+    "prettier-plugin-go-template": "^0.0.15"
   }
 }
