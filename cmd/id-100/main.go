@@ -53,7 +53,7 @@ func main() {
 	}
 
 	// Load and set up templates
-	t := templates.New()
+	t := templates.New(cfg)
 	e.Renderer = t
 
 	// Register routes
