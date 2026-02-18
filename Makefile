@@ -58,6 +58,7 @@ test:
 
 fmt:
 	go fmt ./...
+	npm run format
 
 vet:
 	go vet ./...
