@@ -201,7 +201,6 @@ describe("City Autocomplete - Dropdown Rendering", () => {
 
     const form = document.getElementById("nameForm") as HTMLFormElement;
     const nameInput = document.getElementById("playerName") as HTMLInputElement;
-    const privacyCheckbox = document.getElementById("privacyCheckbox") as HTMLInputElement;
 
     initCityAutocomplete();
     initFormValidation();
@@ -218,6 +217,45 @@ describe("City Autocomplete - Dropdown Rendering", () => {
     form.dispatchEvent(submitEvent);
 
     // Form submission should be prevented
+    expect(submitEvent.defaultPrevented).toBe(true);
+    expect(window.alert).toHaveBeenCalledWith(
+      "Bitte fülle alle Felder korrekt aus und wähle einen Ort aus der Liste!"
+    );
+  });
+
+  it("should prevent form submission when privacy checkbox is not checked", async () => {
+    // Mock window.alert
+    window.alert = vi.fn();
+
+    const form = document.getElementById("nameForm") as HTMLFormElement;
+    const nameInput = document.getElementById("playerName") as HTMLInputElement;
+    const cityInput = document.getElementById("playerCity") as HTMLInputElement;
+    const privacyCheckbox = document.getElementById("privacyCheckbox") as HTMLInputElement;
+
+    initCityAutocomplete();
+    initFormValidation();
+
+    // Fill in name
+    nameInput.value = "Max Mustermann";
+    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+    
+    // Select city
+    cityInput.value = "Ber";
+    cityInput.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    
+    const dropdown = document.querySelector(".city-dropdown") as HTMLDivElement;
+    const firstItem = dropdown.querySelector(".city-dropdown-item") as HTMLDivElement;
+    firstItem?.click();
+    
+    // Explicitly DO NOT check privacy checkbox
+    privacyCheckbox.checked = false;
+
+    // Try to submit the form
+    const submitEvent = new Event("submit", { bubbles: true, cancelable: true });
+    form.dispatchEvent(submitEvent);
+
+    // Form submission should be prevented because privacy is not checked
     expect(submitEvent.defaultPrevented).toBe(true);
     expect(window.alert).toHaveBeenCalledWith(
       "Bitte fülle alle Felder korrekt aus und wähle einen Ort aus der Liste!"

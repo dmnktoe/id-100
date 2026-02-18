@@ -29,10 +29,8 @@ const nameFormSchema = z.object({
   player_city: z.string()
     .min(2, "Ort muss mindestens 2 Zeichen lang sein")
     .max(100, "Ort darf maximal 100 Zeichen lang sein"),
-  agree_privacy: z.literal(true, {
-    errorMap: () => ({ 
-      message: "Datenschutzerklärung muss akzeptiert werden" 
-    })
+  agree_privacy: z.literal(true, { 
+    message: "Datenschutzerklärung muss akzeptiert werden" 
   })
 });
 
@@ -51,7 +49,7 @@ export function validateForm(data: unknown): ValidationResult {
   
   return {
     success: false,
-    errors: result.error.errors.map(err => err.message)
+    errors: result.error.issues.map((err) => err.message)
   };
 }
 
