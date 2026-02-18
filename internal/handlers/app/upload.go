@@ -207,6 +207,10 @@ func UploadPostHandler(c echo.Context) error {
 		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
 	}
 
+	// Emit a structured informational log to Sentry (requires EnableLogs=true)
+	// This will be correlated with the current request's trace/context.
+	sentryhelper.Logger(c).Info().Emitf("upload success: contribution=%d derive=%d token=%d player=%s", contributionID, deriveNumber, tokenID, currentPlayer)
+
 	// Redirect back to the upload page
 	redirectURL := "/upload?uploaded=1"
 	originalToken := c.Request().URL.Query().Get("token")
