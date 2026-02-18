@@ -25,6 +25,12 @@ jobs:
       - name: Install dependencies 📦
         run: npm install
 
+      - name: TypeScript typecheck 🔍
+        run: npm run typecheck
+
+      - name: Prettier format check ✨
+        run: npm run format:check
+
       - name: Build frontend 🏗️
         run: npm run build
 
