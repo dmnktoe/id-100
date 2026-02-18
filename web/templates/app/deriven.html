@@ -1,148 +1,85 @@
-{{ define "ids.content" }}
-  <div class="container">
-    <div class="page-header">
-      <h2 class="page-title">Index: 1-100</h2>
-
-      {{ if .Cities }}
-        <div class="filter-section">
-          <label for="cityFilter" class="filter-label">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M8 0C5.24 0 3 2.24 3 5c0 3.75 5 11 5 11s5-7.25 5-11c0-2.76-2.24-5-5-5zm0 7.5c-1.38 0-2.5-1.12-2.5-2.5S6.62 2.5 8 2.5s2.5 1.12 2.5 2.5S9.38 7.5 8 7.5z"
-                fill="currentColor"
-              />
-            </svg>
-            Ort filtern
-          </label>
-          <select
-            id="cityFilter"
-            class="city-filter-dropdown"
-            onchange="window.location.href=this.value"
-          >
-            <option value="/" {{ if not .SelectedCity }}selected{{ end }}>
-              Alle Orte ({{ .FooterStats.TotalContributions }} Beiträge)
-            </option>
-            {{ range .Cities }}
-              <option value="/?city={{ . }}" {{ if eq $.SelectedCity . }}selected{{ end }}>
-                {{ . }}
-              </option>
-            {{ end }}
-          </select>
-          {{ if .SelectedCity }}
-            <a href="/" class="filter-clear" title="Filter entfernen">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 4L4 12M4 4l8 8"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                />
-              </svg>
-            </a>
-          {{ end }}
+{{define "ids.content"}}
+    <div class="container">
+        <div class="page-header">
+            <h2 class="page-title">Index: 1-100</h2>
+            
+            {{if .Cities}}
+            <div class="filter-section">
+                <label for="cityFilter" class="filter-label">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 0C5.24 0 3 2.24 3 5c0 3.75 5 11 5 11s5-7.25 5-11c0-2.76-2.24-5-5-5zm0 7.5c-1.38 0-2.5-1.12-2.5-2.5S6.62 2.5 8 2.5s2.5 1.12 2.5 2.5S9.38 7.5 8 7.5z" fill="currentColor"/>
+                    </svg>
+                    Ort filtern
+                </label>
+                <select id="cityFilter" class="city-filter-dropdown" onchange="window.location.href=this.value">
+                    <option value="/" {{if not .SelectedCity}}selected{{end}}>Alle Orte ({{.FooterStats.TotalContributions}} Beiträge)</option>
+                    {{range .Cities}}
+                        <option value="/?city={{.}}" {{if eq $.SelectedCity .}}selected{{end}}>{{.}}</option>
+                    {{end}}
+                </select>
+                {{if .SelectedCity}}
+                    <a href="/" class="filter-clear" title="Filter entfernen">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </a>
+                {{end}}
+            </div>
+            {{end}}
         </div>
-      {{ end }}
-    </div>
+        
+        <div class="id-grid">
+            {{range .Deriven}}
+            <a href="/id/{{.Number}}?page={{$.CurrentPage}}{{if $.SelectedCity}}&city={{$.SelectedCity}}{{end}}" class="id-card overlay-{{.PointsTier}}">
+                <div class="card-image-box">
+                    {{if .ImageUrl}}
+                        <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="{{.Title}}">
+                    {{else}}
+                        <div class="no-image">Kein Bild</div>
+                    {{end}}
 
-    <div class="id-grid">
-      {{ range .Deriven }}
-        <a
-          href="/id/{{ .Number }}?page={{ $.CurrentPage }}{{ if $.SelectedCity }}
-            &city={{ $.SelectedCity }}
-          {{ end }}"
-          class="id-card overlay-{{ .PointsTier }}"
-        >
-          <div class="card-image-box">
-            {{ if .ImageUrl }}
-              <img
-                class="card-img lazy blur-up"
-                data-src="{{ .ImageUrl }}"
-                data-lqip="{{ .ImageLqip }}"
-                src="{{ if .ImageLqip }}
-                  {{ .ImageLqip }}
-                {{ else }}
-                  data:image/svg+xml;utf8,<svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="10"
-                    height="6"
-                  />
-                {{ end }}"
-                loading="lazy"
-                alt="{{ .Title }}"
-              />
-            {{ else }}
-              <div class="no-image">Kein Bild</div>
-            {{ end }}
+                    <!-- points badge (top-left) -->
+                    <div class="points-badge points-tier-{{.PointsTier}}">
+                        <img src="/static/assets/images/ui/points_indicator_{{.PointsTier}}.png" alt="{{.Points}} Punkte">
+                    </div>
+                    
+                    <div class="contrib-badge">
+                        {{.ContribCount}}x gelöst
+                    </div>
+                </div>
 
+                <div class="card-content">
+                    <h3 class="card-title">🆔 {{.Number}}</h3>
+                    <p class="card-desc">{{.Description}}</p>
+                </div>
+            </a>
+            {{end}}
+        </div>
 
-            <!-- points badge (top-left) -->
-            <div class="points-badge points-tier-{{ .PointsTier }}">
-              <img
-                src="/static/assets/images/ui/points_indicator_{{ .PointsTier }}.png"
-                alt="{{ .Points }} Punkte"
-              />
+        <nav class="pagination">
+            {{if .HasPrev}}
+                <a href="/?page={{.PrevPage}}{{if .SelectedCity}}&city={{.SelectedCity}}{{end}}" class="pagination-btn">←<span class="pagination-label"> Zurück</span></a>
+            {{else}}
+                <span class="pagination-btn disabled">←<span class="pagination-label"> Zurück</span></span>
+            {{end}}
+
+            <div class="page-numbers">
+                {{range .Pages}}
+                    {{if .IsDots}}
+                        <span class="page-dots">…</span>
+                    {{else if .IsCurrent}}
+                        <span class="page-number active">{{.Number}}</span>
+                    {{else}}
+                        <a href="/?page={{.Number}}{{if $.SelectedCity}}&city={{$.SelectedCity}}{{end}}" class="page-number">{{.Number}}</a>
+                    {{end}}
+                {{end}}
             </div>
 
-            <div class="contrib-badge">{{ .ContribCount }}x gelöst</div>
-          </div>
-
-          <div class="card-content">
-            <h3 class="card-title">🆔 {{ .Number }}</h3>
-            <p class="card-desc">{{ .Description }}</p>
-          </div>
-        </a>
-      {{ end }}
+            {{if .HasNext}}
+                <a href="/?page={{.NextPage}}{{if .SelectedCity}}&city={{.SelectedCity}}{{end}}" class="pagination-btn"><span class="pagination-label">Weiter </span>→</a>
+            {{else}}
+                <span class="pagination-btn disabled"><span class="pagination-label">Weiter </span>→</span>
+            {{end}}
+        </nav>
     </div>
-
-    <nav class="pagination">
-      {{ if .HasPrev }}
-        <a
-          href="/?page={{ .PrevPage }}{{ if .SelectedCity }}&city={{ .SelectedCity }}{{ end }}"
-          class="pagination-btn"
-          >←<span class="pagination-label"> Zurück</span></a
-        >
-      {{ else }}
-        <span class="pagination-btn disabled">←<span class="pagination-label"> Zurück</span></span>
-      {{ end }}
-
-
-      <div class="page-numbers">
-        {{ range .Pages }}
-          {{ if .IsDots }}
-            <span class="page-dots">…</span>
-          {{ else if .IsCurrent }}
-            <span class="page-number active">{{ .Number }}</span>
-          {{ else }}
-            <a
-              href="/?page={{ .Number }}{{ if $.SelectedCity }}&city={{ $.SelectedCity }}{{ end }}"
-              class="page-number"
-              >{{ .Number }}</a
-            >
-          {{ end }}
-        {{ end }}
-      </div>
-
-      {{ if .HasNext }}
-        <a
-          href="/?page={{ .NextPage }}{{ if .SelectedCity }}&city={{ .SelectedCity }}{{ end }}"
-          class="pagination-btn"
-          ><span class="pagination-label">Weiter </span>→</a
-        >
-      {{ else }}
-        <span class="pagination-btn disabled"><span class="pagination-label">Weiter </span>→</span>
-      {{ end }}
-    </nav>
-  </div>
-{{ end }}
+{{end}}

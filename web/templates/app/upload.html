@@ -1,118 +1,65 @@
-{{ define "upload.content" }}
-  <div class="container upload">
-    <div class="current-player">
-      {{ if .CurrentPlayer }}👤 {{ .CurrentPlayer }}{{ end }}
-      {{ if .CurrentPlayer }}
-        <button class="btn-end-session" onclick="endSession()">Session beenden</button>
-      {{ end }}
-    </div>
-    <h2 class="page-title">Dokumentation hochladen</h2>
+{{define "upload.content"}}
+<div class="container upload">
+  <div class="current-player">
+    {{if .CurrentPlayer}}👤 {{.CurrentPlayer}}{{end}}
+    {{if .CurrentPlayer}}<button class="btn-end-session" onclick="endSession()">Session beenden</button>{{end}}
+  </div>
+  <h2 class="page-title">Dokumentation hochladen</h2>
 
-    <form
-      action="/upload?token={{ .Token }}"
-      method="POST"
-      enctype="multipart/form-data"
-      id="uploadForm"
-    >
-      <input type="hidden" name="token" value="{{ .Token }}" />
+  <form action="/upload?token={{.Token}}" method="POST" enctype="multipart/form-data" id="uploadForm">
+      <input type="hidden" name="token" value="{{.Token}}">
       <div class="form-group">
         <label for="deriveInput">Aufgabe</label>
         <select name="derive_number" id="deriveInput" class="autocomplete-input" required>
-          <option value="" disabled {{ if not .SelectedNumber }}selected{{ end }}>
-            Bitte wählen...
-          </option>
-          {{ range .Deriven }}
-            <option
-              value="{{ .Number }}"
-              {{ if index $.UploadedNumbers (printf "%d" .Number) }}
-                disabled class="uploaded" title="Du hast bereits hochgeladen"
-              {{ end }}
-              {{ if eq $.SelectedNumber (printf "%d" .Number) }}selected{{ end }}
-            >
-              🆔
-              {{ .Number }}{{ if index $.UploadedNumbers (printf "%d" .Number) }}
-                (hast du schon bearbeitet)
-              {{ end }}
-            </option>
-          {{ end }}
+          <option value="" disabled {{if not .SelectedNumber}}selected{{end}}>Bitte wählen...</option>
+          {{range .Deriven}}
+          <option value="{{.Number}}" {{if index $.UploadedNumbers (printf "%d" .Number)}}disabled class="uploaded" title="Du hast bereits hochgeladen"{{end}} {{if eq $.SelectedNumber (printf "%d" .Number)}}selected{{end}}>🆔 {{.Number}}{{if index $.UploadedNumbers (printf "%d" .Number)}} (hast du schon bearbeitet){{end}}</option>
+          {{end}}
         </select>
-        <small class="form-note"
-          >Für ausgegraute IDs existiert bereits eine Dokumentation von dir.</small
-        >
+        <small class="form-note">Für ausgegraute IDs existiert bereits eine Dokumentation von dir.</small>
       </div>
 
       <div class="form-group">
         <label>Bild</label>
         <div id="drop-zone">
           <span id="drop-text">Bild ablegen oder klicken</span>
-          <input type="file" name="image" id="fileInput" hidden accept="image/*" required />
-          <img id="preview" src="#" alt="Preview" />
+          <input type="file" name="image" id="fileInput" hidden accept="image/*" required>
+          <img id="preview" src="#" alt="Preview">
         </div>
       </div>
 
       <div class="form-group">
         <label for="commentInput">Kurzer Kommentar (optional, max. 100 Zeichen)</label>
-        <input
-          type="text"
-          name="comment"
-          id="commentInput"
-          class="form-input"
-          maxlength="100"
-          placeholder="z.B. Ort, Besonderheit, ..."
-        />
+        <input type="text" name="comment" id="commentInput" class="form-input" maxlength="100" placeholder="z.B. Ort, Besonderheit, ...">
         <small class="form-note"><span id="charCount">0</span>/100</small>
       </div>
 
       <button type="submit" class="btn-black submit-btn" id="submitBtn">Hochladen</button>
     </form>
 
-    <!-- Punktzahl -->
-    <div class="score-display">
-      <p class="score-text">
-        Deine Punktzahl: <strong class="score-value">{{ .TotalPoints }}</strong>
-      </p>
-    </div>
+  <!-- Punktzahl -->
+  <div class="score-display">
+    <p class="score-text">Deine Punktzahl: <strong class="score-value">{{.TotalPoints}}</strong></p>
+  </div>
 
-    <!-- Session uploads -->
-    {{ if .SessionContribs }}
-      <div class="session-uploads">
-        <h3>Deine Uploads in dieser Session</h3>
-        <div class="session-grid">
-          {{ range .SessionContribs }}
-            <div class="session-card" id="session-upload-{{ index . "id" }}">
-              <div class="session-img-wrapper">
-                <img
-                  class="lazy blur-up"
-                  data-src="{{ index . "image_url" }}"
-                  data-lqip="{{ index . "image_lqip" }}"
-                  src="{{ if index . "image_lqip" }}
-                    {{ index . "image_lqip" }}
-                  {{ else }}
-                    data:image/svg+xml;utf8,<svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="10"
-                      height="6"
-                    />
-                  {{ end }}"
-                  loading="lazy"
-                  alt="upload"
-                />
-              </div>
-              <div class="session-meta">
-                🆔
-                {{ index . "number" }}
-                <button
-                  class="session-delete-btn"
-                  onclick="deleteSessionUpload({{ index . "id" }}, this)"
-                  title="Löschen"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          {{ end }}
+  <!-- Session uploads -->
+  {{if .SessionContribs}}
+  <div class="session-uploads">
+    <h3>Deine Uploads in dieser Session</h3>
+    <div class="session-grid">
+      {{range .SessionContribs}}
+      <div class="session-card" id="session-upload-{{index . "id"}}">
+        <div class="session-img-wrapper">
+          <img class="lazy blur-up" data-src="{{index . "image_url"}}" data-lqip="{{index . "image_lqip"}}" src="{{if index . "image_lqip"}}{{index . "image_lqip"}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="upload">
+        </div>
+        <div class="session-meta">
+          🆔 {{index . "number"}}
+          <button class="session-delete-btn" onclick="deleteSessionUpload({{index . "id"}}, this)" title="Löschen">🗑️</button>
         </div>
       </div>
-    {{ end }}
+      {{end}}
+    </div>
   </div>
-{{ end }}
+  {{end}}
+</div>
+{{end}}

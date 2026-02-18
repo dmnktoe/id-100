@@ -1,189 +1,150 @@
-{{ define "admin_dashboard.content" }}
-  <div class="admin-container">
-    <div class="admin-header">
-      <h1>🔧 Admin Dashboard</h1>
-      <p>Token-Verwaltung und Upload-Übersicht</p>
-    </div>
+{{define "admin_dashboard.content"}}
 
-    <div class="admin-tabs">
-      <a href="/admin?tab=tokens" class="admin-tab{{ if eq .Tab "tokens" }}active{{ end }}"
-        >📱 Werkzeug & Tokens</a
-      >
-      <a href="/admin?tab=requests" class="admin-tab{{ if eq .Tab "requests" }}active{{ end }}"
-        >👜 Werkzeug-Anfragen</a
-      >
-      <a href="/admin?tab=contribs" class="admin-tab{{ if eq .Tab "contribs" }}active{{ end }}"
-        >📸 Neueste Contributions</a
-      >
-    </div>
-
-    {{ if eq .Tab "tokens" }}
-      <div id="tab-tokens" class="admin-section">
-        <h2>➕ Neues Werkzeug erstellen</h2>
-        <div class="token-create-form">
-          <form id="createTokenForm" class="token-create-grid">
-            <div>
-              <label>Werkzeugname</label>
-              <input type="text" id="bagName" placeholder="z.B. Werkzeug #6" required />
-            </div>
-            <div>
-              <label>Max. Uploads</label>
-              <input type="number" id="maxUploads" value="100" min="1" required />
-            </div>
-            <button type="submit" class="btn-admin btn-activate">✨ Erstellen</button>
-          </form>
-          <div id="createResult" class="create-result"></div>
-        </div>
-
-        <h2>📱 Werkzeug & Tokens</h2>
-        {{ range .Tokens }}
-          <div class="token-card{{ if not .IsActive }}inactive{{ end }}">
-            <div class="token-header">
-              <h3>{{ .BagName }}{{ if .CurrentPlayer }}- {{ .CurrentPlayer }}{{ end }}</h3>
-              <span class="token-status{{ if .IsActive }}active{{ else }}inactive{{ end }}">
-                {{ if .IsActive }}● aktiv{{ else }}○ inaktiv{{ end }}
-              </span>
-            </div>
-
-            <div class="token-meta">
-              <div class="token-meta-item">
-                <strong>Uploads</strong>
-                <input
-                  type="number"
-                  id="quota-{{ .ID }}"
-                  value="{{ .MaxUploads }}"
-                  min="1"
-                  class="token-quota-input"
-                />
-                <span class="token-quota-remaining">/ {{ .TotalUploads }} genutzt</span>
-              </div>
-              <div class="token-meta-item">
-                <strong>Verbleibend</strong>
-                {{ .Remaining }}
-              </div>
-              <div class="token-meta-item">
-                <strong>Sessions</strong>
-                #{{ .TotalSessions }}
-              </div>
-              <div class="token-meta-item">
-                <strong>Gestartet</strong>
-                {{ .SessionStartedAt.Format "02.01. 15:04" }}
-              </div>
-            </div>
-
-            <div class="token-actions">
-              <button class="btn-admin btn-reset" onclick="resetToken({{ .ID }}, '{{ .BagName }}')">
-                🔄 Zurücksetzen
-              </button>
-              <button class="btn-admin btn-update" onclick="updateQuota({{ .ID }})">
-                💾 Kontingent speichern
-              </button>
-              <button
-                class="btn-admin btn-qr-svg"
-                onclick="downloadQR({{ .ID }}, '{{ .BagName }}', 'svg')"
-              >
-                📥 QR (SVG)
-              </button>
-              <button
-                class="btn-admin btn-qr-png"
-                onclick="downloadQR({{ .ID }}, '{{ .BagName }}', 'png')"
-              >
-                📥 QR (PNG)
-              </button>
-              <button
-                class="btn-admin btn-copy-url"
-                onclick="copyUploadURL('{{ .Token }}', '{{ .BagName }}')"
-              >
-                🔗 URL kopieren
-              </button>
-              {{ if .IsActive }}
-                <button
-                  class="btn-admin btn-deactivate"
-                  onclick="deactivateToken({{ .ID }}, '{{ .BagName }}')"
-                >
-                  🚫 Deaktivieren
-                </button>
-              {{ end }}
-            </div>
-          </div>
-        {{ end }}
-      </div>
-    {{ end }}
-
-    {{ if eq .Tab "requests" }}
-      <div id="tab-requests" class="admin-section">
-        <h2>👜 Werkzeug-Anfragen</h2>
-        <div class="filter-controls">
-          <a
-            href="/admin?tab=requests&bag_status=all"
-            class="filter-btn {{ if or (not .BagStatus) (eq .BagStatus "all") }}active{{ end }}"
-            >Alle ({{ len .BagRequests }})</a
-          >
-          <a
-            href="/admin?tab=requests&bag_status=open"
-            class="filter-btn {{ if eq .BagStatus "open" }}active{{ end }}"
-            >Offen ({{ .OpenCount }})</a
-          >
-          <a
-            href="/admin?tab=requests&bag_status=handled"
-            class="filter-btn {{ if eq .BagStatus "handled" }}active{{ end }}"
-            >Erledigt ({{ .HandledCount }})</a
-          >
-        </div>
-
-        <div id="bagRequestsContainer" class="bag-requests-container">
-          {{ if .BagRequests }}
-            <ul class="bag-requests-list">
-              {{ range .BagRequests }}
-                <li class="bag-request-item">
-                  <div>
-                    <strong class="bag-request-email">{{ .Email }}</strong>
-                    <div class="bag-request-date">{{ .CreatedAt.Format "02.01.2006 15:04" }}</div>
-                  </div>
-                  <div>
-                    {{ if .Handled }}
-                      <span class="bag-request-handled">✅ Erledigt</span>
-                    {{ else }}
-                      <button
-                        class="btn-admin btn-reset"
-                        onclick="markBagRequestDone({{ .ID }}, this)"
-                      >
-                        ✅ Erledigt
-                      </button>
-                    {{ end }}
-                  </div>
-                </li>
-              {{ end }}
-            </ul>
-          {{ else }}
-            <div class="bag-requests-empty">Noch keine Anfragen.</div>
-          {{ end }}
-        </div>
-      </div>
-    {{ end }}
-
-    {{ if eq .Tab "contribs" }}
-      <div id="tab-contribs" class="admin-section">
-        <h2>📸 Neueste Contributions</h2>
-        <div class="contrib-grid">
-          {{ range .RecentContribs }}
-            <div class="contrib-card" id="contrib-{{ .ID }}">
-              <img src="{{ .ImageUrl }}" alt="Contribution" loading="lazy" />
-              <div class="contrib-meta">
-                <div>{{ .PlayerName }}</div>
-                <div>ID #{{ .DeriveNumber }}</div>
-              </div>
-              <button
-                class="btn-admin btn-delete"
-                onclick="deleteContribution({{ .ID }}, this)"
-                title="Löschen"
-              >
-                🗑️ Löschen
-              </button>
-            </div>
-          {{ end }}
-        </div>
-      </div>
-    {{ end }}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>🔧 Admin Dashboard</h1>
+    <p>Token-Verwaltung und Upload-Übersicht</p>
   </div>
-{{ end }}
+
+  <div class="admin-tabs">
+    <a href="/admin?tab=tokens" class="admin-tab{{if eq .Tab "tokens"}} active{{end}}">📱 Werkzeug & Tokens</a>
+    <a href="/admin?tab=requests" class="admin-tab{{if eq .Tab "requests"}} active{{end}}">👜 Werkzeug-Anfragen</a>
+    <a href="/admin?tab=contribs" class="admin-tab{{if eq .Tab "contribs"}} active{{end}}">📸 Neueste Contributions</a>
+  </div>
+
+  {{if eq .Tab "tokens"}}
+  <div id="tab-tokens" class="admin-section">
+    <h2>➕ Neues Werkzeug erstellen</h2>
+    <div class="token-create-form">
+      <form id="createTokenForm" class="token-create-grid">
+        <div>
+          <label>Werkzeugname</label>
+          <input type="text" id="bagName" placeholder="z.B. Werkzeug #6" required>
+        </div>
+        <div>
+          <label>Max. Uploads</label>
+          <input type="number" id="maxUploads" value="100" min="1" required>
+        </div>
+        <button type="submit" class="btn-admin btn-activate">
+          ✨ Erstellen
+        </button>
+      </form>
+      <div id="createResult" class="create-result"></div>
+    </div>
+
+    <h2>📱 Werkzeug & Tokens</h2>
+    {{range .Tokens}}
+    <div class="token-card{{if not .IsActive}} inactive{{end}}">
+      <div class="token-header">
+        <h3>{{.BagName}}{{if .CurrentPlayer}} - {{.CurrentPlayer}}{{end}}</h3>
+        <span class="token-status{{if .IsActive}} active{{else}} inactive{{end}}">
+          {{if .IsActive}}● aktiv{{else}}○ inaktiv{{end}}
+        </span>
+      </div>
+
+      <div class="token-meta">
+        <div class="token-meta-item">
+          <strong>Uploads</strong>
+          <input type="number" id="quota-{{.ID}}" value="{{.MaxUploads}}" min="1" class="token-quota-input">
+          <span class="token-quota-remaining">/ {{.TotalUploads}} genutzt</span>
+        </div>
+        <div class="token-meta-item">
+          <strong>Verbleibend</strong>
+          {{.Remaining}}
+        </div>
+        <div class="token-meta-item">
+          <strong>Sessions</strong>
+          #{{.TotalSessions}}
+        </div>
+        <div class="token-meta-item">
+          <strong>Gestartet</strong>
+          {{.SessionStartedAt.Format "02.01. 15:04"}}
+        </div>
+      </div>
+
+      <div class="token-actions">
+        <button class="btn-admin btn-reset" onclick="resetToken({{.ID}}, '{{.BagName}}')">
+          🔄 Zurücksetzen
+        </button>
+        <button class="btn-admin btn-update" onclick="updateQuota({{.ID}})">
+          💾 Kontingent speichern
+        </button>
+        <button class="btn-admin btn-qr-svg"
+          onclick="downloadQR({{.ID}}, '{{.BagName}}', 'svg')">
+          📥 QR (SVG)
+        </button>
+        <button class="btn-admin btn-qr-png"
+          onclick="downloadQR({{.ID}}, '{{.BagName}}', 'png')">
+          📥 QR (PNG)
+        </button>
+        <button class="btn-admin btn-copy-url"
+          onclick="copyUploadURL('{{.Token}}', '{{.BagName}}')">
+          🔗 URL kopieren
+        </button>
+        {{if .IsActive}}
+        <button class="btn-admin btn-deactivate" onclick="deactivateToken({{.ID}}, '{{.BagName}}')">
+          🚫 Deaktivieren
+        </button>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+
+  {{if eq .Tab "requests"}}
+  <div id="tab-requests" class="admin-section">
+    <h2>👜 Werkzeug-Anfragen</h2>
+    <div class="filter-controls">
+      <a href="/admin?tab=requests&bag_status=all" class="filter-btn {{if or (not .BagStatus) (eq .BagStatus "all")}}active{{end}}">Alle ({{len .BagRequests}})</a>
+      <a href="/admin?tab=requests&bag_status=open" class="filter-btn {{if eq .BagStatus "open"}}active{{end}}">Offen ({{.OpenCount}})</a>
+      <a href="/admin?tab=requests&bag_status=handled" class="filter-btn {{if eq .BagStatus "handled"}}active{{end}}">Erledigt ({{.HandledCount}})</a>
+    </div>
+
+    <div id="bagRequestsContainer" class="bag-requests-container">
+      {{if .BagRequests}}
+      <ul class="bag-requests-list">
+        {{range .BagRequests}}
+        <li class="bag-request-item">
+          <div>
+            <strong class="bag-request-email">{{.Email}}</strong>
+            <div class="bag-request-date">{{.CreatedAt.Format "02.01.2006 15:04"}}</div>
+          </div>
+          <div>
+            {{if .Handled}}
+            <span class="bag-request-handled">✅ Erledigt</span>
+            {{else}}
+            <button class="btn-admin btn-reset" onclick="markBagRequestDone({{.ID}}, this)">✅ Erledigt</button>
+            {{end}}
+          </div>
+        </li>
+        {{end}}
+      </ul>
+      {{else}}
+      <div class="bag-requests-empty">Noch keine Anfragen.</div>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  {{if eq .Tab "contribs"}}
+  <div id="tab-contribs" class="admin-section">
+    <h2>📸 Neueste Contributions</h2>
+    <div class="contrib-grid">
+      {{range .RecentContribs}}
+      <div class="contrib-card" id="contrib-{{.ID}}">
+        <img src="{{.ImageUrl}}" alt="Contribution" loading="lazy">
+        <div class="contrib-meta">
+          <div>{{.PlayerName}}</div>
+          <div>ID #{{.DeriveNumber}}</div>
+        </div>
+        <button class="btn-admin btn-delete" onclick="deleteContribution({{.ID}}, this)" title="Löschen">
+          🗑️ Löschen
+        </button>
+      </div>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+</div>
+{{end}}

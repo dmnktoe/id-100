@@ -1,66 +1,40 @@
-{{ define "id_detail.content" }}
-  <main class="detail-container">
-    {{ if .IsPartial }}<button class="drawer-close" aria-label="close">✕</button>{{ end }}
+{{define "id_detail.content"}}
+    <main class="detail-container">
+        {{if .IsPartial}}<button class="drawer-close" aria-label="close">✕</button>{{end}}
 
+        <header class="detail-header">
+            <h1 class="detail-title">🆔 {{.Derive.Number}}</h1>
+            <p class="detail-description">{{.Derive.Description}}</p>
+        </header>
 
-    <header class="detail-header">
-      <h1 class="detail-title">🆔 {{ .Derive.Number }}</h1>
-      <p class="detail-description">{{ .Derive.Description }}</p>
-    </header>
+        <section class="contributions-section">
+            <h2 class="section-label">Eingereichte Beiträge ({{len .Contributions}})</h2>
 
-    <section class="contributions-section">
-      <h2 class="section-label">Eingereichte Beiträge ({{ len .Contributions }})</h2>
-
-      {{ if gt (len .Contributions) 0 }}
-        <div class="id-grid contributions-grid">
-          {{ range .Contributions }}
-            <div class="id-card" role="article">
-              <div class="card-image-box">
-                <img
-                  class="card-img lazy blur-up"
-                  data-src="{{ .ImageUrl }}"
-                  data-lqip="{{ .ImageLqip }}"
-                  src="{{ if .ImageLqip }}
-                    {{ .ImageLqip }}
-                  {{ else }}
-                    data:image/svg+xml;utf8,<svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="10"
-                      height="6"
-                    />
-                  {{ end }}"
-                  loading="lazy"
-                  alt="Beitrag von {{ .UserName }}{{ if .UserCity }}aus {{ .UserCity }}{{ end }}"
-                />
-              </div>
-              <div class="card-content">
-                <span class="card-number">Beitrag</span>
-                <h3 class="card-title">
-                  {{ .UserName }}{{ if .UserCity }}· {{ .UserCity }}{{ end }}
-                </h3>
-                <p class="card-desc">{{ .CreatedAt.Format "02.01.2006" }}</p>
-                {{ if .UserComment }}<p class="card-comment">„{{ .UserComment }}“</p>{{ end }}
-              </div>
+            {{if gt (len .Contributions) 0}}
+            <div class="id-grid contributions-grid">
+                {{range .Contributions}}
+                <div class="id-card" role="article">
+                    <div class="card-image-box">
+                        <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="Beitrag von {{.UserName}}{{if .UserCity}} aus {{.UserCity}}{{end}}">
+                    </div>
+                    <div class="card-content">
+                        <span class="card-number">Beitrag</span>
+                        <h3 class="card-title">{{.UserName}}{{if .UserCity}} · {{.UserCity}}{{end}}</h3>
+                        <p class="card-desc">{{.CreatedAt.Format "02.01.2006"}}</p>
+                        {{if .UserComment}}<p class="card-comment">„{{.UserComment}}“</p>{{end}}
+                    </div>
+                </div>
+                {{end}}
             </div>
-          {{ end }}
-        </div>
-      {{ else }}
-        <div class="empty-state">Noch keine Beiträge. Sei der Erste.</div>
-      {{ end }}
-    </section>
+            {{else}}
+            <div class="empty-state">
+                Noch keine Beiträge. Sei der Erste.
+            </div>
+            {{end}}
+        </section>
 
-    <footer class="detail-footer">
-      <a
-        href="/{{ if or (ne .PageParam "") (ne .CityFilter "") }}
-          ?{{ if ne .PageParam "" }}
-            page={{ .PageParam }}
-          {{ end }}{{ if and (ne .PageParam "") (ne .CityFilter "") }}
-            &
-          {{ end }}{{ if ne .CityFilter "" }}city={{ .CityFilter }}{{ end }}
-        {{ end }}"
-        class="back-link drawer-back-link"
-        >← zurück zum Index</a
-      >
-    </footer>
-  </main>
-{{ end }}
+        <footer class="detail-footer">
+            <a href="/{{if or (ne .PageParam "") (ne .CityFilter "")}}?{{if ne .PageParam ""}}page={{.PageParam}}{{end}}{{if and (ne .PageParam "") (ne .CityFilter "")}}&{{end}}{{if ne .CityFilter ""}}city={{.CityFilter}}{{end}}{{end}}" class="back-link drawer-back-link">← zurück zum Index</a>
+        </footer>
+    </main>
+{{end}}
