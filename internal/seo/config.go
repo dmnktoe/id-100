@@ -55,7 +55,7 @@ func GetConfig() *Config {
 			},
 			"request_bag": {
 				Path:        "/werkzeug-anfordern",
-				Title:       "Mitmachen | Innenstadt ID-100",
+				Title:       "Werkzeug anfordern | Innenstadt ID-100",
 				Description: "Fordere dein Werkzeug für die urbane Stadtrallye an und starte deine Entdeckungsreise.",
 				Type:        "website",
 			},
