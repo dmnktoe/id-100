@@ -1,0 +1,37 @@
+{{ define "map.content" }}
+  <div class="container map-page">
+
+    <div class="page-header">
+      <h2 class="page-title">Interaktive Karte</h2>
+    </div>
+    <p class="map-subtitle">Entdecke alle teilnehmenden Städte auf der Karte</p>
+
+    <div id="map" class="leaflet-map-container"></div>
+
+    <div class="map-stats-row">
+      <div class="map-stat-card">
+        <span class="map-stat-value">{{ len .Cities }}</span>
+        <span class="map-stat-label">Städte</span>
+      </div>
+      <div class="map-stat-card">
+        <span class="map-stat-value">{{ .FooterStats.TotalContributions }}</span>
+        <span class="map-stat-label">Beiträge</span>
+      </div>
+    </div>
+
+    {{ if .Cities }}
+      <div class="map-city-list-section">
+        <h3 class="map-city-list-title">Teilnehmende Städte</h3>
+        <div class="map-city-list">
+          {{ range .Cities }}
+            <a href="/?city={{ .Name }}" class="map-city-item">
+              <span class="map-city-name">{{ .Name }}</span>
+              <span class="map-city-count">{{ .Count }} Beiträge</span>
+            </a>
+          {{ end }}
+        </div>
+      </div>
+    {{ end }}
+
+  </div>
+{{ end }}

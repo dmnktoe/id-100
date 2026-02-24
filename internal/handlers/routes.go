@@ -36,6 +36,9 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 	e.POST("/upload/end-session", app.EndSessionHandler, middleware.TokenWithSession)
 	e.POST("/upload/contributions/:id/delete", app.UserDeleteContributionHandler, middleware.TokenWithSession)
 
+	e.GET("/karte", app.MapHandler)
+	e.GET("/api/map-data", app.MapDataHandler)
+
 	e.GET("/leitfaden", app.RulesHandler)
 	e.GET("/impressum", app.ImpressumHandler)
 	e.GET("/datenschutz", app.DatenschutzHandler)
