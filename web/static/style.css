@@ -390,7 +390,9 @@ main {
   font-weight: 400;
   display: grid;
   place-items: center;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .product-slideshow .swiper-button-prev:hover,
@@ -434,7 +436,9 @@ svg.swiper-navigation-icon {
   display: grid;
   place-items: center;
   font-size: 0.95rem;
-  transition: transform var(--transition-fast), opacity var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
 .product-slideshow .swiper-pagination-bullet::before {
@@ -2241,7 +2245,9 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   text-decoration: none;
   color: inherit;
 }
