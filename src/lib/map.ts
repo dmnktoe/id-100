@@ -141,7 +141,10 @@ export async function initMap(): Promise<void> {
   const geocoded = await geocodeAll(cities);
 
   if (geocoded.length === 0) {
-    captureException(new Error("All Nominatim geocoding requests failed"), { module: "map", cities: cities.map((c) => c.name) });
+    captureException(new Error("All Nominatim geocoding requests failed"), {
+      module: "map",
+      cities: cities.map((c) => c.name),
+    });
     el.innerHTML = `<div class="map-loading map-error">Koordinaten konnten nicht geladen werden.</div>`;
     return;
   }
