@@ -27,6 +27,37 @@
             </div>
             {{end}}
         </div>
+
+        {{if .Leaderboard}}
+        <div class="leaderboard-widget">
+            <h3 class="leaderboard-title">Bestenliste</h3>
+            <ol class="leaderboard-list">
+                {{range .Leaderboard}}
+                <li class="leaderboard-entry rank-{{.Rank}}">
+                    <div class="leaderboard-rank">
+                        {{if le .Rank 3}}
+                        <img
+                            src="/static/assets/images/ui/points_indicator_{{.Rank}}.png"
+                            alt="Platz {{.Rank}}"
+                            class="leaderboard-flag"
+                        >
+                        {{else}}
+                        <span class="leaderboard-rank-num">#{{.Rank}}</span>
+                        {{end}}
+                    </div>
+                    <div class="leaderboard-info">
+                        <span class="leaderboard-name">{{.PlayerName}}</span>
+                        {{if .PlayerCity}}<span class="leaderboard-city">{{.PlayerCity}}</span>{{end}}
+                    </div>
+                    <div class="leaderboard-score">
+                        <span class="leaderboard-points">{{.TotalPoints}} Pkt.</span>
+                        <span class="leaderboard-uploads">{{.UniqueDerivens}} IDs</span>
+                    </div>
+                </li>
+                {{end}}
+            </ol>
+        </div>
+        {{end}}
         
         <div class="id-grid">
             {{range .Deriven}}

@@ -314,6 +314,49 @@ func DecrementTokenUploadCount(ctx context.Context, tokenID int) error {
 	return err
 }
 
+// GetLeaderboard retrieves the top N players ordered by total points
+func GetLeaderboard(ctx context.Context, limit int) ([]models.LeaderboardEntry, error) {
+	rows, err := database.DB.Query(ctx, `
+		SELECT
+			player_name,
+			COALESCE(MAX(player_city), '') AS player_city,
+			COUNT(*) AS unique_derives,
+			COALESCE(SUM(derive_points), 0) AS total_points
+		FROM (
+			SELECT DISTINCT ON (ul.player_name, ul.derive_number)
+				ul.player_name,
+				ul.derive_number,
+				d.points AS derive_points,
+				COALESCE(c.user_city, '') AS player_city
+			FROM upload_logs ul
+			JOIN deriven d ON d.number = ul.derive_number
+			LEFT JOIN contributions c ON c.id = ul.contribution_id
+			WHERE ul.player_name IS NOT NULL AND ul.player_name != ''
+			ORDER BY ul.player_name, ul.derive_number, ul.uploaded_at DESC
+		) sub
+		GROUP BY player_name
+		ORDER BY total_points DESC NULLS LAST, unique_derives DESC
+		LIMIT $1
+	`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []models.LeaderboardEntry
+	rank := 1
+	for rows.Next() {
+		var e models.LeaderboardEntry
+		if err := rows.Scan(&e.PlayerName, &e.PlayerCity, &e.UniqueDerivens, &e.TotalPoints); err != nil {
+			return nil, err
+		}
+		e.Rank = rank
+		rank++
+		entries = append(entries, e)
+	}
+	return entries, nil
+}
+
 // Admin-specific database queries
 
 // GetAllTokens retrieves all upload tokens
