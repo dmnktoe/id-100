@@ -157,6 +157,30 @@ func GetDeriveContributions(ctx context.Context, deriveID int, cityFilter string
 	return contribs, nil
 }
 
+// GetTopSolvedDeriven returns the top N derives ordered by contribution count descending
+func GetTopSolvedDeriven(ctx context.Context, limit int) ([]models.Derive, error) {
+	rows, err := database.DB.Query(ctx, `
+		SELECT d.id, d.number, d.title,
+		       COALESCE((SELECT COUNT(*) FROM contributions WHERE derive_id = d.id), 0) AS contrib_count
+		FROM deriven d
+		ORDER BY contrib_count DESC, d.number ASC
+		LIMIT $1`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []models.Derive
+	for rows.Next() {
+		var d models.Derive
+		if err := rows.Scan(&d.ID, &d.Number, &d.Title, &d.ContribCount); err != nil {
+			return nil, err
+		}
+		list = append(list, d)
+	}
+	return list, nil
+}
+
 // GetDerivenForUpload retrieves all deriven for the upload form
 func GetDerivenForUpload(ctx context.Context) ([]models.Derive, error) {
 	rows, err := database.DB.Query(ctx, `

@@ -27,6 +27,23 @@
             </div>
             {{end}}
         </div>
+
+        {{if .TopSolved}}
+        <div class="top-solved-strip">
+            <p class="top-solved-label">🔥 Meist gelöst</p>
+            <div class="swiper top-solved-swiper">
+                <div class="swiper-wrapper">
+                    {{range .TopSolved}}
+                    <div class="swiper-slide">
+                        <a href="/id/{{.Number}}" class="top-solved-badge" title="{{.Title}}">
+                            🆔&nbsp;#{{.Number}}<span class="badge-count">{{.ContribCount}}×</span>
+                        </a>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+        {{end}}
         
         <div class="id-grid">
             {{range .Deriven}}

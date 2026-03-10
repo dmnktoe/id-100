@@ -13,6 +13,7 @@ import { initCityAutocomplete, initFormValidation } from "./lib/city-autocomplet
 import { initAdminDashboard } from "./lib/admin-dashboard";
 import { initUpload } from "./lib/upload";
 import { initProductSlideshow } from "./lib/product-slideshow";
+import { initTopSolvedSlider } from "./lib/top-solved-slider";
 import "./lib/favicon-emoji";
 
 // Initialize all modules when DOM is ready
@@ -41,6 +42,9 @@ import "./lib/favicon-emoji";
 
   // Product slideshow
   initProductSlideshow();
+
+  // Top-solved badge strip (deriven index page)
+  initTopSolvedSlider();
 
   // Admin dashboard functionality
   initAdminDashboard();
