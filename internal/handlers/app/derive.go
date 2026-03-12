@@ -35,6 +35,13 @@ func DerivenHandler(c echo.Context) error {
 		cities = []string{}
 	}
 
+	// Get top solved derives for the badge strip
+	topSolved, err := repository.GetTopSolvedDeriven(context.Background(), 20)
+	if err != nil {
+		log.Printf("TopSolved Query Error: %v", err)
+		topSolved = []models.Derive{}
+	}
+
 	// Get total count
 	totalCount, err := repository.GetDerivenCount(context.Background(), cityFilter)
 	if err != nil {
@@ -116,6 +123,7 @@ func DerivenHandler(c echo.Context) error {
 		"PrevPage":        page - 1,
 		"Cities":          cities,
 		"SelectedCity":    cityFilter,
+		"TopSolved":       topSolved,
 		"ContentTemplate": "ids.content",
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
