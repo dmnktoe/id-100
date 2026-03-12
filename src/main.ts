@@ -13,6 +13,7 @@ import { initCityAutocomplete, initFormValidation } from "./lib/city-autocomplet
 import { initAdminDashboard } from "./lib/admin-dashboard";
 import { initUpload } from "./lib/upload";
 import { initProductSlideshow } from "./lib/product-slideshow";
+import { initMap } from "./lib/map";
 import "./lib/favicon-emoji";
 
 // Initialize all modules when DOM is ready
@@ -47,4 +48,7 @@ import "./lib/favicon-emoji";
 
   // Upload page functionality
   initUpload();
+
+  // Interactive map
+  initMap();
 })();
