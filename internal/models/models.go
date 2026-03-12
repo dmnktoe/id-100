@@ -74,3 +74,12 @@ type PageNumber struct {
 	IsCurrent bool
 	IsDots    bool
 }
+
+// LeaderboardEntry represents a single entry in the player leaderboard
+type LeaderboardEntry struct {
+	Rank          int
+	PlayerName    string
+	PlayerCity    string
+	UniqueDerivens int
+	TotalPoints   int
+}

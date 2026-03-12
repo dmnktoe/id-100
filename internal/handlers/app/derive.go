@@ -98,6 +98,13 @@ func DerivenHandler(c echo.Context) error {
 		pages = append(pages, models.PageNumber{Number: totalPages, IsCurrent: page == totalPages})
 	}
 
+	// Fetch leaderboard (top 10 players)
+	leaderboard, err := repository.GetLeaderboard(context.Background(), 10)
+	if err != nil {
+		log.Printf("Leaderboard error: %v", err)
+		leaderboard = nil
+	}
+
 	// Generate SEO metadata
 	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 	builder := seo.NewBuilder(baseURL)
@@ -120,6 +127,7 @@ func DerivenHandler(c echo.Context) error {
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
+		"Leaderboard":     leaderboard,
 	}))
 }
 
