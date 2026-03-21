@@ -22,7 +22,7 @@ COPY web/static/admin.styles.css ./web/static/admin.styles.css
 RUN npm run build
 
 # Build stage for Go backend
-FROM golang:1.24-alpine AS backend-builder
+FROM golang:1.26-alpine AS backend-builder
 
 ARG APP_VERSION=dev
 WORKDIR /app
