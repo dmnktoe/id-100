@@ -1,6 +1,6 @@
 module id-100
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.4
@@ -12,7 +12,7 @@ require (
 	github.com/getsentry/sentry-go v0.43.0
 	github.com/getsentry/sentry-go/echo v0.43.0
 	github.com/gorilla/sessions v1.4.0
-	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jackc/pgx/v5 v5.9.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.15.1
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
