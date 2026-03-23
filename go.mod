@@ -12,7 +12,7 @@ require (
 	github.com/getsentry/sentry-go v0.43.0
 	github.com/getsentry/sentry-go/echo v0.43.0
 	github.com/gorilla/sessions v1.4.0
-	github.com/jackc/pgx/v5 v5.9.0
+	github.com/jackc/pgx/v5 v5.9.1
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.15.1
 	github.com/labstack/echo/v5 v5.0.4
