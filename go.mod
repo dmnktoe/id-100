@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.97.1
 	github.com/chai2010/webp v1.4.0
 	github.com/disintegration/imaging v1.6.2
-	github.com/getsentry/sentry-go v0.43.0
+	github.com/getsentry/sentry-go v0.44.1
 	github.com/getsentry/sentry-go/echo v0.43.0
 	github.com/gorilla/sessions v1.4.0
 	github.com/jackc/pgx/v5 v5.9.1
