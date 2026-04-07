@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/repository"
 	"id-100/internal/sentryhelper"
@@ -14,7 +14,7 @@ import (
 )
 
 // AdminTokenResetHandler resets a token for the next player
-func AdminTokenResetHandler(c echo.Context) error {
+func AdminTokenResetHandler(c *echo.Context) error {
 	tokenID := c.Param("id")
 
 	rows, err := repository.ResetToken(context.Background(), tokenID)
@@ -35,7 +35,7 @@ func AdminTokenResetHandler(c echo.Context) error {
 }
 
 // AdminTokenDeactivateHandler deactivates a token
-func AdminTokenDeactivateHandler(c echo.Context) error {
+func AdminTokenDeactivateHandler(c *echo.Context) error {
 	tokenID := c.Param("id")
 
 	rows, err := repository.DeactivateToken(context.Background(), tokenID)
@@ -53,7 +53,7 @@ func AdminTokenDeactivateHandler(c echo.Context) error {
 }
 
 // AdminTokenAssignHandler assigns a token to a specific player
-func AdminTokenAssignHandler(c echo.Context) error {
+func AdminTokenAssignHandler(c *echo.Context) error {
 	tokenID := c.Param("id")
 
 	type AssignRequest struct {
@@ -91,7 +91,7 @@ func AdminTokenAssignHandler(c echo.Context) error {
 }
 
 // AdminTokenListHandler returns JSON list of all tokens
-func AdminTokenListHandler(c echo.Context) error {
+func AdminTokenListHandler(c *echo.Context) error {
 	tokens, err := repository.GetAllTokens(context.Background())
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Database error")
@@ -104,7 +104,7 @@ func AdminTokenListHandler(c echo.Context) error {
 }
 
 // AdminCreateTokenHandler creates a new token/bag
-func AdminCreateTokenHandler(c echo.Context, baseURL string) error {
+func AdminCreateTokenHandler(c *echo.Context, baseURL string) error {
 	type CreateRequest struct {
 		BagName    string `json:"bag_name"`
 		MaxUploads int    `json:"max_uploads"`
@@ -161,7 +161,7 @@ func AdminCreateTokenHandler(c echo.Context, baseURL string) error {
 }
 
 // AdminUpdateQuotaHandler updates the max_uploads quota for a token
-func AdminUpdateQuotaHandler(c echo.Context) error {
+func AdminUpdateQuotaHandler(c *echo.Context) error {
 	tokenID := c.Param("id")
 
 	type QuotaRequest struct {

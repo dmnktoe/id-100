@@ -10,7 +10,7 @@ import (
 
 	"id-100/internal/config"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/html"
 )
@@ -23,7 +23,7 @@ type Renderer struct {
 }
 
 // Render renders a template with data
-func (t *Renderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+func (t *Renderer) Render(c *echo.Context, w io.Writer, name string, data any) error {
 	if m, ok := data.(map[string]interface{}); ok {
 		if ct, ok := m["ContentTemplate"].(string); ok && ct != "" {
 			var buf bytes.Buffer

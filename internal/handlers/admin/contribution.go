@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/repository"
 	"id-100/internal/sentryhelper"
@@ -14,7 +14,7 @@ import (
 )
 
 // AdminDeleteContributionHandler deletes a contribution from the admin panel
-func AdminDeleteContributionHandler(c echo.Context) error {
+func AdminDeleteContributionHandler(c *echo.Context) error {
 	contributionIDStr := c.Param("id")
 	contributionID, err := strconv.Atoi(contributionIDStr)
 	if err != nil {

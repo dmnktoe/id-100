@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/gorilla/sessions"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // Store is the session store
@@ -26,7 +26,7 @@ func InitSessionStore(secret string, isProduction bool) {
 
 // BasicAuth provides basic authentication middleware for admin routes
 func BasicAuth(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		adminUser := os.Getenv("ADMIN_USERNAME")
 		adminPass := os.Getenv("ADMIN_PASSWORD")
 

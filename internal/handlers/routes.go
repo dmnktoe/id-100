@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/handlers/admin"
 	"id-100/internal/handlers/app"
@@ -12,7 +12,7 @@ import (
 
 // RegisterRoutes registers all application routes
 func RegisterRoutes(e *echo.Echo, baseURL string) {
-	e.GET("/health", func(c echo.Context) error {
+	e.GET("/health", func(c *echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
 			"status":  "ok",
 			"service": "id-100",
@@ -46,14 +46,14 @@ func RegisterRoutes(e *echo.Echo, baseURL string) {
 	adminGroup := e.Group("/admin", middleware.BasicAuth)
 	adminGroup.GET("", admin.AdminDashboardHandler)
 	adminGroup.GET("/tokens", admin.AdminTokenListHandler)
-	adminGroup.POST("/tokens", func(c echo.Context) error {
+	adminGroup.POST("/tokens", func(c *echo.Context) error {
 		return admin.AdminCreateTokenHandler(c, baseURL)
 	})
 	adminGroup.POST("/tokens/:id/deactivate", admin.AdminTokenDeactivateHandler)
 	adminGroup.POST("/tokens/:id/reset", admin.AdminTokenResetHandler)
 	adminGroup.POST("/tokens/:id/assign", admin.AdminTokenAssignHandler)
 	adminGroup.POST("/tokens/:id/quota", admin.AdminUpdateQuotaHandler)
-	adminGroup.GET("/tokens/:id/qr", func(c echo.Context) error {
+	adminGroup.GET("/tokens/:id/qr", func(c *echo.Context) error {
 		return admin.AdminDownloadQRHandler(c, baseURL)
 	})
 

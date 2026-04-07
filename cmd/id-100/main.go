@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	sentryecho "github.com/getsentry/sentry-go/echo"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	sentryhttp "github.com/getsentry/sentry-go/http"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 
 	"id-100/internal/config"
 	"id-100/internal/database"
@@ -43,14 +43,14 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(middleware.Logger())
+	e.Use(middleware.RequestLogger())
 	e.Use(middleware.Recover())
 
 	// Add Sentry middleware if configured
 	if cfg.SentryDSN != "" {
-		e.Use(sentryecho.New(sentryecho.Options{
+		e.Use(echo.WrapMiddleware(sentryhttp.New(sentryhttp.Options{
 			Repanic: true,
-		}))
+		}).Handle))
 	}
 
 	// Load and set up templates
@@ -62,5 +62,5 @@ func main() {
 
 	// Log app version
 	log.Printf("Starting server on port %s (version=%s)", cfg.Port, version.Version)
-	e.Logger.Fatal(e.Start(":" + cfg.Port))
+	log.Fatal(e.Start(":" + cfg.Port))
 }

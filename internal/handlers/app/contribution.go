@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/repository"
 	"id-100/internal/sentryhelper"
@@ -14,7 +14,7 @@ import (
 )
 
 // UserDeleteContributionHandler allows users to delete their own contributions from the current session
-func UserDeleteContributionHandler(c echo.Context) error {
+func UserDeleteContributionHandler(c *echo.Context) error {
 	contributionIDStr := c.Param("id")
 	contributionID, err := strconv.Atoi(contributionIDStr)
 	if err != nil {

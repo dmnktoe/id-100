@@ -18,7 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/chai2010/webp"
 	"github.com/getsentry/sentry-go"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/imgutil"
 	"id-100/internal/middleware"
@@ -30,7 +30,7 @@ import (
 )
 
 // UploadGetHandler displays the upload form
-func UploadGetHandler(c echo.Context) error {
+func UploadGetHandler(c *echo.Context) error {
 	stats := utils.GetFooterStats()
 
 	// Get deriven list
@@ -98,7 +98,7 @@ func UploadGetHandler(c echo.Context) error {
 }
 
 // UploadPostHandler handles image upload
-func UploadPostHandler(c echo.Context) error {
+func UploadPostHandler(c *echo.Context) error {
 	// Get token info from middleware context
 	tokenID, ok := c.Get("token_id").(int)
 	if !ok {
@@ -218,7 +218,7 @@ func UploadPostHandler(c echo.Context) error {
 		contentType := c.Request().Header.Get("Content-Type")
 		if strings.Contains(contentType, "application/x-www-form-urlencoded") {
 			const maxFormSize = int64(2 * 1024 * 1024)
-			c.Request().Body = http.MaxBytesReader(c.Response().Writer, c.Request().Body, maxFormSize)
+			c.Request().Body = http.MaxBytesReader(c.Response(), c.Request().Body, maxFormSize)
 			if formToken := c.FormValue("token"); formToken != "" {
 				originalToken = formToken
 			}
@@ -231,11 +231,11 @@ func UploadPostHandler(c echo.Context) error {
 }
 
 // SetPlayerNameHandler handles the name entry form submission
-func SetPlayerNameHandler(c echo.Context) error {
+func SetPlayerNameHandler(c *echo.Context) error {
 	// Protect against large request bodies
 	const maxFormSize = int64(2 * 1024 * 1024)
 	if strings.Contains(c.Request().Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
-		c.Request().Body = http.MaxBytesReader(c.Response().Writer, c.Request().Body, maxFormSize)
+		c.Request().Body = http.MaxBytesReader(c.Response(), c.Request().Body, maxFormSize)
 	}
 
 	playerName := c.FormValue("player_name")
@@ -290,7 +290,7 @@ func SetPlayerNameHandler(c echo.Context) error {
 }
 
 // EndSessionHandler allows a user to end their session and reset the bag for the next player
-func EndSessionHandler(c echo.Context) error {
+func EndSessionHandler(c *echo.Context) error {
 	tokenID, ok := c.Get("token_id").(int)
 	if !ok {
 		return c.JSON(http.StatusBadRequest, map[string]string{

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/repository"
 	"id-100/internal/seo"
@@ -16,7 +16,7 @@ import (
 )
 
 // RequestBagHandler displays the bag request form
-func RequestBagHandler(c echo.Context) error {
+func RequestBagHandler(c *echo.Context) error {
 	stats := utils.GetFooterStats()
 
 	// Generate SEO metadata
@@ -43,7 +43,7 @@ func RequestBagHandler(c echo.Context) error {
 }
 
 // RequestBagPostHandler handles bag request submissions
-func RequestBagPostHandler(c echo.Context) error {
+func RequestBagPostHandler(c *echo.Context) error {
 	type payload struct {
 		Email string `json:"email"`
 	}

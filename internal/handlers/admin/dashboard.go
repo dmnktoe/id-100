@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/models"
 	"id-100/internal/repository"
@@ -17,7 +17,7 @@ import (
 )
 
 // AdminDashboardHandler shows the admin dashboard
-func AdminDashboardHandler(c echo.Context) error {
+func AdminDashboardHandler(c *echo.Context) error {
 	// Get all tokens
 	tokens, err := repository.GetAllTokens(context.Background())
 	if err != nil {

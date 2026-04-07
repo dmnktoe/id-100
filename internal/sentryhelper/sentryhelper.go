@@ -4,13 +4,15 @@ import (
 	"context"
 
 	"github.com/getsentry/sentry-go"
-	sentryecho "github.com/getsentry/sentry-go/echo"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // CaptureError captures an error to Sentry with the specified level
-func CaptureError(c echo.Context, err error, level sentry.Level) {
-	if hub := sentryecho.GetHubFromContext(c); hub != nil {
+func CaptureError(c *echo.Context, err error, level sentry.Level) {
+	if c == nil || c.Request() == nil {
+		return
+	}
+	if hub := sentry.GetHubFromContext(c.Request().Context()); hub != nil {
 		hub.WithScope(func(scope *sentry.Scope) {
 			scope.SetLevel(level)
 			hub.CaptureException(err)
@@ -19,8 +21,11 @@ func CaptureError(c echo.Context, err error, level sentry.Level) {
 }
 
 // CaptureException captures an error to Sentry with default error level
-func CaptureException(c echo.Context, err error) {
-	if hub := sentryecho.GetHubFromContext(c); hub != nil {
+func CaptureException(c *echo.Context, err error) {
+	if c == nil || c.Request() == nil {
+		return
+	}
+	if hub := sentry.GetHubFromContext(c.Request().Context()); hub != nil {
 		hub.CaptureException(err)
 	}
 }
@@ -28,7 +33,7 @@ func CaptureException(c echo.Context, err error) {
 // Logger returns a sentry.Logger bound to the request's context so structured logs
 // can be correlated with traces. If the echo context is nil, a background context
 // logger is returned.
-func Logger(c echo.Context) sentry.Logger {
+func Logger(c *echo.Context) sentry.Logger {
 	if c == nil || c.Request() == nil {
 		return sentry.NewLogger(context.Background())
 	}

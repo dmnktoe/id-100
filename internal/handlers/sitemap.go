@@ -5,14 +5,14 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/repository"
 	"id-100/internal/seo"
 )
 
 // SitemapHandler generates and serves the sitemap.xml
-func SitemapHandler(c echo.Context) error {
+func SitemapHandler(c *echo.Context) error {
 	// Get base URL from request
 	baseURL := seo.GetBaseURLFromRequest(c.Scheme(), c.Request().Host, c.Request().Header.Get("X-Forwarded-Host"))
 
