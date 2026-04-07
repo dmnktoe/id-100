@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"id-100/internal/database"
 )
 
@@ -18,7 +18,7 @@ const (
 
 // TokenWithSession is a middleware with session support for token validation
 func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		// Get session
 		session, err := Store.Get(c.Request(), "id-100-session")
 		if err != nil {
@@ -38,7 +38,7 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 			if isFormEncoded {
 				// Limit the body size before any parsing to guard against large uploads
-				c.Request().Body = http.MaxBytesReader(c.Response().Writer, c.Request().Body, maxFormSize)
+				c.Request().Body = http.MaxBytesReader(c.Response(), c.Request().Body, maxFormSize)
 				if formToken := c.FormValue("token"); formToken != "" {
 					token = formToken
 				}

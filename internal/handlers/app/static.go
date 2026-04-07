@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/seo"
 	"id-100/internal/templates"
@@ -12,7 +12,7 @@ import (
 )
 
 // RulesHandler displays the rules page
-func RulesHandler(c echo.Context) error {
+func RulesHandler(c *echo.Context) error {
 	stats := utils.GetFooterStats()
 
 	// Generate SEO metadata
@@ -31,7 +31,7 @@ func RulesHandler(c echo.Context) error {
 }
 
 // ImpressumHandler displays the impressum page
-func ImpressumHandler(c echo.Context) error {
+func ImpressumHandler(c *echo.Context) error {
 	stats := utils.GetFooterStats()
 
 	// Generate SEO metadata
@@ -50,7 +50,7 @@ func ImpressumHandler(c echo.Context) error {
 }
 
 // DatenschutzHandler displays the privacy policy page
-func DatenschutzHandler(c echo.Context) error {
+func DatenschutzHandler(c *echo.Context) error {
 	stats := utils.GetFooterStats()
 
 	// Generate SEO metadata

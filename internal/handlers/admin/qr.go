@@ -6,7 +6,7 @@ import (
 	"mime"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	qrcode "github.com/skip2/go-qrcode"
 
 	"id-100/internal/repository"
@@ -14,7 +14,7 @@ import (
 )
 
 // AdminDownloadQRHandler generates and returns QR code as SVG or PNG
-func AdminDownloadQRHandler(c echo.Context, baseURL string) error {
+func AdminDownloadQRHandler(c *echo.Context, baseURL string) error {
 	tokenID := c.Param("id")
 
 	// Get token from database

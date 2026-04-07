@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/repository"
 	"id-100/internal/sentryhelper"
 )
 
 // AdminBagRequestCompleteHandler marks a bag request as handled
-func AdminBagRequestCompleteHandler(c echo.Context) error {
+func AdminBagRequestCompleteHandler(c *echo.Context) error {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {

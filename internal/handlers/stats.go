@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/database"
 )
 
 // StatsHandler returns lightweight stats for badges and integrations.
-func StatsHandler(c echo.Context) error {
+func StatsHandler(c *echo.Context) error {
 	totalDeriven, totalContribs, activeUsers, totalCities, lastActivity := database.GetFooterStats()
 
 	response := map[string]interface{}{

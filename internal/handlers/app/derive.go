@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"id-100/internal/models"
 	"id-100/internal/repository"
@@ -17,7 +17,7 @@ import (
 )
 
 // DerivenHandler displays the list of deriven with pagination and optional city filter
-func DerivenHandler(c echo.Context) error {
+func DerivenHandler(c *echo.Context) error {
 	stats := utils.GetFooterStats()
 
 	page, _ := strconv.Atoi(c.QueryParam("page"))
@@ -124,7 +124,7 @@ func DerivenHandler(c echo.Context) error {
 }
 
 // DeriveHandler displays a single derive with its contributions
-func DeriveHandler(c echo.Context) error {
+func DeriveHandler(c *echo.Context) error {
 	stats := utils.GetFooterStats()
 	num := c.Param("number")
 	pageParam := c.QueryParam("page")
