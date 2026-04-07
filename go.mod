@@ -17,7 +17,7 @@ require (
 	github.com/labstack/echo/v4 v4.15.1
 	github.com/labstack/echo/v5 v5.1.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	github.com/tdewolff/minify/v2 v2.24.11
+	github.com/tdewolff/minify/v2 v2.24.12
 	golang.org/x/image v0.38.0
 )
 
