@@ -2029,3 +2029,117 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ========================================
+   LEADERBOARD WIDGET
+   ======================================== */
+.leaderboard-widget {
+  margin-bottom: var(--pad-2xl);
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--pad-lg);
+  border: var(--border-light);
+}
+
+.leaderboard-title {
+  font-size: 1rem;
+  font-weight: 400;
+  margin: 0 0 var(--gap-md) 0;
+  letter-spacing: var(--letter-spacing-tighter);
+  color: var(--gray-900);
+}
+
+.leaderboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.leaderboard-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  border: var(--border-light);
+  border-left: 3px solid transparent;
+  transition: transform var(--transition-fast);
+}
+
+.leaderboard-entry:hover {
+  transform: translateX(3px);
+}
+
+.leaderboard-entry.rank-1 { border-left-color: #f5c518; }
+.leaderboard-entry.rank-2 { border-left-color: #a8a9ad; }
+.leaderboard-entry.rank-3 { border-left-color: #cd7f32; }
+
+.leaderboard-rank {
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.leaderboard-flag {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.leaderboard-rank-num {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--gray-600);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.leaderboard-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.leaderboard-name {
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: var(--letter-spacing-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--gray-900);
+}
+
+.leaderboard-city {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  font-weight: 300;
+}
+
+.leaderboard-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  gap: 0.1rem;
+}
+
+.leaderboard-points {
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--gray-900);
+}
+
+.leaderboard-uploads {
+  font-size: 0.72rem;
+  color: var(--gray-600);
+  font-weight: 300;
+}
