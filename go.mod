@@ -16,7 +16,7 @@ require (
 	github.com/labstack/echo/v5 v5.1.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/tdewolff/minify/v2 v2.24.12
-	golang.org/x/image v0.38.0
+	golang.org/x/image v0.39.0
 )
 
 require (
@@ -43,6 +43,6 @@ require (
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 )
