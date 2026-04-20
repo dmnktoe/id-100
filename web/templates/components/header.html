@@ -9,23 +9,24 @@
           ><span class="brand-text">)</span>
         </h1>
       {{ else }}
-        <h1 class="brand-compact">
-          <span class="brand-text">Innenstadt (</span><span class="brand-emoji">🏠</span
-          ><span class="brand-text">) ID (</span><span class="brand-emoji">🆔</span
-          ><span class="brand-text">) - 100 (</span><span class="brand-emoji">💯</span
-          ><span class="brand-text">)</span>
-        </h1>
-        <a class="sr-only" href="/">Startseite</a>
+        <a href="/" class="brand-link" aria-label="Startseite – Innenstadt ID-100">
+          <h1 class="brand-compact">
+            <span class="brand-text">Innenstadt (</span><span class="brand-emoji">🏠</span
+            ><span class="brand-text">) ID (</span><span class="brand-emoji">🆔</span
+            ><span class="brand-text">) - 100 (</span><span class="brand-emoji">💯</span
+            ><span class="brand-text">)</span>
+          </h1>
+        </a>
       {{ end }}
     </div>
-    <nav class="main-nav">
+    <nav class="main-nav" aria-label="Hauptnavigation">
       <a
         href="/"
         {{ if or (eq .CurrentPath "/") (hasprefix .CurrentPath "/id") }}class="nav-active"{{ end }}
-        >ID 1-100</a
+        >ID 1–100</a
       >
       <a href="/leitfaden" {{ if eq .CurrentPath "/leitfaden" }}class="nav-active"{{ end }}>🚨</a>
-      <a href="/werkzeug-anfordern" class="drawer-link">Werkzeug anfordern</a>
+      <a href="/werkzeug-anfordern" class="drawer-link nav-cta">Werkzeug anfordern</a>
     </nav>
   </header>
 {{ end }}
