@@ -23,7 +23,7 @@
       "addLabels": ["ci"]
     },
     {
-      "matchManagers": ["dockerfile"],
+      "matchManagers": ["dockerfile", "docker-compose"],
       "addLabels": ["docker"]
     }
   ]
