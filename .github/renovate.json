@@ -8,6 +8,7 @@
     ":disableDependencyDashboard"
   ],
   "labels": ["dependencies"],
+  "ignoreDeps": ["postgres", "getmeili/meilisearch"],
   "packageRules": [
     {
       "matchManagers": ["gomod"],
