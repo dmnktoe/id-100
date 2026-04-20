@@ -64,7 +64,7 @@ services:
 
   # Meilisearch for city autocomplete
   meilisearch:
-    image: getmeili/meilisearch:v1.41
+    image: getmeili/meilisearch:v1.42
     container_name: id100-meilisearch
     restart: unless-stopped
     environment:
