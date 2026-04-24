@@ -15,7 +15,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.1.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	github.com/tdewolff/minify/v2 v2.24.12
+	github.com/tdewolff/minify/v2 v2.24.13
 	golang.org/x/image v0.39.0
 )
 
@@ -39,10 +39,10 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
-	github.com/tdewolff/parse/v2 v2.8.11 // indirect
+	github.com/tdewolff/parse/v2 v2.8.12 // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 )
