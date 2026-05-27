@@ -21,8 +21,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_SERVER_URL: ${MINIO_SERVER_URL}
-      MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL}
+      MINIO_SERVER_URL: https://${S3_DOMAIN}
+      MINIO_BROWSER_REDIRECT_URL: https://${MINIO_CONSOLE_DOMAIN}
     volumes:
       - minio_data:/data
     healthcheck:
@@ -32,11 +32,11 @@ services:
       retries: 5
     labels:
       - traefik.enable=true
-      - traefik.http.routers.minio-api.rule=Host(`s3.id-100.online`)
+      - traefik.http.routers.minio-api.rule=Host(`${S3_DOMAIN}`)
       - traefik.http.routers.minio-api.entrypoints=https
       - traefik.http.routers.minio-api.tls.certresolver=letsencrypt
       - traefik.http.services.minio-api.loadbalancer.server.port=9000
-      - traefik.http.routers.minio-console.rule=Host(`minio.id-100.online`)
+      - traefik.http.routers.minio-console.rule=Host(`${MINIO_CONSOLE_DOMAIN}`)
       - traefik.http.routers.minio-console.entrypoints=https
       - traefik.http.routers.minio-console.tls.certresolver=letsencrypt
       - traefik.http.services.minio-console.loadbalancer.server.port=9001
@@ -59,7 +59,7 @@ services:
     image: getmeili/meilisearch:v1.7.6
     restart: unless-stopped
     environment:
-      MEILI_ENV: production
+      MEILI_ENV: ${ENVIRONMENT}
       MEILI_NO_ANALYTICS: "true"
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
     volumes:
@@ -109,10 +109,10 @@ services:
       S3_BUCKET: ${S3_BUCKET}
       S3_REGION: ${S3_REGION}
       S3_ENDPOINT: http://minio:9000
-      S3_PUBLIC_URL: https://s3.id-100.online
-      BASE_URL: https://id-100.online
-      PORT: "8080"
-      ENVIRONMENT: production
+      S3_PUBLIC_URL: https://${S3_DOMAIN}
+      BASE_URL: https://${APP_DOMAIN}
+      PORT: ${PORT}
+      ENVIRONMENT: ${ENVIRONMENT}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       SESSION_SECRET: ${SESSION_SECRET}
@@ -123,17 +123,17 @@ services:
       DATADOG_APP_ID: ${DATADOG_APP_ID}
       DATADOG_CLIENT_TOKEN: ${DATADOG_CLIENT_TOKEN}
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${PORT}/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     labels:
       - traefik.enable=true
-      - traefik.http.routers.webapp.rule=Host(`id-100.online`)
+      - traefik.http.routers.webapp.rule=Host(`${APP_DOMAIN}`)
       - traefik.http.routers.webapp.entrypoints=https
       - traefik.http.routers.webapp.tls.certresolver=letsencrypt
-      - traefik.http.services.webapp.loadbalancer.server.port=8080
+      - traefik.http.services.webapp.loadbalancer.server.port=${PORT}
 
 volumes:
   postgres_data:
