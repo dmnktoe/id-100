@@ -29,6 +29,7 @@ tmp/
 
 # Environment Files (Sensible Daten wie S3 Keys)
 .env
+.env.dev
 .env.local
 .env.production
 

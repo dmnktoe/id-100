@@ -119,7 +119,10 @@ func UploadPostHandler(c *echo.Context) error {
 		return c.String(http.StatusBadRequest, "Kein Bild gefunden")
 	}
 
-	src, _ := file.Open()
+	src, err := file.Open()
+	if err != nil {
+		return c.String(http.StatusBadRequest, "Datei konnte nicht geöffnet werden")
+	}
 	defer src.Close()
 	// Decode and auto-orient based on EXIF so mobile uploads keep the correct rotation
 	img, err := imgutil.DecodeAutoOriented(src)
@@ -131,7 +134,7 @@ func UploadPostHandler(c *echo.Context) error {
 		return c.String(http.StatusInternalServerError, "WebP-Kodierung fehlgeschlagen")
 	}
 
-	cfg, _ := config.LoadDefaultConfig(c.Request().Context(),
+	cfg, err := config.LoadDefaultConfig(c.Request().Context(),
 		config.WithRegion(os.Getenv("S3_REGION")),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			os.Getenv("S3_ACCESS_KEY"),
@@ -139,6 +142,11 @@ func UploadPostHandler(c *echo.Context) error {
 			""),
 		),
 	)
+	if err != nil {
+		log.Printf("Failed to load AWS config: %v", err)
+		sentryhelper.CaptureException(c, err)
+		return c.String(http.StatusInternalServerError, "Upload fehlgeschlagen")
+	}
 	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		if endpoint := os.Getenv("S3_ENDPOINT"); endpoint != "" {
 			o.BaseEndpoint = aws.String(endpoint)
@@ -155,7 +163,9 @@ func UploadPostHandler(c *echo.Context) error {
 		ContentType: aws.String("image/webp"),
 	})
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "S3 Fehler: "+err.Error())
+		log.Printf("S3 upload error: %v", err)
+		sentryhelper.CaptureException(c, err)
+		return c.String(http.StatusInternalServerError, "Upload fehlgeschlagen")
 	}
 
 	// Store just the filename in DB
@@ -286,7 +296,7 @@ func SetPlayerNameHandler(c *echo.Context) error {
 	}
 
 	// Redirect to upload page
-	return c.Redirect(http.StatusSeeOther, "/upload?token="+token)
+	return c.Redirect(http.StatusSeeOther, "/upload?token="+url.QueryEscape(token))
 }
 
 // EndSessionHandler allows a user to end their session and reset the bag for the next player
