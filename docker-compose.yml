@@ -32,6 +32,7 @@ services:
       retries: 5
     labels:
       - traefik.enable=true
+      - traefik.docker.network=coolify
       - traefik.http.routers.minio-api.rule=Host(`${S3_DOMAIN}`)
       - traefik.http.routers.minio-api.entrypoints=https
       - traefik.http.routers.minio-api.tls.certresolver=letsencrypt
@@ -143,6 +144,7 @@ services:
       start_period: 40s
     labels:
       - traefik.enable=true
+      - traefik.docker.network=coolify
       - traefik.http.routers.webapp.rule=Host(`${APP_DOMAIN}`)
       - traefik.http.routers.webapp.entrypoints=https
       - traefik.http.routers.webapp.tls.certresolver=letsencrypt
