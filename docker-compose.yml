@@ -1,8 +1,6 @@
 services:
-  # PostgreSQL Database
   db:
-    image: postgres:15-alpine@sha256:1c52f5ad23db5d7648a63634444af76de48e63b860fccbe3e3a5458b2812eaed
-    container_name: id100-db
+    image: postgres:16-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -10,20 +8,14 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - id100-network
 
-  # MinIO S3-compatible storage
   minio:
     image: minio/minio:latest
-    container_name: id100-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -33,22 +25,27 @@ services:
       MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL}
     volumes:
       - minio_data:/data
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - id100-network
-      - nginx-proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.routers.minio-api.rule=Host(`s3.id-100.online`)
+      - traefik.http.routers.minio-api.entrypoints=https
+      - traefik.http.routers.minio-api.tls.certresolver=letsencrypt
+      - traefik.http.routers.minio-api.service=minio-api
+      - traefik.http.services.minio-api.loadbalancer.server.port=9000
+      - traefik.http.routers.minio-console.rule=Host(`oss.id-100.online`)
+      - traefik.http.routers.minio-console.entrypoints=https
+      - traefik.http.routers.minio-console.tls.certresolver=letsencrypt
+      - traefik.http.routers.minio-console.service=minio-console
+      - traefik.http.services.minio-console.loadbalancer.server.port=9001
 
-  # MinIO client for bucket creation (run once only)
   minio-init:
     image: minio/mc:latest
-    container_name: id100-minio-init
     restart: "no"
     depends_on:
       minio:
@@ -60,13 +57,9 @@ services:
       mc anonymous set download myminio/${S3_BUCKET};
       exit 0;
       "
-    networks:
-      - id100-network
 
-  # Meilisearch for city autocomplete
   meilisearch:
-    image: getmeili/meilisearch:v1.7.6@sha256:010341a778fe82592cff7a4f85d05eb89d2618141defea005616a476064fa56a
-    container_name: id100-meilisearch
+    image: getmeili/meilisearch:v1.7.6
     restart: unless-stopped
     environment:
       MEILI_ENV: ${ENVIRONMENT}
@@ -74,47 +67,65 @@ services:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
     volumes:
       - meilisearch_data:/meili_data
-    ports:
-      - "8081:7700"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - id100-network
-      - nginx-proxy
 
-  # GeoNames data loader for Meilisearch (run once only)
   geonames-loader:
     image: alpine:latest
-    container_name: id100-geonames-loader
+    restart: "no"
     environment:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
-    restart: "no"
     depends_on:
       meilisearch:
         condition: service_healthy
-    volumes:
-      - ./scripts:/scripts:ro
     entrypoint: /bin/sh
     command:
       - -c
       - |
+        set -eu
         apk add --no-cache curl unzip gawk
         cd /tmp
-        curl -O https://download.geonames.org/export/dump/DE.zip
+        curl -fsSL -O https://download.geonames.org/export/dump/DE.zip
         unzip -o DE.zip
-        sh /scripts/import-geonames.sh
-    networks:
-      - id100-network
 
-  # ID-100 Web Application
+        MEILI_URL="http://meilisearch:7700"
+        AUTH="Authorization: Bearer $$MEILI_MASTER_KEY"
+
+        get_uid() { sed -n 's/.*"taskUid":\([0-9][0-9]*\).*/\1/p'; }
+        wait_task() {
+          uid="$$1"
+          [ -z "$$uid" ] && return 0
+          while :; do
+            st="$$(curl -fsS -H "$$AUTH" "$$MEILI_URL/tasks/$$uid" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')"
+            case "$$st" in
+              succeeded) return 0 ;;
+              failed|canceled) echo "task $$uid $$st"; return 1 ;;
+            esac
+            sleep 1
+          done
+        }
+
+        awk -F'\t' 'BEGIN{print "[";f=1} $$7=="P"&&($$8~/^(PPL|PPLA|PPLA2|PPLA3|PPLA4|PPLC)$$/){if(!f)print ",";f=0;printf "  {\"id\":\"%s\",\"name\":\"%s\",\"lat\":%s,\"lon\":%s,\"type\":\"%s\",\"population\":%s}",$$1,$$2,$$5,$$6,($$8=="PPLC"?"capital":$$8=="PPLA"?"major_city":$$8=="PPLA2"?"town":"city"),($$15==""?"0":$$15)} END{print "\n]"}' DE.txt > cities.json
+
+        echo "Created JSON with $$(grep -c '"id"' cities.json) cities"
+
+        # index may already exist from a previous run; that task failure is fine
+        wait_task "$$(curl -fsS -X POST "$$MEILI_URL/indexes" -H "Content-Type: application/json" -H "$$AUTH" -d '{"uid":"cities","primaryKey":"id"}' | get_uid)" || true
+        wait_task "$$(curl -fsS -X PUT "$$MEILI_URL/indexes/cities/settings/searchable-attributes" -H "Content-Type: application/json" -H "$$AUTH" -d '["name"]' | get_uid)"
+        wait_task "$$(curl -fsS -X PUT "$$MEILI_URL/indexes/cities/settings/ranking-rules" -H "Content-Type: application/json" -H "$$AUTH" -d '["words","typo","proximity","attribute","sort","exactness","population:desc"]' | get_uid)"
+        wait_task "$$(curl -fsS -X PATCH "$$MEILI_URL/indexes/cities/settings/typo-tolerance" -H "Content-Type: application/json" -H "$$AUTH" -d '{"enabled":true,"minWordSizeForTypos":{"oneTypo":4,"twoTypos":8}}' | get_uid)"
+        wait_task "$$(curl -fsS -X POST "$$MEILI_URL/indexes/cities/documents" -H "Content-Type: application/json" -H "$$AUTH" -d @cities.json | get_uid)"
+
+        echo "Import complete!"
+        curl -fsS -H "$$AUTH" "$$MEILI_URL/indexes/cities/search?q=Berlin&limit=1"
+
   webapp:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: id100-webapp
     restart: unless-stopped
     depends_on:
       db:
@@ -124,7 +135,7 @@ services:
       meilisearch:
         condition: service_healthy
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DATABASE_URL}?sslmode=disable
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
       S3_BUCKET: ${S3_BUCKET}
@@ -141,32 +152,21 @@ services:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       MEILI_SEARCH_KEY: ${MEILI_SEARCH_KEY}
       SENTRY_DSN: ${SENTRY_DSN}
-      DATADOG_APP_ID: ${DATADOG_APP_ID}
-      DATADOG_CLIENT_TOKEN: ${DATADOG_CLIENT_TOKEN}
+      UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    expose:
-      - "8080"
-    networks:
-      - id100-network
-      - nginx-proxy
-    volumes:
-      - ./web/templates:/app/web/templates
-      - ./web/static/assets:/app/web/static/assets
-      - ./web/static/admin.styles.css:/app/web/static/admin.styles.css
-      - ./web/static/style.css:/app/web/static/style.css
-      - ./cmd:/app/cmd
-      - ./internal:/app/internal
-
-networks:
-  id100-network:
-    driver: bridge
-  nginx-proxy:
-    external: true
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.routers.webapp.rule=Host(`id-100.online`)
+      - traefik.http.routers.webapp.entrypoints=https
+      - traefik.http.routers.webapp.tls.certresolver=letsencrypt
+      - traefik.http.services.webapp.loadbalancer.server.port=8080
 
 volumes:
   postgres_data:
