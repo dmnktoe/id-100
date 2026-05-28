@@ -85,26 +85,42 @@ services:
     command:
       - -c
       - |
+        set -eu
         apk add --no-cache curl unzip gawk
         cd /tmp
-        curl -O https://download.geonames.org/export/dump/DE.zip
+        curl -fsSL -O https://download.geonames.org/export/dump/DE.zip
         unzip -o DE.zip
 
         MEILI_URL="http://meilisearch:7700"
         AUTH="Authorization: Bearer $$MEILI_MASTER_KEY"
 
+        get_uid() { sed -n 's/.*"taskUid":\([0-9][0-9]*\).*/\1/p'; }
+        wait_task() {
+          uid="$$1"
+          [ -z "$$uid" ] && return 0
+          while :; do
+            st="$$(curl -fsS -H "$$AUTH" "$$MEILI_URL/tasks/$$uid" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')"
+            case "$$st" in
+              succeeded) return 0 ;;
+              failed|canceled) echo "task $$uid $$st"; return 1 ;;
+            esac
+            sleep 1
+          done
+        }
+
         awk -F'\t' 'BEGIN{print "[";f=1} $$7=="P"&&($$8~/^(PPL|PPLA|PPLA2|PPLA3|PPLA4|PPLC)$$/){if(!f)print ",";f=0;printf "  {\"id\":\"%s\",\"name\":\"%s\",\"lat\":%s,\"lon\":%s,\"type\":\"%s\",\"population\":%s}",$$1,$$2,$$5,$$6,($$8=="PPLC"?"capital":$$8=="PPLA"?"major_city":$$8=="PPLA2"?"town":"city"),($$15==""?"0":$$15)} END{print "\n]"}' DE.txt > cities.json
 
         echo "Created JSON with $$(grep -c '"id"' cities.json) cities"
 
-        curl -X POST "$$MEILI_URL/indexes" -H "Content-Type: application/json" -H "$$AUTH" -d '{"uid":"cities","primaryKey":"id"}' || true
-        curl -X PATCH "$$MEILI_URL/indexes/cities/settings/searchable-attributes" -H "Content-Type: application/json" -H "$$AUTH" -d '["name"]'
-        curl -X PATCH "$$MEILI_URL/indexes/cities/settings/ranking-rules" -H "Content-Type: application/json" -H "$$AUTH" -d '["words","typo","proximity","attribute","sort","exactness","population:desc"]'
-        curl -X PATCH "$$MEILI_URL/indexes/cities/settings/typo-tolerance" -H "Content-Type: application/json" -H "$$AUTH" -d '{"enabled":true,"minWordSizeForTypos":{"oneTypo":4,"twoTypos":8}}'
-        curl -X POST "$$MEILI_URL/indexes/cities/documents" -H "Content-Type: application/json" -H "$$AUTH" -d @cities.json
+        # index may already exist from a previous run; that task failure is fine
+        wait_task "$$(curl -fsS -X POST "$$MEILI_URL/indexes" -H "Content-Type: application/json" -H "$$AUTH" -d '{"uid":"cities","primaryKey":"id"}' | get_uid)" || true
+        wait_task "$$(curl -fsS -X PUT "$$MEILI_URL/indexes/cities/settings/searchable-attributes" -H "Content-Type: application/json" -H "$$AUTH" -d '["name"]' | get_uid)"
+        wait_task "$$(curl -fsS -X PUT "$$MEILI_URL/indexes/cities/settings/ranking-rules" -H "Content-Type: application/json" -H "$$AUTH" -d '["words","typo","proximity","attribute","sort","exactness","population:desc"]' | get_uid)"
+        wait_task "$$(curl -fsS -X PATCH "$$MEILI_URL/indexes/cities/settings/typo-tolerance" -H "Content-Type: application/json" -H "$$AUTH" -d '{"enabled":true,"minWordSizeForTypos":{"oneTypo":4,"twoTypos":8}}' | get_uid)"
+        wait_task "$$(curl -fsS -X POST "$$MEILI_URL/indexes/cities/documents" -H "Content-Type: application/json" -H "$$AUTH" -d @cities.json | get_uid)"
 
         echo "Import complete!"
-        curl -s -H "$$AUTH" "$$MEILI_URL/indexes/cities/search?q=Berlin&limit=1"
+        curl -fsS -H "$$AUTH" "$$MEILI_URL/indexes/cities/search?q=Berlin&limit=1"
 
   webapp:
     build:
