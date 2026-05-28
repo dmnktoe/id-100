@@ -20,7 +20,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@datadog/browser-rum": "^6.27.1",
     "@sentry/browser": "^10.39.0",
     "meilisearch": "^0.56.0",
     "swiper": "^12.1.1",
