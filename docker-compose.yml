@@ -72,6 +72,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.routers.meilisearch.rule=Host(`search.id-100.online`)
+      - traefik.http.routers.meilisearch.entrypoints=https
+      - traefik.http.routers.meilisearch.tls.certresolver=letsencrypt
+      - traefik.http.services.meilisearch.loadbalancer.server.port=7700
 
   geonames-loader:
     image: alpine:latest
