@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
+
 	"id-100/internal/database"
 )
 
@@ -120,14 +121,18 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			session.Values["session_started_at"] = sessionStartedAt
 		}
 
-		session.Save(c.Request(), c.Response())
+		if err := session.Save(c.Request(), c.Response()); err != nil {
+			log.Printf("Failed to save session: %v", err)
+		}
 
 		// If DB currently has no current_player (e.g. after an admin reset), remove any stored player_name from the session
 		if currentPlayer == "" {
 			if _, ok := session.Values["player_name"].(string); ok {
 				delete(session.Values, "player_name")
 				// persist session changes
-				session.Save(c.Request(), c.Response())
+				if err := session.Save(c.Request(), c.Response()); err != nil {
+					log.Printf("Failed to save session: %v", err)
+				}
 			}
 		}
 
@@ -180,7 +185,9 @@ func TokenWithSession(next echo.HandlerFunc) echo.HandlerFunc {
 			// Save player name and city in session if not already there
 			session.Values["player_name"] = currentPlayer
 			session.Values["player_city"] = currentPlayerCity
-			session.Save(c.Request(), c.Response())
+			if err := session.Save(c.Request(), c.Response()); err != nil {
+				log.Printf("Failed to save session: %v", err)
+			}
 		}
 
 		// Store token info in context for handler

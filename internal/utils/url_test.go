@@ -1,14 +1,13 @@
 package utils
 
 import (
-	"os"
 	"testing"
 )
 
 func TestEnsureFullImageURL(t *testing.T) {
 	// Set MinIO configuration
-	os.Setenv("S3_PUBLIC_URL", "http://localhost:9000")
-	os.Setenv("S3_BUCKET", "id100-images")
+	t.Setenv("S3_PUBLIC_URL", "http://localhost:9000")
+	t.Setenv("S3_BUCKET", "id100-images")
 
 	tests := []struct{ raw, want string }{
 		{"", ""},
@@ -30,10 +29,10 @@ func TestEnsureFullImageURL(t *testing.T) {
 }
 
 func TestEnsureFullImageURLFallback(t *testing.T) {
-	// Test fallback when S3_PUBLIC_URL is not set
-	os.Unsetenv("S3_PUBLIC_URL")
-	os.Setenv("S3_ENDPOINT", "http://minio:9000")
-	os.Setenv("S3_BUCKET", "id100-images")
+	// Test fallback when S3_PUBLIC_URL is not set (empty is treated as unset)
+	t.Setenv("S3_PUBLIC_URL", "")
+	t.Setenv("S3_ENDPOINT", "http://minio:9000")
+	t.Setenv("S3_BUCKET", "id100-images")
 
 	got := EnsureFullImageURL("derive_1.webp")
 	want := "http://minio:9000/id100-images/derive_1.webp"
@@ -42,10 +41,10 @@ func TestEnsureFullImageURLFallback(t *testing.T) {
 		t.Fatalf("want=%q got=%q", want, got)
 	}
 
-	// Test default fallback when neither is set
-	os.Unsetenv("S3_PUBLIC_URL")
-	os.Unsetenv("S3_ENDPOINT")
-	os.Setenv("S3_BUCKET", "id100-images")
+	// Test default fallback when neither S3_PUBLIC_URL nor S3_ENDPOINT is set
+	t.Setenv("S3_PUBLIC_URL", "")
+	t.Setenv("S3_ENDPOINT", "")
+	t.Setenv("S3_BUCKET", "id100-images")
 
 	got = EnsureFullImageURL("derive_2.webp")
 	want = "http://localhost:9000/id100-images/derive_2.webp"

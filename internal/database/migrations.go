@@ -53,7 +53,7 @@ func runMigrations() {
 		// Execute migration SQL
 		_, err = tx.Exec(ctx, migration.SQL)
 		if err != nil {
-			tx.Rollback(ctx)
+			_ = tx.Rollback(ctx)
 			log.Fatalf("Failed to execute migration %d: %v", migration.Version, err)
 		}
 
@@ -62,7 +62,7 @@ func runMigrations() {
 			"INSERT INTO schema_migrations (version, name, applied_at) VALUES ($1, $2, NOW())",
 			migration.Version, migration.Name)
 		if err != nil {
-			tx.Rollback(ctx)
+			_ = tx.Rollback(ctx)
 			log.Fatalf("Failed to record migration %d: %v", migration.Version, err)
 		}
 

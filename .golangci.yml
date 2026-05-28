@@ -1,0 +1,27 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  # "standard" = errcheck, govet, ineffassign, staticcheck, unused.
+  default: standard
+  enable:
+    - bodyclose # checks HTTP response bodies are closed
+    - unconvert # removes unnecessary type conversions
+    - usetesting # promotes the modern testing helpers over deprecated ones
+  exclusions:
+    paths:
+      - node_modules # vendored JS deps occasionally ship Go files
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - id-100
+  exclusions:
+    paths:
+      - node_modules

@@ -1,7 +1,4 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
-name: CI — Frontend & Backend 🚀
+name: CI
 
 on:
   push:
@@ -9,51 +6,105 @@ on:
   pull_request:
     branches: ["main"]
 
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default token.
+permissions:
+  contents: read
+
 jobs:
   frontend:
-    name: Frontend · Build & Test 🟦
+    name: Frontend
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository ✅
+      - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Set up Node.js 🔧
+      - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version-file: ".nvmrc"
+          cache: npm
 
-      - name: Install dependencies 📦
-        run: npm install
+      - name: Install dependencies
+        run: npm ci
 
-      - name: TypeScript typecheck 🔍
+      - name: Typecheck
         run: npm run typecheck
 
-      - name: Prettier format check ✨
+      - name: Format check
         run: npm run format:check
 
-      - name: Build frontend 🏗️
+      - name: Build
         run: npm run build
 
-      - name: Test TypeScript 🧪
+      - name: Test
         run: npm test
 
   backend:
-    name: Backend · Build & Test 🐹
+    name: Backend
     runs-on: ubuntu-latest
+    env:
+      # chai2010/webp compiles bundled C sources, so cgo must stay enabled.
+      CGO_ENABLED: "1"
     steps:
-      - name: Checkout repository ✅
+      - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # full history so `git describe --tags` resolves the version
 
-      - name: Set up Go 🐹
+      - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version-file: go.mod
 
-      - name: Build backend 🏗️
+      - name: Install native build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libwebp-dev
+
+      - name: Verify formatting (gofmt)
+        run: |
+          go version
+          diff=$(gofmt -d .)
+          if [ -n "$diff" ]; then
+            echo "::error::gofmt found formatting differences"
+            echo "$diff"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Build
         run: |
           VERSION=$(git describe --tags --always --dirty)
           echo "Building backend (version=$VERSION)"
           go build -ldflags "-X 'id-100/internal/version.Version=${VERSION}'" -o bin/id-100 ./cmd/id-100
 
-      - name: Test Go 🧪
-        run: go test -v ./...
+      - name: Test
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install native build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libwebp-dev
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          # Pin for reproducible runs; bump deliberately (renovate manages it).
+          version: v2.12.2

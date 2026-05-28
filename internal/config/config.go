@@ -21,7 +21,7 @@ type Config struct {
 
 // Load loads configuration from environment variables
 func Load() *Config {
-	godotenv.Load()
+	_ = godotenv.Load()
 
 	isProduction := IsProduction()
 

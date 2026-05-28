@@ -120,7 +120,7 @@ func UploadPostHandler(c *echo.Context) error {
 	}
 
 	src, _ := file.Open()
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 	// Decode and auto-orient based on EXIF so mobile uploads keep the correct rotation
 	img, err := imgutil.DecodeAutoOriented(src)
 	if err != nil {
@@ -277,7 +277,9 @@ func SetPlayerNameHandler(c *echo.Context) error {
 	session, _ := middleware.Store.Get(c.Request(), "id-100-session")
 	session.Values[middleware.SessionKeyPlayerName] = playerName
 	session.Values[middleware.SessionKeyPlayerCity] = playerCity
-	session.Save(c.Request(), c.Response())
+	if err := session.Save(c.Request(), c.Response()); err != nil {
+		log.Printf("Failed to save session: %v", err)
+	}
 
 	// Update database
 	err := repository.UpdatePlayerNameAndCity(context.Background(), playerName, playerCity, token)

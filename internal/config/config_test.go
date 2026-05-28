@@ -1,35 +1,18 @@
 package config
 
 import (
-	"os"
 	"testing"
 )
 
 func TestLoad(t *testing.T) {
-	// Save original env vars to restore later
-	origBaseURL := os.Getenv("BASE_URL")
-	origEnv := os.Getenv("ENVIRONMENT")
-	origSecret := os.Getenv("SESSION_SECRET")
-	origPort := os.Getenv("PORT")
-	origAdminUser := os.Getenv("ADMIN_USERNAME")
-	origAdminPass := os.Getenv("ADMIN_PASSWORD")
-
-	defer func() {
-		os.Setenv("BASE_URL", origBaseURL)
-		os.Setenv("ENVIRONMENT", origEnv)
-		os.Setenv("SESSION_SECRET", origSecret)
-		os.Setenv("PORT", origPort)
-		os.Setenv("ADMIN_USERNAME", origAdminUser)
-		os.Setenv("ADMIN_PASSWORD", origAdminPass)
-	}()
-
 	t.Run("defaults", func(t *testing.T) {
-		os.Unsetenv("BASE_URL")
-		os.Unsetenv("ENVIRONMENT")
-		os.Unsetenv("SESSION_SECRET")
-		os.Unsetenv("PORT")
-		os.Unsetenv("ADMIN_USERNAME")
-		os.Unsetenv("ADMIN_PASSWORD")
+		// Empty values are treated as unset by Load.
+		t.Setenv("BASE_URL", "")
+		t.Setenv("ENVIRONMENT", "")
+		t.Setenv("SESSION_SECRET", "")
+		t.Setenv("PORT", "")
+		t.Setenv("ADMIN_USERNAME", "")
+		t.Setenv("ADMIN_PASSWORD", "")
 
 		cfg := Load()
 
@@ -59,12 +42,12 @@ func TestLoad(t *testing.T) {
 	})
 
 	t.Run("custom values", func(t *testing.T) {
-		os.Setenv("BASE_URL", "https://example.com")
-		os.Setenv("ENVIRONMENT", "production")
-		os.Setenv("SESSION_SECRET", "my-secret-key")
-		os.Setenv("PORT", "3000")
-		os.Setenv("ADMIN_USERNAME", "admin")
-		os.Setenv("ADMIN_PASSWORD", "pass123")
+		t.Setenv("BASE_URL", "https://example.com")
+		t.Setenv("ENVIRONMENT", "production")
+		t.Setenv("SESSION_SECRET", "my-secret-key")
+		t.Setenv("PORT", "3000")
+		t.Setenv("ADMIN_USERNAME", "admin")
+		t.Setenv("ADMIN_PASSWORD", "pass123")
 
 		cfg := Load()
 
@@ -93,14 +76,11 @@ func TestLoad(t *testing.T) {
 		}
 	})
 
-	t.Run("production without SESSION_SECRET", func(t *testing.T) {
-		os.Setenv("ENVIRONMENT", "production")
-		os.Unsetenv("SESSION_SECRET")
+	t.Run("production with SESSION_SECRET", func(t *testing.T) {
+		t.Setenv("ENVIRONMENT", "production")
+		// A secret must be set in production, otherwise Load calls log.Fatal.
+		t.Setenv("SESSION_SECRET", "required-in-prod")
 
-		// This test would normally cause a log.Fatal, so we can't test the actual behavior
-		// but we've validated the logic exists
-		// For now, just test with a secret set
-		os.Setenv("SESSION_SECRET", "required-in-prod")
 		cfg := Load()
 		if !cfg.IsProduction {
 			t.Error("IsProduction should be true")
