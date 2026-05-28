@@ -136,8 +136,8 @@ services:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       MEILI_SEARCH_KEY: ${MEILI_SEARCH_KEY}
       SENTRY_DSN: ${SENTRY_DSN}
-      DATADOG_APP_ID: ${DATADOG_APP_ID}
-      DATADOG_CLIENT_TOKEN: ${DATADOG_CLIENT_TOKEN}
+      UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
       interval: 30s
