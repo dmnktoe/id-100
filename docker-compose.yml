@@ -33,11 +33,11 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=coolify
-      - traefik.http.routers.minio-api.rule=Host(`${S3_DOMAIN}`)
+      - traefik.http.routers.minio-api.rule=Host(`s3.id-100.online`)
       - traefik.http.routers.minio-api.entrypoints=https
       - traefik.http.routers.minio-api.tls.certresolver=letsencrypt
       - traefik.http.services.minio-api.loadbalancer.server.port=9000
-      - traefik.http.routers.minio-console.rule=Host(`${MINIO_CONSOLE_DOMAIN}`)
+      - traefik.http.routers.minio-console.rule=Host(`oss.id-100.online`)
       - traefik.http.routers.minio-console.entrypoints=https
       - traefik.http.routers.minio-console.tls.certresolver=letsencrypt
       - traefik.http.services.minio-console.loadbalancer.server.port=9001
@@ -145,7 +145,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=coolify
-      - traefik.http.routers.webapp.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.webapp.rule=Host(`id-100.online`)
       - traefik.http.routers.webapp.entrypoints=https
       - traefik.http.routers.webapp.tls.certresolver=letsencrypt
       - traefik.http.services.webapp.loadbalancer.server.port=8080
