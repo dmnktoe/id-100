@@ -4,7 +4,7 @@
  */
 
 import { initSentry } from "./lib/sentry";
-import { initDatadog } from "./lib/datadog";
+import { initCookieConsent } from "./lib/cookie-consent";
 import { initBrandAnimation } from "./lib/brand-animation";
 import { initDrawer } from "./lib/drawer";
 import { initLazyImages } from "./lib/lazy-images";
@@ -19,7 +19,9 @@ import "./lib/favicon-emoji";
 (() => {
   // Initialize monitoring first to catch early errors
   initSentry();
-  initDatadog();
+
+  // Cookie consent & analytics
+  initCookieConsent();
 
   // Brand animation logic
   initBrandAnimation();

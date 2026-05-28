@@ -79,12 +79,12 @@ func GetEnvironment() string {
 	return env
 }
 
-// GetDatadogAppID returns the Datadog Application ID from environment
-func GetDatadogAppID() string {
-	return os.Getenv("DATADOG_APP_ID")
+// GetUmamiScriptURL returns the Umami analytics script URL from environment
+func GetUmamiScriptURL() string {
+	return os.Getenv("UMAMI_SCRIPT_URL")
 }
 
-// GetDatadogClientToken returns the Datadog Client Token from environment
-func GetDatadogClientToken() string {
-	return os.Getenv("DATADOG_CLIENT_TOKEN")
+// GetUmamiWebsiteID returns the Umami website ID from environment
+func GetUmamiWebsiteID() string {
+	return os.Getenv("UMAMI_WEBSITE_ID")
 }
