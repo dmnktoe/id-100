@@ -90,11 +90,8 @@ func Load(cfg *config.Config) *Renderer {
 		"eq":        func(a, b string) bool { return a == b },
 		"or":        func(a, b bool) bool { return a || b },
 		"hasprefix": func(s, prefix string) bool { return strings.HasPrefix(s, prefix) },
-		// urlParam percent-encodes a value for safe use inside a URL query string.
-		// Needed for non-URL attributes (e.g. <option value>) where html/template's
-		// contextual autoescaping does not apply, so raw spaces would otherwise leak
-		// into URLs and break Search Console indexing. Uses %20 (not "+") to match the
-		// encoding html/template applies to href query parameters.
+		// urlParam encodes a query value for non-URL attributes (e.g. <option value>),
+		// which html/template does not autoescape. Uses %20 to match href encoding.
 		"urlParam": func(s string) string {
 			return strings.ReplaceAll(url.QueryEscape(s), "+", "%20")
 		},

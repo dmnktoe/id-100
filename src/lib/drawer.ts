@@ -12,11 +12,7 @@ interface DrawerState {
   city: string | null;
 }
 
-/**
- * Build the URL used to fetch the drawer partial for a given id, preserving the
- * active list filters (page / city) so the drawer content stays in sync with the
- * index the user came from.
- */
+// partial fetch URL, keeping the active page/city filters
 function buildPartialUrl(num: string | number, page: string | null, city: string | null): string {
   const qs = new URLSearchParams();
   qs.set("partial", "1");
@@ -25,11 +21,7 @@ function buildPartialUrl(num: string | number, page: string | null, city: string
   return `/id/${num}?${qs.toString()}`;
 }
 
-/**
- * Build the address-bar URL pushed to history when a drawer opens. Params are
- * encoded via URLSearchParams so values like "Frankfurt am Main" never leak raw
- * spaces into the URL.
- */
+// history URL pushed when a drawer opens (params encoded, no raw spaces)
 function buildHistoryUrl(num: string | number, page: string | null, city: string | null): string {
   const qs = new URLSearchParams();
   if (page) qs.set("page", page);
@@ -44,11 +36,10 @@ export function initDrawer(): void {
 
   if (!panel || !backdrop) return;
 
-  // Element focus is returned to when the drawer closes (accessibility).
+  // focus is restored here on close
   let lastFocused: HTMLElement | null = null;
 
-  // Dedupe in-flight/completed partial fetches so hover-prefetch can be reused on
-  // click and we never fire the same request twice.
+  // dedupe fetches so a hover-prefetch is reused on click
   const partialCache = new Map<string, Promise<string>>();
 
   function fetchPartial(url: string): Promise<string> {
@@ -58,8 +49,7 @@ export function initDrawer(): void {
         if (!r.ok) throw new Error("fetch failed");
         return r.text();
       });
-      // Allow retries after a failed request.
-      pending.catch(() => partialCache.delete(url));
+      pending.catch(() => partialCache.delete(url)); // allow retry after failure
       partialCache.set(url, pending);
     }
     return pending;
@@ -80,7 +70,7 @@ export function initDrawer(): void {
     if (pushBack && pushed) history.back();
     // clear stored flag
     delete panel.dataset.drawerPushed;
-    // restore focus to the element that opened the drawer
+    // restore focus to the opener
     if (lastFocused && document.contains(lastFocused)) {
       lastFocused.focus();
     }
@@ -124,9 +114,8 @@ export function initDrawer(): void {
       );
     }
 
-    // Lazy-load images inside the panel using the panel itself as the scroll root,
-    // so only the contributions actually in view are fetched (instead of forcing
-    // every image to download at once when the drawer opens).
+    // lazy-load panel images with the panel as scroll root, so only visible
+    // contributions are fetched instead of all at once
     try {
       initLazyImages(panel, panel);
     } catch (e) {
@@ -145,7 +134,6 @@ export function initDrawer(): void {
       panel.dataset.drawerPushed = "false";
     }
 
-    // Move focus into the drawer for keyboard/screen-reader users.
     (closeBtn || panel).focus();
   }
 
@@ -159,7 +147,7 @@ export function initDrawer(): void {
     }
   });
 
-  // Resolve an id-card to { num, page, city } from its href, or null if not a card link.
+  // parse num/page/city from a card's href, or null if not a card link
   function parseCard(
     el: HTMLElement
   ): { num: string; page: string | null; city: string | null } | null {
@@ -176,15 +164,13 @@ export function initDrawer(): void {
     };
   }
 
-  // Prefetch the drawer partial on hover/touch so the drawer opens instantly.
+  // prefetch the partial on hover/touch for instant open
   const prefetchCard = (e: Event): void => {
     const card = (e.target as HTMLElement).closest<HTMLElement>(".id-card");
     if (!card) return;
     const info = parseCard(card);
     if (!info) return;
-    fetchPartial(buildPartialUrl(info.num, info.page, info.city)).catch(() => {
-      /* ignore prefetch errors; the click handler will surface them */
-    });
+    fetchPartial(buildPartialUrl(info.num, info.page, info.city)).catch(() => {});
   };
   document.addEventListener("pointerenter", prefetchCard, true);
   document.addEventListener("touchstart", prefetchCard, { passive: true });
@@ -230,7 +216,7 @@ export function initDrawer(): void {
   window.addEventListener("popstate", () => {
     const m = location.pathname.match(/\/id\/(\d+)/);
     if (m) {
-      // Only hijack navigation when an index grid exists to drawer over.
+      // only hijack navigation when there is a grid to drawer over
       if (!isOpen() && !document.querySelector(".id-grid")) return;
       const num = m[1];
       const params = new URLSearchParams(location.search);
