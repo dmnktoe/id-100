@@ -40,8 +40,20 @@ RUN go mod download
 COPY cmd ./cmd
 COPY internal ./internal
 
-# Build the application with CGO enabled
-RUN CGO_ENABLED=1 GOOS=linux go build -ldflags "-X 'id-100/internal/version.Version=${APP_VERSION}'" -o /app/bin/id-100 ./cmd/id-100
+# Copy git metadata so the version can be derived from the latest tag
+COPY .git ./.git
+
+# Build the application with CGO enabled.
+# Version precedence:
+#   1. APP_VERSION build-arg, if explicitly set to something other than "dev"
+#   2. otherwise derive dynamically from the latest git tag (git describe)
+#   3. fall back to "dev" if neither is available
+RUN git config --global --add safe.directory /app && \
+    if [ -z "${APP_VERSION}" ] || [ "${APP_VERSION}" = "dev" ]; then \
+      APP_VERSION="$(git describe --tags --always --dirty 2>/dev/null || echo dev)"; \
+    fi && \
+    echo "Building id-100 version: ${APP_VERSION}" && \
+    CGO_ENABLED=1 GOOS=linux go build -ldflags "-X 'id-100/internal/version.Version=${APP_VERSION}'" -o /app/bin/id-100 ./cmd/id-100
 
 # Final stage
 FROM alpine:latest

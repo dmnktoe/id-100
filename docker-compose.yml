@@ -116,6 +116,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Leave unset (or "dev") to derive the version from the latest git tag
+        # inside the build. Set APP_VERSION explicitly to override.
+        APP_VERSION: ${APP_VERSION:-dev}
     restart: unless-stopped
     depends_on:
       db:
