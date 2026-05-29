@@ -24,11 +24,19 @@ RUN npm run build
 # Build stage for Go backend
 FROM golang:1.26-alpine AS backend-builder
 
+# Version handling:
+#   APP_VERSION   - explicit override; if empty/"dev" the version is fetched
+#                   from the latest GitHub release at build time
+#   GITHUB_REPO   - owner/name used for the release lookup
+#   GITHUB_TOKEN  - optional, only needed if the repo is private or to avoid
+#                   the unauthenticated API rate limit
 ARG APP_VERSION=dev
+ARG GITHUB_REPO=dmnktoe/id-100
+ARG GITHUB_TOKEN=
 WORKDIR /app
 
-# Install build dependencies
-RUN apk add --no-cache git build-base libwebp-dev
+# Install build dependencies (curl + ca-certificates for the release lookup)
+RUN apk add --no-cache git build-base libwebp-dev curl ca-certificates
 
 # Copy go mod files
 COPY go.mod go.sum ./
@@ -40,19 +48,23 @@ RUN go mod download
 COPY cmd ./cmd
 COPY internal ./internal
 
-# Copy git metadata so the version can be derived from the latest tag
-COPY .git ./.git
-
 # Build the application with CGO enabled.
 # Version precedence:
 #   1. APP_VERSION build-arg, if explicitly set to something other than "dev"
-#   2. otherwise derive dynamically from the latest git tag (git describe)
-#   3. fall back to "dev" if neither is available
-RUN git config --global --add safe.directory /app && \
+#   2. otherwise the latest GitHub release tag (queried via the API)
+#   3. fall back to "dev" if the lookup yields nothing
+RUN set -e; \
     if [ -z "${APP_VERSION}" ] || [ "${APP_VERSION}" = "dev" ]; then \
-      APP_VERSION="$(git describe --tags --always --dirty 2>/dev/null || echo dev)"; \
-    fi && \
-    echo "Building id-100 version: ${APP_VERSION}" && \
+      echo "Resolving latest release tag from GitHub for ${GITHUB_REPO}..."; \
+      if [ -n "${GITHUB_TOKEN}" ]; then \
+        RESP="$(curl -fsSL -H "Authorization: Bearer ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" || true)"; \
+      else \
+        RESP="$(curl -fsSL -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" || true)"; \
+      fi; \
+      APP_VERSION="$(printf '%s' "$RESP" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/' || true)"; \
+    fi; \
+    [ -z "${APP_VERSION}" ] && APP_VERSION=dev; \
+    echo "Building id-100 version: ${APP_VERSION}"; \
     CGO_ENABLED=1 GOOS=linux go build -ldflags "-X 'id-100/internal/version.Version=${APP_VERSION}'" -o /app/bin/id-100 ./cmd/id-100
 
 # Final stage

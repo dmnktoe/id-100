@@ -1,6 +1,5 @@
 # Git
-# NOTE: .git is intentionally NOT ignored so the Docker build can derive the
-# app version from the latest git tag via `git describe` (see Dockerfile).
+.git
 .gitignore
 
 # Documentation

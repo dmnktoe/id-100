@@ -117,9 +117,12 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Leave unset (or "dev") to derive the version from the latest git tag
-        # inside the build. Set APP_VERSION explicitly to override.
+        # Leave unset (or "dev") to resolve the version from the latest GitHub
+        # release at build time. Set APP_VERSION explicitly to override.
         APP_VERSION: ${APP_VERSION:-dev}
+        GITHUB_REPO: ${GITHUB_REPO:-dmnktoe/id-100}
+        # Only needed for private repos or to avoid the unauthenticated API rate limit.
+        GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     restart: unless-stopped
     depends_on:
       db:
