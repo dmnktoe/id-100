@@ -119,7 +119,6 @@ services:
       args:
         APP_VERSION: ${APP_VERSION:-dev}
         GITHUB_REPO: ${GITHUB_REPO:-dmnktoe/id-100}
-        GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     restart: unless-stopped
     depends_on:
       db:

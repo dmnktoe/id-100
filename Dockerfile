@@ -25,10 +25,9 @@ RUN npm run build
 FROM golang:1.26-alpine AS backend-builder
 
 # Version: APP_VERSION overrides; otherwise resolved from the latest GitHub
-# release at build time. GITHUB_TOKEN is only needed for private repos.
+# release at build time.
 ARG APP_VERSION=dev
 ARG GITHUB_REPO=dmnktoe/id-100
-ARG GITHUB_TOKEN=
 WORKDIR /app
 
 # Install build dependencies
@@ -47,11 +46,7 @@ COPY internal ./internal
 # Build the application with CGO enabled
 RUN set -e; \
     if [ -z "${APP_VERSION}" ] || [ "${APP_VERSION}" = "dev" ]; then \
-      if [ -n "${GITHUB_TOKEN}" ]; then \
-        RESP="$(curl -fsSL -H "Authorization: Bearer ${GITHUB_TOKEN}" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" || true)"; \
-      else \
-        RESP="$(curl -fsSL -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" || true)"; \
-      fi; \
+      RESP="$(curl -fsSL -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" || true)"; \
       APP_VERSION="$(printf '%s' "$RESP" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/' || true)"; \
     fi; \
     [ -z "${APP_VERSION}" ] && APP_VERSION=dev; \
