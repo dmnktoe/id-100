@@ -1,14 +1,3 @@
-# =============================================================================
-# PRODUCTION COMPOSE — managed by Coolify
-# -----------------------------------------------------------------------------
-# This file is deployed by Coolify, NOT meant for plain `docker compose up`.
-# Public routing (domains + TLS) is configured via Coolify's SERVICE_FQDN_*
-# magic environment variables; Coolify generates the proxy/Traefik labels and
-# Let's Encrypt certificates from them and exposes the URLs in its "Links" UI.
-#
-# Local development uses docker-compose.dev.yml instead.
-# Docs: https://coolify.io/docs/knowledge-base/docker/compose
-# =============================================================================
 services:
   db:
     image: postgres:16-alpine
