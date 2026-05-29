@@ -9,6 +9,33 @@ interface DrawerState {
   drawer: boolean;
   number: number;
   page: string | null;
+  city: string | null;
+}
+
+/**
+ * Build the URL used to fetch the drawer partial for a given id, preserving the
+ * active list filters (page / city) so the drawer content stays in sync with the
+ * index the user came from.
+ */
+function buildPartialUrl(num: string | number, page: string | null, city: string | null): string {
+  const qs = new URLSearchParams();
+  qs.set("partial", "1");
+  if (page) qs.set("page", page);
+  if (city) qs.set("city", city);
+  return `/id/${num}?${qs.toString()}`;
+}
+
+/**
+ * Build the address-bar URL pushed to history when a drawer opens. Params are
+ * encoded via URLSearchParams so values like "Frankfurt am Main" never leak raw
+ * spaces into the URL.
+ */
+function buildHistoryUrl(num: string | number, page: string | null, city: string | null): string {
+  const qs = new URLSearchParams();
+  if (page) qs.set("page", page);
+  if (city) qs.set("city", city);
+  const search = qs.toString();
+  return search ? `/id/${num}?${search}` : `/id/${num}`;
 }
 
 export function initDrawer(): void {
@@ -17,7 +44,33 @@ export function initDrawer(): void {
 
   if (!panel || !backdrop) return;
 
+  // Element focus is returned to when the drawer closes (accessibility).
+  let lastFocused: HTMLElement | null = null;
+
+  // Dedupe in-flight/completed partial fetches so hover-prefetch can be reused on
+  // click and we never fire the same request twice.
+  const partialCache = new Map<string, Promise<string>>();
+
+  function fetchPartial(url: string): Promise<string> {
+    let pending = partialCache.get(url);
+    if (!pending) {
+      pending = fetch(url).then((r) => {
+        if (!r.ok) throw new Error("fetch failed");
+        return r.text();
+      });
+      // Allow retries after a failed request.
+      pending.catch(() => partialCache.delete(url));
+      partialCache.set(url, pending);
+    }
+    return pending;
+  }
+
+  function isOpen(): boolean {
+    return document.body.classList.contains("drawer-open");
+  }
+
   function closeDrawer(pushBack: boolean): void {
+    if (!isOpen()) return;
     const pushed = panel.dataset.drawerPushed === "true";
     document.body.classList.remove("drawer-open");
     panel.innerHTML = "";
@@ -27,14 +80,22 @@ export function initDrawer(): void {
     if (pushBack && pushed) history.back();
     // clear stored flag
     delete panel.dataset.drawerPushed;
+    // restore focus to the element that opened the drawer
+    if (lastFocused && document.contains(lastFocused)) {
+      lastFocused.focus();
+    }
+    lastFocused = null;
   }
 
   function openDrawer(
     number: number,
     html: string,
     pushState: boolean,
-    pageParam: string | null
+    pageParam: string | null,
+    cityParam: string | null,
+    trigger?: HTMLElement | null
   ): void {
+    if (trigger) lastFocused = trigger;
     panel.innerHTML = html;
     panel.setAttribute("aria-hidden", "false");
     backdrop.setAttribute("aria-hidden", "false");
@@ -63,55 +124,86 @@ export function initDrawer(): void {
       );
     }
 
-    // Initialize lazy images inside the newly-inserted panel and force immediate load
+    // Lazy-load images inside the panel using the panel itself as the scroll root,
+    // so only the contributions actually in view are fetched (instead of forcing
+    // every image to download at once when the drawer opens).
     try {
-      initLazyImages(panel);
-      Array.from(panel.querySelectorAll<HTMLImageElement>("img.lazy")).forEach((img) => {
-        const full = img.getAttribute("data-src");
-        if (full && img.src !== full) img.src = full;
-      });
+      initLazyImages(panel, panel);
     } catch (e) {
       console.warn("initLazyImages failed", e);
     }
 
     if (pushState) {
-      const url = pageParam ? `/id/${number}?page=${pageParam}` : `/id/${number}`;
-      history.pushState({ drawer: true, number: number, page: pageParam } as DrawerState, "", url);
+      history.pushState(
+        { drawer: true, number, page: pageParam, city: cityParam } as DrawerState,
+        "",
+        buildHistoryUrl(number, pageParam, cityParam)
+      );
       panel.dataset.drawerPushed = "true";
     } else {
       // record that we did not push history for this drawer instance
       panel.dataset.drawerPushed = "false";
     }
+
+    // Move focus into the drawer for keyboard/screen-reader users.
+    (closeBtn || panel).focus();
   }
 
   backdrop.addEventListener("click", () => closeDrawer(true));
+
+  // Close on Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isOpen()) {
+      e.preventDefault();
+      closeDrawer(true);
+    }
+  });
+
+  // Resolve an id-card to { num, page, city } from its href, or null if not a card link.
+  function parseCard(
+    el: HTMLElement
+  ): { num: string; page: string | null; city: string | null } | null {
+    const href =
+      el.getAttribute("href") || el.querySelector<HTMLAnchorElement>("a")?.getAttribute("href");
+    if (!href) return null;
+    const m = href.match(/\/id\/(\d+)/);
+    if (!m) return null;
+    const url = new URL(href, window.location.origin);
+    return {
+      num: m[1],
+      page: url.searchParams.get("page"),
+      city: url.searchParams.get("city"),
+    };
+  }
+
+  // Prefetch the drawer partial on hover/touch so the drawer opens instantly.
+  const prefetchCard = (e: Event): void => {
+    const card = (e.target as HTMLElement).closest<HTMLElement>(".id-card");
+    if (!card) return;
+    const info = parseCard(card);
+    if (!info) return;
+    fetchPartial(buildPartialUrl(info.num, info.page, info.city)).catch(() => {
+      /* ignore prefetch errors; the click handler will surface them */
+    });
+  };
+  document.addEventListener("pointerenter", prefetchCard, true);
+  document.addEventListener("touchstart", prefetchCard, { passive: true });
 
   // Click delegation for id cards
   document.addEventListener("click", (e) => {
     const card = (e.target as HTMLElement).closest<HTMLElement>(".id-card");
     if (!card) return;
+    const info = parseCard(card);
+    if (!info) return;
     e.preventDefault();
+
     const href =
-      card.getAttribute("href") || card.querySelector<HTMLAnchorElement>("a")?.getAttribute("href");
-    if (!href) return;
+      card.getAttribute("href") ||
+      card.querySelector<HTMLAnchorElement>("a")?.getAttribute("href") ||
+      buildHistoryUrl(info.num, info.page, info.city);
 
-    // extract number and page parameter from href /id/:number?page=X
-    const m = href.match(/\/id\/(\d+)/);
-    if (!m) return;
-    const num = m[1];
-
-    // Extract page parameter if present
-    const url = new URL(href, window.location.origin);
-    const pageParam = url.searchParams.get("page");
-
-    const fetchUrl = pageParam ? `/id/${num}?partial=1&page=${pageParam}` : `/id/${num}?partial=1`;
-
-    fetch(fetchUrl)
-      .then((r) => {
-        if (!r.ok) throw new Error("fetch failed");
-        return r.text();
-      })
-      .then((html) => openDrawer(parseInt(num), html, true, pageParam))
+    fetchPartial(buildPartialUrl(info.num, info.page, info.city))
+      .then((html) => openDrawer(parseInt(info.num), html, true, info.page, info.city, card))
       .catch((err) => {
         console.error(err);
         window.location.href = href;
@@ -126,50 +218,29 @@ export function initDrawer(): void {
     const href = link.getAttribute("href");
     if (!href) return;
     const fetchUrl = href + (href.includes("?") ? "&partial=1" : "?partial=1");
-    fetch(fetchUrl)
-      .then((r) => {
-        if (!r.ok) throw new Error("fetch failed");
-        return r.text();
-      })
-      .then((html) => openDrawer(0, html, false, null))
+    fetchPartial(fetchUrl)
+      .then((html) => openDrawer(0, html, false, null, null, link))
       .catch((err) => {
         console.error(err);
         window.location.href = href;
       });
   });
 
-  // popstate: close drawer when state removed
-  window.addEventListener("popstate", (_ev) => {
-    if (document.body.classList.contains("drawer-open")) {
-      // if new location is an id path keep it open, otherwise close
-      const path = location.pathname;
-      const m = path.match(/\/id\/(\d+)/);
-      if (m) {
-        const num = m[1];
-        const pageParam = new URLSearchParams(location.search).get("page");
-        const fetchUrl = pageParam
-          ? `/id/${num}?partial=1&page=${pageParam}`
-          : `/id/${num}?partial=1`;
-        // fetch and open if different
-        fetch(fetchUrl)
-          .then((r) => r.text())
-          .then((html) => openDrawer(parseInt(num), html, false, pageParam));
-      } else {
-        closeDrawer(false);
-      }
+  // popstate: open/close/update drawer to match the new location
+  window.addEventListener("popstate", () => {
+    const m = location.pathname.match(/\/id\/(\d+)/);
+    if (m) {
+      // Only hijack navigation when an index grid exists to drawer over.
+      if (!isOpen() && !document.querySelector(".id-grid")) return;
+      const num = m[1];
+      const params = new URLSearchParams(location.search);
+      const page = params.get("page");
+      const city = params.get("city");
+      fetchPartial(buildPartialUrl(num, page, city))
+        .then((html) => openDrawer(parseInt(num), html, false, page, city))
+        .catch((err) => console.error(err));
     } else {
-      // if not open but user navigated directly to id path (e.g. via back), and page has .id-grid, open it
-      const m = location.pathname.match(/\/id\/(\d+)/);
-      if (m && document.querySelector(".id-grid")) {
-        const num = m[1];
-        const pageParam = new URLSearchParams(location.search).get("page");
-        const fetchUrl = pageParam
-          ? `/id/${num}?partial=1&page=${pageParam}`
-          : `/id/${num}?partial=1`;
-        fetch(fetchUrl)
-          .then((r) => r.text())
-          .then((html) => openDrawer(parseInt(num), html, false, pageParam));
-      }
+      closeDrawer(false);
     }
   });
 }

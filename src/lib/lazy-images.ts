@@ -3,7 +3,7 @@
  * Implements blur-up image loading with IntersectionObserver
  */
 
-export function initLazyImages(root?: Document | HTMLElement): void {
+export function initLazyImages(root?: Document | HTMLElement, observerRoot?: Element | null): void {
   const container = root || document;
   const images = Array.from(container.querySelectorAll<HTMLImageElement>("img.lazy"));
 
@@ -74,7 +74,7 @@ export function initLazyImages(root?: Document | HTMLElement): void {
           o.unobserve(img);
         });
       },
-      { root: null, rootMargin: "200px", threshold: 0.01 }
+      { root: observerRoot ?? null, rootMargin: "200px", threshold: 0.01 }
     );
 
     images.forEach((img) => {

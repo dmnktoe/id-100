@@ -14,7 +14,7 @@
                 <select id="cityFilter" class="city-filter-dropdown" onchange="window.location.href=this.value">
                     <option value="/" {{if not .SelectedCity}}selected{{end}}>Alle Orte ({{.FooterStats.TotalContributions}} Beiträge)</option>
                     {{range .Cities}}
-                        <option value="/?city={{.}}" {{if eq $.SelectedCity .}}selected{{end}}>{{.}}</option>
+                        <option value="/?city={{urlParam .}}" {{if eq $.SelectedCity .}}selected{{end}}>{{.}}</option>
                     {{end}}
                 </select>
                 {{if .SelectedCity}}
@@ -33,7 +33,7 @@
             <a href="/id/{{.Number}}?page={{$.CurrentPage}}{{if $.SelectedCity}}&city={{$.SelectedCity}}{{end}}" class="id-card overlay-{{.PointsTier}}">
                 <div class="card-image-box">
                     {{if .ImageUrl}}
-                        <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" alt="{{.Title}}">
+                        <img class="card-img lazy blur-up" data-src="{{.ImageUrl}}" data-lqip="{{.ImageLqip}}" src="{{if .ImageLqip}}{{.ImageLqip}}{{else}}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'/>{{end}}" loading="lazy" decoding="async" alt="{{.Title}}">
                     {{else}}
                         <div class="no-image">Kein Bild</div>
                     {{end}}
