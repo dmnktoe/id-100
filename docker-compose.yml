@@ -23,6 +23,8 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_SERVER_URL: ${MINIO_SERVER_URL}
       MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL}
+      SERVICE_FQDN_MINIO_9000: https://s3.id-100.online
+      SERVICE_FQDN_MINIOCONSOLE_9001: https://oss.id-100.online
     volumes:
       - minio_data:/data
     healthcheck:
@@ -30,19 +32,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=coolify
-      - traefik.http.routers.minio-api.rule=Host(`s3.id-100.online`)
-      - traefik.http.routers.minio-api.entrypoints=https
-      - traefik.http.routers.minio-api.tls.certresolver=letsencrypt
-      - traefik.http.routers.minio-api.service=minio-api
-      - traefik.http.services.minio-api.loadbalancer.server.port=9000
-      - traefik.http.routers.minio-console.rule=Host(`oss.id-100.online`)
-      - traefik.http.routers.minio-console.entrypoints=https
-      - traefik.http.routers.minio-console.tls.certresolver=letsencrypt
-      - traefik.http.routers.minio-console.service=minio-console
-      - traefik.http.services.minio-console.loadbalancer.server.port=9001
 
   minio-init:
     image: minio/mc:latest
@@ -65,6 +54,7 @@ services:
       MEILI_ENV: ${ENVIRONMENT}
       MEILI_NO_ANALYTICS: ${MEILI_NO_ANALYTICS}
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      SERVICE_FQDN_MEILISEARCH_7700: https://search.id-100.online
     volumes:
       - meilisearch_data:/meili_data
     healthcheck:
@@ -72,13 +62,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=coolify
-      - traefik.http.routers.meilisearch.rule=Host(`search.id-100.online`)
-      - traefik.http.routers.meilisearch.entrypoints=https
-      - traefik.http.routers.meilisearch.tls.certresolver=letsencrypt
-      - traefik.http.services.meilisearch.loadbalancer.server.port=7700
 
   geonames-loader:
     image: alpine:latest
@@ -161,19 +144,13 @@ services:
       SENTRY_DSN: ${SENTRY_DSN}
       UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL}
       UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID}
+      SERVICE_FQDN_WEBAPP_8080: https://id-100.online
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=coolify
-      - traefik.http.routers.webapp.rule=Host(`id-100.online`)
-      - traefik.http.routers.webapp.entrypoints=https
-      - traefik.http.routers.webapp.tls.certresolver=letsencrypt
-      - traefik.http.services.webapp.loadbalancer.server.port=8080
 
 volumes:
   postgres_data:
