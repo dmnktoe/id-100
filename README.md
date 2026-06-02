@@ -16,13 +16,15 @@ Eine moderne Go-Webanwendung fuer kreative Dokumentationen mit Echo, PostgreSQL,
 - S3-kompatibler Storage ueber MinIO
 - PostgreSQL fuer Daten und Migrations
 - Meilisearch fuer City Autocomplete
+- Umami Analytics mit Cookie-Consent (datenschutzfreundlich)
+- Favicons und Web-App-Manifest (PWA-Icons)
 - Hot Reload via Air
 - Komplettes lokales Setup via Docker Compose
 
 ## Voraussetzungen
 
-- Go 1.24 oder hoeher
-- Node.js 20 oder hoeher (Frontend Build)
+- Go 1.26 oder hoeher
+- Node.js 24 oder hoeher (Frontend Build)
 - Docker und Docker Compose (empfohlen)
 
 ## Schnellstart mit Docker Compose
@@ -35,7 +37,7 @@ cd id-100
 docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
 ```
 
-Produktion (mit nginx):
+Produktion (Traefik / Coolify):
 
 ```bash
 docker compose up -d
@@ -43,7 +45,8 @@ docker compose up -d
 
 Hinweise:
 
-- In Produktion wird ein externes Netzwerk namens nginx-proxy erwartet.
+- Die Produktions-Compose ist fuer ein Deployment via Coolify ausgelegt; das Routing laeuft ueber Traefik (Labels in [docker-compose.yml](docker-compose.yml)) auf dem externen Netzwerk `coolify`.
+- Alle Domains, Endpoints und Secrets sind ueber Environment-Variablen konfigurierbar.
 - Der erste Start laedt deutsche Staedtedaten von GeoNames (ca. 10 MB).
 
 ## Manuelle Entwicklung
