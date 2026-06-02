@@ -24,14 +24,13 @@ RUN npm run build
 # Build stage for Go backend
 FROM golang:1.26-alpine AS backend-builder
 
-# Version: APP_VERSION overrides; otherwise resolved from the latest GitHub
-# release at build time.
+# APP_VERSION optionally pins the version at build time; when left at "dev" the
+# container resolves it from the latest GitHub release at startup (startup.sh).
 ARG APP_VERSION=dev
-ARG GITHUB_REPO=dmnktoe/id-100
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache git build-base libwebp-dev curl ca-certificates
+RUN apk add --no-cache git build-base libwebp-dev
 
 # Copy go mod files
 COPY go.mod go.sum ./
@@ -44,14 +43,7 @@ COPY cmd ./cmd
 COPY internal ./internal
 
 # Build the application with CGO enabled
-RUN set -e; \
-    if [ -z "${APP_VERSION}" ] || [ "${APP_VERSION}" = "dev" ]; then \
-      RESP="$(curl -fsSL -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" || true)"; \
-      APP_VERSION="$(printf '%s' "$RESP" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/' || true)"; \
-    fi; \
-    [ -z "${APP_VERSION}" ] && APP_VERSION=dev; \
-    echo "Building id-100 version: ${APP_VERSION}"; \
-    CGO_ENABLED=1 GOOS=linux go build -ldflags "-X 'id-100/internal/version.Version=${APP_VERSION}'" -o /app/bin/id-100 ./cmd/id-100
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags "-X 'id-100/internal/version.Version=${APP_VERSION}'" -o /app/bin/id-100 ./cmd/id-100
 
 # Final stage
 FROM alpine:latest

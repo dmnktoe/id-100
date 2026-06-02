@@ -116,9 +116,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        APP_VERSION: ${APP_VERSION:-dev}
-        GITHUB_REPO: ${GITHUB_REPO:-dmnktoe/id-100}
     restart: unless-stopped
     depends_on:
       db:
@@ -128,6 +125,9 @@ services:
       meilisearch:
         condition: service_healthy
     environment:
+      # Pin to override the startup release lookup; GITHUB_REPO overrides the repo.
+      APP_VERSION: ${APP_VERSION:-}
+      GITHUB_REPO: ${GITHUB_REPO:-dmnktoe/id-100}
       DATABASE_URL: ${DATABASE_URL}?sslmode=disable
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
