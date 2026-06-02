@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io"
 	"log"
+	"net/url"
 	"path/filepath"
 	"strings"
 
@@ -89,6 +90,11 @@ func Load(cfg *config.Config) *Renderer {
 		"eq":        func(a, b string) bool { return a == b },
 		"or":        func(a, b bool) bool { return a || b },
 		"hasprefix": func(s, prefix string) bool { return strings.HasPrefix(s, prefix) },
+		// urlParam encodes a query value for non-URL attributes (e.g. <option value>),
+		// which html/template does not autoescape. Uses %20 to match href encoding.
+		"urlParam": func(s string) string {
+			return strings.ReplaceAll(url.QueryEscape(s), "+", "%20")
+		},
 	}
 	tmpl := template.New("").Funcs(funcs)
 	tmpls, err := tmpl.ParseFiles(files...)
