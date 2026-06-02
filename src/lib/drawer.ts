@@ -1,232 +1,201 @@
 /**
- * Drawer module
- * Handles drawer/modal functionality for viewing content
+ * Drawer module — opens id detail pages in an overlay without a full navigation,
+ * keeping the URL (page/city filters) in sync for deep-linking and back/forward.
  */
 
 import { initLazyImages } from "./lazy-images";
+import {
+  buildHistoryUrl,
+  buildPartialUrl,
+  parseDrawerHref,
+  parseDrawerLocation,
+  type DrawerTarget,
+} from "./drawer-urls";
 
-interface DrawerState {
-  drawer: boolean;
-  number: number;
-  page: string | null;
-  city: string | null;
-}
-
-// partial fetch URL, keeping the active page/city filters
-function buildPartialUrl(num: string | number, page: string | null, city: string | null): string {
-  const qs = new URLSearchParams();
-  qs.set("partial", "1");
-  if (page) qs.set("page", page);
-  if (city) qs.set("city", city);
-  return `/id/${num}?${qs.toString()}`;
-}
-
-// history URL pushed when a drawer opens (params encoded, no raw spaces)
-function buildHistoryUrl(num: string | number, page: string | null, city: string | null): string {
-  const qs = new URLSearchParams();
-  if (page) qs.set("page", page);
-  if (city) qs.set("city", city);
-  const search = qs.toString();
-  return search ? `/id/${num}?${search}` : `/id/${num}`;
-}
-
-export function initDrawer(): void {
-  const panel = document.getElementById("drawer-panel") as HTMLElement;
-  const backdrop = document.getElementById("drawer-backdrop") as HTMLElement;
-
-  if (!panel || !backdrop) return;
-
-  // focus is restored here on close
-  let lastFocused: HTMLElement | null = null;
-
-  // dedupe fetches so a hover-prefetch is reused on click
-  const partialCache = new Map<string, Promise<string>>();
-
-  function fetchPartial(url: string): Promise<string> {
-    let pending = partialCache.get(url);
+/** Dedupes partial fetches so a hover-prefetch can be reused by the subsequent click. */
+function createPartialFetcher(): (url: string) => Promise<string> {
+  const cache = new Map<string, Promise<string>>();
+  return (url) => {
+    let pending = cache.get(url);
     if (!pending) {
-      pending = fetch(url).then((r) => {
-        if (!r.ok) throw new Error("fetch failed");
-        return r.text();
+      pending = fetch(url).then((res) => {
+        if (!res.ok) throw new Error(`drawer partial failed: ${res.status}`);
+        return res.text();
       });
-      pending.catch(() => partialCache.delete(url)); // allow retry after failure
-      partialCache.set(url, pending);
+      pending.catch(() => cache.delete(url)); // allow retry after a failed request
+      cache.set(url, pending);
     }
     return pending;
-  }
+  };
+}
 
-  function isOpen(): boolean {
+/** Resolve the drawer target for an id card from its href (or nested anchor). */
+function targetFromCard(card: HTMLElement): DrawerTarget | null {
+  const href =
+    card.getAttribute("href") ?? card.querySelector<HTMLAnchorElement>("a")?.getAttribute("href");
+  return href ? parseDrawerHref(href) : null;
+}
+
+/** Owns the panel DOM: open/close lifecycle, focus handling, images and history. */
+class DrawerController {
+  private lastFocused: HTMLElement | null = null;
+
+  constructor(
+    private readonly panel: HTMLElement,
+    private readonly backdrop: HTMLElement
+  ) {}
+
+  get isOpen(): boolean {
     return document.body.classList.contains("drawer-open");
   }
 
-  function closeDrawer(pushBack: boolean): void {
-    if (!isOpen()) return;
-    const pushed = panel.dataset.drawerPushed === "true";
-    document.body.classList.remove("drawer-open");
-    panel.innerHTML = "";
-    panel.setAttribute("aria-hidden", "true");
-    backdrop.setAttribute("aria-hidden", "true");
-    // only navigate back if caller requested AND this drawer actually pushed a history entry
-    if (pushBack && pushed) history.back();
-    // clear stored flag
-    delete panel.dataset.drawerPushed;
-    // restore focus to the opener
-    if (lastFocused && document.contains(lastFocused)) {
-      lastFocused.focus();
-    }
-    lastFocused = null;
-  }
-
-  function openDrawer(
-    number: number,
+  open(
     html: string,
+    target: DrawerTarget | null,
     pushState: boolean,
-    pageParam: string | null,
-    cityParam: string | null,
     trigger?: HTMLElement | null
   ): void {
-    if (trigger) lastFocused = trigger;
-    panel.innerHTML = html;
-    panel.setAttribute("aria-hidden", "false");
-    backdrop.setAttribute("aria-hidden", "false");
+    if (trigger) this.lastFocused = trigger;
+
+    this.panel.innerHTML = html;
+    this.panel.setAttribute("aria-hidden", "false");
+    this.backdrop.setAttribute("aria-hidden", "false");
     document.body.classList.add("drawer-open");
 
-    // Wire close button if present
-    const closeBtn = panel.querySelector<HTMLElement>(".drawer-close");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", () => closeDrawer(true), {
-        once: true,
-      });
-    }
+    this.wireDismissControls();
+    this.loadImages();
+    this.syncHistory(target, pushState);
 
-    // Wire back link to close drawer instead of normal navigation
-    const backLink = panel.querySelector<HTMLAnchorElement>(".drawer-back-link");
-    if (backLink) {
-      backLink.addEventListener(
-        "click",
-        (e) => {
-          e.preventDefault();
-          closeDrawer(true);
-        },
-        {
-          once: true,
-        }
-      );
-    }
+    (this.panel.querySelector<HTMLElement>(".drawer-close") ?? this.panel).focus();
+  }
 
-    // lazy-load panel images with the panel as scroll root, so only visible
-    // contributions are fetched instead of all at once
+  close(pushBack: boolean): void {
+    if (!this.isOpen) return;
+    const pushed = this.panel.dataset.drawerPushed === "true";
+
+    document.body.classList.remove("drawer-open");
+    this.panel.innerHTML = "";
+    this.panel.setAttribute("aria-hidden", "true");
+    this.backdrop.setAttribute("aria-hidden", "true");
+    delete this.panel.dataset.drawerPushed;
+
+    // only navigate back when this instance actually pushed a history entry
+    if (pushBack && pushed) history.back();
+    this.restoreFocus();
+  }
+
+  private wireDismissControls(): void {
+    const dismiss = (e: Event): void => {
+      e.preventDefault();
+      this.close(true);
+    };
+    this.panel
+      .querySelector<HTMLElement>(".drawer-close")
+      ?.addEventListener("click", dismiss, { once: true });
+    this.panel
+      .querySelector<HTMLAnchorElement>(".drawer-back-link")
+      ?.addEventListener("click", dismiss, { once: true });
+  }
+
+  private loadImages(): void {
+    // panel as scroll root → only contributions in view are fetched, not all at once
     try {
-      initLazyImages(panel, panel);
+      initLazyImages(this.panel, this.panel);
     } catch (e) {
       console.warn("initLazyImages failed", e);
     }
-
-    if (pushState) {
-      history.pushState(
-        { drawer: true, number, page: pageParam, city: cityParam } as DrawerState,
-        "",
-        buildHistoryUrl(number, pageParam, cityParam)
-      );
-      panel.dataset.drawerPushed = "true";
-    } else {
-      // record that we did not push history for this drawer instance
-      panel.dataset.drawerPushed = "false";
-    }
-
-    (closeBtn || panel).focus();
   }
 
-  backdrop.addEventListener("click", () => closeDrawer(true));
+  private syncHistory(target: DrawerTarget | null, pushState: boolean): void {
+    if (pushState && target) {
+      history.pushState({ drawer: true, target }, "", buildHistoryUrl(target));
+      this.panel.dataset.drawerPushed = "true";
+    } else {
+      this.panel.dataset.drawerPushed = "false";
+    }
+  }
 
-  // Close on Escape
+  private restoreFocus(): void {
+    if (this.lastFocused && document.contains(this.lastFocused)) {
+      this.lastFocused.focus();
+    }
+    this.lastFocused = null;
+  }
+}
+
+export function initDrawer(): void {
+  const panel = document.getElementById("drawer-panel");
+  const backdrop = document.getElementById("drawer-backdrop");
+  if (!panel || !backdrop) return;
+
+  const drawer = new DrawerController(panel, backdrop);
+  const fetchPartial = createPartialFetcher();
+
+  const openTarget = (
+    target: DrawerTarget,
+    pushState: boolean,
+    trigger?: HTMLElement | null
+  ): Promise<void> =>
+    fetchPartial(buildPartialUrl(target)).then((html) =>
+      drawer.open(html, target, pushState, trigger)
+    );
+
+  // dismiss: backdrop click + Escape
+  backdrop.addEventListener("click", () => drawer.close(true));
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && isOpen()) {
+    if (e.key === "Escape" && drawer.isOpen) {
       e.preventDefault();
-      closeDrawer(true);
+      drawer.close(true);
     }
   });
 
-  // parse num/page/city from a card's href, or null if not a card link
-  function parseCard(
-    el: HTMLElement
-  ): { num: string; page: string | null; city: string | null } | null {
-    const href =
-      el.getAttribute("href") || el.querySelector<HTMLAnchorElement>("a")?.getAttribute("href");
-    if (!href) return null;
-    const m = href.match(/\/id\/(\d+)/);
-    if (!m) return null;
-    const url = new URL(href, window.location.origin);
-    return {
-      num: m[1],
-      page: url.searchParams.get("page"),
-      city: url.searchParams.get("city"),
-    };
-  }
-
-  // prefetch the partial on hover/touch for instant open
-  const prefetchCard = (e: Event): void => {
+  // prefetch on hover/touch for instant open (pointerenter doesn't bubble → capture)
+  const prefetch = (e: Event): void => {
     const card = (e.target as HTMLElement).closest<HTMLElement>(".id-card");
-    if (!card) return;
-    const info = parseCard(card);
-    if (!info) return;
-    fetchPartial(buildPartialUrl(info.num, info.page, info.city)).catch(() => {});
+    const target = card && targetFromCard(card);
+    if (target) fetchPartial(buildPartialUrl(target)).catch(() => {});
   };
-  document.addEventListener("pointerenter", prefetchCard, true);
-  document.addEventListener("touchstart", prefetchCard, { passive: true });
+  document.addEventListener("pointerenter", prefetch, true);
+  document.addEventListener("touchstart", prefetch, { passive: true });
 
-  // Click delegation for id cards
+  // open id cards in the drawer
   document.addEventListener("click", (e) => {
     const card = (e.target as HTMLElement).closest<HTMLElement>(".id-card");
     if (!card) return;
-    const info = parseCard(card);
-    if (!info) return;
+    const target = targetFromCard(card);
+    if (!target) return;
     e.preventDefault();
-
-    const href =
-      card.getAttribute("href") ||
-      card.querySelector<HTMLAnchorElement>("a")?.getAttribute("href") ||
-      buildHistoryUrl(info.num, info.page, info.city);
-
-    fetchPartial(buildPartialUrl(info.num, info.page, info.city))
-      .then((html) => openDrawer(parseInt(info.num), html, true, info.page, info.city, card))
-      .catch((err) => {
-        console.error(err);
-        window.location.href = href;
-      });
+    openTarget(target, true, card).catch((err) => {
+      console.error(err);
+      window.location.href = buildHistoryUrl(target);
+    });
   });
 
-  // Click delegation for simple drawer links (e.g., "werkzeug anfordern")
+  // open simple drawer links (e.g. "werkzeug anfordern") without a history entry
   document.addEventListener("click", (e) => {
     const link = (e.target as HTMLElement).closest<HTMLAnchorElement>(".drawer-link");
     if (!link) return;
-    e.preventDefault();
     const href = link.getAttribute("href");
     if (!href) return;
-    const fetchUrl = href + (href.includes("?") ? "&partial=1" : "?partial=1");
-    fetchPartial(fetchUrl)
-      .then((html) => openDrawer(0, html, false, null, null, link))
+    e.preventDefault();
+    const url = href + (href.includes("?") ? "&partial=1" : "?partial=1");
+    fetchPartial(url)
+      .then((html) => drawer.open(html, null, false, link))
       .catch((err) => {
         console.error(err);
         window.location.href = href;
       });
   });
 
-  // popstate: open/close/update drawer to match the new location
+  // sync drawer with browser back/forward
   window.addEventListener("popstate", () => {
-    const m = location.pathname.match(/\/id\/(\d+)/);
-    if (m) {
-      // only hijack navigation when there is a grid to drawer over
-      if (!isOpen() && !document.querySelector(".id-grid")) return;
-      const num = m[1];
-      const params = new URLSearchParams(location.search);
-      const page = params.get("page");
-      const city = params.get("city");
-      fetchPartial(buildPartialUrl(num, page, city))
-        .then((html) => openDrawer(parseInt(num), html, false, page, city))
-        .catch((err) => console.error(err));
-    } else {
-      closeDrawer(false);
+    const target = parseDrawerLocation(window.location);
+    if (!target) {
+      drawer.close(false);
+      return;
     }
+    // only hijack navigation when there is a grid to drawer over
+    if (!drawer.isOpen && !document.querySelector(".id-grid")) return;
+    openTarget(target, false).catch((err) => console.error(err));
   });
 }
