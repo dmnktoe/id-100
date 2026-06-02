@@ -42,8 +42,11 @@ RUN go mod download
 COPY cmd ./cmd
 COPY internal ./internal
 
-# Build the application with CGO enabled
-RUN CGO_ENABLED=1 GOOS=linux go build -ldflags "-X 'id-100/internal/version.Version=${APP_VERSION}'" -o /app/bin/id-100 ./cmd/id-100
+# Build the application with CGO enabled.
+# Coalesce an empty APP_VERSION (e.g. injected as an empty build-arg) to "dev"
+# so the runtime startup lookup can resolve the real version.
+RUN APP_VERSION="${APP_VERSION:-dev}"; \
+    CGO_ENABLED=1 GOOS=linux go build -ldflags "-X 'id-100/internal/version.Version=${APP_VERSION}'" -o /app/bin/id-100 ./cmd/id-100
 
 # Final stage
 FROM alpine:latest

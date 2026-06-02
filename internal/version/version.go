@@ -8,9 +8,14 @@ import "os"
 var Version = "dev"
 
 func init() {
-	if Version == "dev" {
+	// An empty Version can happen when the build passes an empty APP_VERSION
+	// build-arg; treat it the same as the "dev" default.
+	if Version == "" || Version == "dev" {
 		if v := os.Getenv("APP_VERSION"); v != "" {
 			Version = v
 		}
+	}
+	if Version == "" {
+		Version = "dev"
 	}
 }
