@@ -41,8 +41,6 @@ tmp/
 # Node modules
 node_modules/
 
-# Package lock files
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 id-100-app

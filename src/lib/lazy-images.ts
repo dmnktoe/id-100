@@ -55,7 +55,11 @@ export function initLazyImages(root?: Document | HTMLElement, observerRoot?: Ele
       if (img.naturalWidth && img.naturalWidth > 0) {
         onLoad();
       } else {
-        onError();
+        const full = img.getAttribute("data-src");
+        const currentSrc = img.currentSrc || img.src || "";
+        if (!full || currentSrc === full) {
+          onError();
+        }
       }
     }
   });
