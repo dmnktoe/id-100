@@ -151,7 +151,8 @@ export function initDrawer(): void {
 
   // prefetch on hover/touch for instant open (pointerenter doesn't bubble → capture)
   const prefetch = (e: Event): void => {
-    const card = (e.target as HTMLElement).closest<HTMLElement>(".id-card");
+    if (!(e.target instanceof Element)) return;
+    const card = e.target.closest<HTMLElement>(".id-card");
     const target = card && targetFromCard(card);
     if (target) fetchPartial(buildPartialUrl(target)).catch(() => {});
   };
@@ -160,7 +161,8 @@ export function initDrawer(): void {
 
   // open id cards in the drawer
   document.addEventListener("click", (e) => {
-    const card = (e.target as HTMLElement).closest<HTMLElement>(".id-card");
+    if (!(e.target instanceof Element)) return;
+    const card = e.target.closest<HTMLElement>(".id-card");
     if (!card) return;
     const target = targetFromCard(card);
     if (!target) return;
@@ -173,7 +175,8 @@ export function initDrawer(): void {
 
   // open simple drawer links (e.g. "werkzeug anfordern") without a history entry
   document.addEventListener("click", (e) => {
-    const link = (e.target as HTMLElement).closest<HTMLAnchorElement>(".drawer-link");
+    if (!(e.target instanceof Element)) return;
+    const link = e.target.closest<HTMLAnchorElement>(".drawer-link");
     if (!link) return;
     const href = link.getAttribute("href");
     if (!href) return;
