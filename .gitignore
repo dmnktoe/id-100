@@ -41,8 +41,7 @@ tmp/
 # Node modules
 node_modules/
 
-# Package lock files
-package-lock.json
+# Package lock files (package-lock.json is committed for reproducible CI installs)
 yarn.lock
 pnpm-lock.yaml
 id-100-app
