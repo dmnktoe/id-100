@@ -64,17 +64,45 @@ export function initLazyImages(root?: Document | HTMLElement, observerRoot?: Ele
     }
   });
 
+  // Preload the full-size image off-DOM and only swap the visible src once it
+  // is fully loaded (and decoded). Swapping src directly would discard the
+  // currently displayed LQIP and show a blank/white frame until the full image
+  // arrives — preloading keeps the blurred placeholder visible until the moment
+  // the sharp image is ready to paint.
+  const loadFull = (img: HTMLImageElement): void => {
+    const src = img.getAttribute("data-src");
+    if (!src || img.src === src || img.dataset.fullLoaded) return;
+    img.dataset.fullLoaded = "1";
+
+    const reveal = (): void => {
+      if (img.src !== src) img.src = src;
+      img.classList.add("loaded");
+    };
+
+    const pre = new Image();
+    pre.onload = (): void => {
+      // decode (when available) so the swap paints instantly without a flash
+      if (typeof pre.decode === "function") {
+        pre.decode().then(reveal).catch(reveal);
+      } else {
+        reveal();
+      }
+    };
+    pre.onerror = (): void => {
+      // keep the placeholder but drop the blur so we don't stay blurred forever
+      img.classList.add("loaded");
+    };
+    pre.src = src;
+  };
+
   if ("IntersectionObserver" in window) {
     const obs = new IntersectionObserver(
       (entries, o) => {
         entries.forEach((en) => {
           if (!en.isIntersecting) return;
           const img = en.target as HTMLImageElement;
-          const src = img.getAttribute("data-src");
-          if (src && img.src !== src) {
-            // trigger full-size load
-            img.src = src;
-          }
+          // preload full-size, then swap once ready (no blank frame)
+          loadFull(img);
           o.unobserve(img);
         });
       },
