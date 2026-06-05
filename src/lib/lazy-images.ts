@@ -55,7 +55,17 @@ export function initLazyImages(root?: Document | HTMLElement, observerRoot?: Ele
       if (img.naturalWidth && img.naturalWidth > 0) {
         onLoad();
       } else {
-        onError();
+        // naturalWidth === 0 can mean a broken image OR the tiny LQIP placeholder
+        // we just assigned (some DOM implementations mark a data-URL src as
+        // complete synchronously). Only treat this as a load failure when the
+        // full-size image is actually the current source — otherwise the
+        // placeholder would wrongly be flagged as 'loaded' and suppress the
+        // eager fallback below.
+        const full = img.getAttribute("data-src");
+        const currentSrc = img.currentSrc || img.src || "";
+        if (!full || currentSrc === full) {
+          onError();
+        }
       }
     }
   });
