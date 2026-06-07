@@ -169,7 +169,7 @@ main {
 }
 
 .brand-full.reverse-animated .brand-text {
-  display: inline-block !important;
+  display: inline-block;
   opacity: 0;
   transform: scaleX(0);
   transform-origin: left center;
@@ -222,6 +222,24 @@ main {
   filter: blur(4px);
   opacity: 0.8;
   animation: unblurEmoji 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+}
+
+/* Respect users who prefer reduced motion: drop the brand transitions/animations
+   and let the static resting states (full text / crisp emojis) stand in. The
+   JS in brand-animation.ts already skips adding the animation classes here, so
+   the brand simply renders in its correct end state without movement. */
+@media (prefers-reduced-motion: reduce) {
+  .brand-full .brand-emoji,
+  .brand-compact .brand-emoji {
+    transition: none;
+  }
+
+  .brand-full.reverse-animated .brand-text,
+  .brand-full.reverse-animated .brand-emoji,
+  .brand-compact.animated .brand-text,
+  .brand-compact.animated .brand-emoji {
+    animation: none;
+  }
 }
 
 .sr-only {
