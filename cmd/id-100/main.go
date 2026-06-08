@@ -46,6 +46,16 @@ func main() {
 	e.Use(middleware.RequestLogger())
 	e.Use(middleware.Recover())
 
+	// Security headers
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c *echo.Context) error {
+			c.Response().Header().Set("X-Content-Type-Options", "nosniff")
+			c.Response().Header().Set("X-Frame-Options", "DENY")
+			c.Response().Header().Set("Referrer-Policy", "same-origin")
+			return next(c)
+		}
+	})
+
 	// Add Sentry middleware if configured
 	if cfg.SentryDSN != "" {
 		e.Use(echo.WrapMiddleware(sentryhttp.New(sentryhttp.Options{

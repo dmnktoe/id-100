@@ -8,6 +8,7 @@ README.md
 
 # Development files
 .env
+.env.dev
 .env.local
 .env.example
 .air.toml

@@ -155,7 +155,8 @@ main {
 
 /* Full-title (homepage) */
 .brand-full .brand-text {
-  display: inline;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .brand-full .brand-emoji {

@@ -1,7 +1,4 @@
-/**
- * Brand animation module
- * Plays the one-shot brand header animation on homepage <-> subpage navigation
- */
+// Plays the one-shot brand header animation on homepage <-> subpage navigation.
 
 const STORAGE_KEY = "brandAnimated";
 const COMPACT_SHOWN = "1";

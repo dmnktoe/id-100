@@ -39,6 +39,11 @@
       {{ end }}
 
 
+      {{ if .PreloadFrame }}
+        <!-- Preload the card frame so it is always ready before the inner photos load -->
+        <link rel="preload" as="image" href="/static/assets/images/ui/card_frame-holder.png" fetchpriority="high" />
+      {{ end }}
+
       <link rel="stylesheet" href="{{ .AssetMainCSS }}" />
       {{ if .AdditionalCSS }}
         <link rel="stylesheet" href="/static/{{ .AdditionalCSS }}" />

@@ -28,6 +28,9 @@ func GetDistinctCities(ctx context.Context) ([]string, error) {
 			cities = append(cities, city)
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return cities, nil
 }
 
@@ -103,6 +106,9 @@ func GetDerivenList(ctx context.Context, cityFilter string, limit, offset int) (
 		}
 		deriven = append(deriven, d)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return deriven, nil
 }
@@ -153,6 +159,9 @@ func GetDeriveContributions(ctx context.Context, deriveID int, cityFilter string
 		}
 		contribs = append(contribs, ct)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return contribs, nil
 }
@@ -175,6 +184,9 @@ ORDER BY d.number ASC`)
 			return nil, err
 		}
 		list = append(list, d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return list, nil
@@ -210,6 +222,9 @@ func GetSessionUploads(ctx context.Context, tokenID, sessionNumber int) ([]map[s
 			"image_url":  imageUrl,
 			"image_lqip": imageLqip,
 		})
+	}
+	if err := uRows.Err(); err != nil {
+		return nil, err
 	}
 
 	return sessionContribs, nil
@@ -340,6 +355,9 @@ func GetAllTokens(ctx context.Context) ([]models.TokenInfo, error) {
 		t.Remaining = t.MaxUploads - t.TotalUploads
 		tokens = append(tokens, t)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return tokens, nil
 }
@@ -365,6 +383,9 @@ func GetRecentContributions(ctx context.Context, limit int) ([]models.RecentCont
 			continue
 		}
 		recentContribs = append(recentContribs, rc)
+	}
+	if err := contribRows.Err(); err != nil {
+		return nil, err
 	}
 
 	return recentContribs, nil
@@ -409,6 +430,9 @@ func GetBagRequests(ctx context.Context, status string, limit int) ([]models.Bag
 		if err := reqRows.Scan(&br.ID, &br.Email, &br.CreatedAt, &br.Handled); err == nil {
 			bagRequests = append(bagRequests, br)
 		}
+	}
+	if err := reqRows.Err(); err != nil {
+		return nil, err
 	}
 
 	return bagRequests, nil

@@ -1,6 +1,3 @@
-/**
- * Tests for drawer module
- */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { initDrawer } from "../lib/drawer";
 

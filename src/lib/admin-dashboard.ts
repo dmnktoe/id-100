@@ -17,8 +17,14 @@ export function initAdminDashboard(): void {
 
       const bagName = (document.getElementById("bagName") as HTMLInputElement).value;
       const maxUploads = parseInt(
-        (document.getElementById("maxUploads") as HTMLInputElement).value
+        (document.getElementById("maxUploads") as HTMLInputElement).value,
+        10
       );
+
+      if (isNaN(maxUploads) || maxUploads <= 0) {
+        alert("Kontingent muss eine gültige Zahl größer als 0 sein");
+        return;
+      }
 
       try {
         const response = await fetch("/admin/tokens", {
@@ -108,9 +114,9 @@ export async function deactivateToken(id: number, name: string): Promise<void> {
  */
 export async function updateQuota(id: number): Promise<void> {
   const input = document.getElementById(`quota-${id}`) as HTMLInputElement;
-  const newQuota = parseInt(input.value);
+  const newQuota = parseInt(input.value, 10);
 
-  if (newQuota <= 0) {
+  if (isNaN(newQuota) || newQuota <= 0) {
     alert("Kontingent muss größer als 0 sein");
     return;
   }

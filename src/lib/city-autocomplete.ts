@@ -122,20 +122,18 @@ function showDropdown(input: HTMLInputElement, dropdown: HTMLDivElement, cities:
   currentResults = cities;
   selectedIndex = -1;
 
-  dropdown.innerHTML = cities
-    .map((city, index) => `<div class="city-dropdown-item" data-index="${index}">${city}</div>`)
-    .join("");
+  dropdown.innerHTML = "";
+  cities.forEach((city, index) => {
+    const item = document.createElement("div");
+    item.className = "city-dropdown-item";
+    item.dataset.index = String(index);
+    item.textContent = city;
+    item.addEventListener("click", () => selectCity(input, dropdown, city));
+    dropdown.appendChild(item);
+  });
 
   positionDropdown(input, dropdown);
   dropdown.style.display = "block";
-
-  // Add click handlers to dropdown items
-  dropdown.querySelectorAll(".city-dropdown-item").forEach((item) => {
-    item.addEventListener("click", () => {
-      const cityName = item.textContent || "";
-      selectCity(input, dropdown, cityName);
-    });
-  });
 }
 
 /**
@@ -456,45 +454,26 @@ function updateStatusIndicators(): void {
 
   // Update name status
   if (statusName) {
-    if (nameValid) {
-      statusName.innerHTML = "✅ Name: Gültig";
-      statusName.style.color = "green";
-    } else {
-      statusName.innerHTML = "❌ Name: Nicht ausgefüllt";
-      statusName.style.color = "red";
-    }
+    statusName.textContent = nameValid ? "✅ Name: Gültig" : "❌ Name: Nicht ausgefüllt";
+    statusName.style.color = nameValid ? "green" : "red";
   }
 
-  // Update city status
   if (statusCity) {
-    if (citySelected) {
-      statusCity.innerHTML = "✅ Ort: Ausgewählt";
-      statusCity.style.color = "green";
-    } else {
-      statusCity.innerHTML = "❌ Ort: Nicht ausgewählt";
-      statusCity.style.color = "red";
-    }
+    statusCity.textContent = citySelected ? "✅ Ort: Ausgewählt" : "❌ Ort: Nicht ausgewählt";
+    statusCity.style.color = citySelected ? "green" : "red";
   }
 
-  // Update privacy status
   if (statusPrivacy) {
-    if (privacyAccepted) {
-      statusPrivacy.innerHTML = "✅ Datenschutz: Akzeptiert";
-      statusPrivacy.style.color = "green";
-    } else {
-      statusPrivacy.innerHTML = "❌ Datenschutz: Nicht akzeptiert";
-      statusPrivacy.style.color = "red";
-    }
+    statusPrivacy.textContent = privacyAccepted
+      ? "✅ Datenschutz: Akzeptiert"
+      : "❌ Datenschutz: Nicht akzeptiert";
+    statusPrivacy.style.color = privacyAccepted ? "green" : "red";
   }
 
-  // Update button status
   if (statusButton) {
-    if (!submitBtn.disabled) {
-      statusButton.innerHTML = "✅ Submit-Button: Aktiviert";
-      statusButton.style.color = "green";
-    } else {
-      statusButton.innerHTML = "❌ Submit-Button: Deaktiviert";
-      statusButton.style.color = "red";
-    }
+    statusButton.textContent = !submitBtn.disabled
+      ? "✅ Submit-Button: Aktiviert"
+      : "❌ Submit-Button: Deaktiviert";
+    statusButton.style.color = !submitBtn.disabled ? "green" : "red";
   }
 }
