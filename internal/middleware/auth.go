@@ -3,6 +3,7 @@ package middleware
 import (
 	"crypto/subtle"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gorilla/sessions"
@@ -20,7 +21,7 @@ func InitSessionStore(secret string, isProduction bool) {
 		MaxAge:   86400 * 30, // 30 days
 		HttpOnly: true,
 		Secure:   isProduction, // Enable in production with HTTPS
-		SameSite: 0,
+		SameSite: http.SameSiteLaxMode,
 	}
 }
 

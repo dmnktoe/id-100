@@ -53,7 +53,7 @@ describe("initUpload", () => {
     expect(dropZone.classList.contains("active")).toBe(false);
   });
 
-  it("should update preview when file is selected", () => {
+  it("should update preview when file is selected", async () => {
     document.body.innerHTML = `
       <div id="drop-zone">
         <span id="drop-text">Drop here</span>
@@ -78,11 +78,11 @@ describe("initUpload", () => {
     const changeEvent = new Event("change", { bubbles: true });
     fileInput.dispatchEvent(changeEvent);
 
-    // FileReader is async, need to wait
-    setTimeout(() => {
+    // FileReader is async, wait for it to complete
+    await vi.waitFor(() => {
       expect(preview.style.display).toBe("block");
       expect(dropText.style.display).toBe("none");
-    }, 100);
+    });
   });
 
   it("should update character count for comment input", () => {
