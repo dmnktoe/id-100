@@ -169,7 +169,7 @@ main {
 }
 
 .brand-full.reverse-animated .brand-text {
-  display: inline-block !important;
+  display: inline-block;
   opacity: 0;
   transform: scaleX(0);
   transform-origin: left center;
@@ -222,6 +222,21 @@ main {
   filter: blur(4px);
   opacity: 0.8;
   animation: unblurEmoji 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+}
+
+/* prefers-reduced-motion: fall back to the static resting states */
+@media (prefers-reduced-motion: reduce) {
+  .brand-full .brand-emoji,
+  .brand-compact .brand-emoji {
+    transition: none;
+  }
+
+  .brand-full.reverse-animated .brand-text,
+  .brand-full.reverse-animated .brand-emoji,
+  .brand-compact.animated .brand-text,
+  .brand-compact.animated .brand-emoji {
+    animation: none;
+  }
 }
 
 .sr-only {

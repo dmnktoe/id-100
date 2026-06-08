@@ -1,26 +1,53 @@
 /**
  * Brand animation module
- * Handles brand animation logic on page transitions
+ * Plays the one-shot brand header animation on homepage <-> subpage navigation
  */
+
+const STORAGE_KEY = "brandAnimated";
+const COMPACT_SHOWN = "1";
+const COMPACT_HIDDEN = "0";
+
+function readFlag(): string | null {
+  try {
+    return sessionStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeFlag(value: string): void {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, value);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
 
 export function initBrandAnimation(): void {
   const brandFull = document.querySelector<HTMLElement>(".brand-full");
   const brandCompact = document.querySelector<HTMLElement>(".brand-compact");
 
-  // If on homepage and returning from a subpage, trigger reverse animation
-  if (brandFull && sessionStorage.getItem("brandAnimated") === "1") {
-    brandFull.classList.add("reverse-animated");
-    sessionStorage.setItem("brandAnimated", "0");
+  if (!brandFull && !brandCompact) return;
 
-    // Remove animation class after animation completes to restore normal state
-    setTimeout(() => {
-      brandFull.classList.remove("reverse-animated");
-    }, 800);
+  const flag = readFlag();
+  const animate = !prefersReducedMotion();
+
+  // Homepage, returning from a subpage: unfold the text back in.
+  if (brandFull && flag === COMPACT_SHOWN) {
+    writeFlag(COMPACT_HIDDEN);
+    if (animate) brandFull.classList.add("reverse-animated");
   }
 
-  // If on subpage and not yet animated, trigger forward animation
-  if (brandCompact && sessionStorage.getItem("brandAnimated") !== "1") {
-    brandCompact.classList.add("animated");
-    sessionStorage.setItem("brandAnimated", "1");
+  // Subpage, compact state not shown yet: fold the text away.
+  if (brandCompact && flag !== COMPACT_SHOWN) {
+    writeFlag(COMPACT_SHOWN);
+    if (animate) brandCompact.classList.add("animated");
   }
 }
