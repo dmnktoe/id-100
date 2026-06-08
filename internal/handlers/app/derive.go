@@ -120,6 +120,7 @@ func DerivenHandler(c *echo.Context) error {
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
+		"PreloadFrame":    true,
 	}))
 }
 
@@ -188,5 +189,6 @@ func DeriveHandler(c *echo.Context) error {
 		"CurrentPath":     c.Request().URL.Path,
 		"CurrentYear":     time.Now().Year(),
 		"FooterStats":     stats,
+		"PreloadFrame":    true,
 	}))
 }
