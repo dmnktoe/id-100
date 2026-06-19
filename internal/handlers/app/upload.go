@@ -13,8 +13,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/chai2010/webp"
 	"github.com/getsentry/sentry-go"
@@ -134,25 +132,12 @@ func UploadPostHandler(c *echo.Context) error {
 		return c.String(http.StatusInternalServerError, "WebP-Kodierung fehlgeschlagen")
 	}
 
-	cfg, err := config.LoadDefaultConfig(c.Request().Context(),
-		config.WithRegion(os.Getenv("S3_REGION")),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			os.Getenv("S3_ACCESS_KEY"),
-			os.Getenv("S3_SECRET_KEY"),
-			""),
-		),
-	)
+	s3Client, err := utils.NewS3Client(c.Request().Context())
 	if err != nil {
 		log.Printf("Failed to load AWS config: %v", err)
 		sentryhelper.CaptureException(c, err)
 		return c.String(http.StatusInternalServerError, "Upload fehlgeschlagen")
 	}
-	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		if endpoint := os.Getenv("S3_ENDPOINT"); endpoint != "" {
-			o.BaseEndpoint = aws.String(endpoint)
-		}
-		o.UsePathStyle = true
-	})
 
 	fileName := fmt.Sprintf("derive_%s_%d.webp", deriveNumberStr, time.Now().Unix())
 

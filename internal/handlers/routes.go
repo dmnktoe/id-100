@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v5"
 
 	"id-100/internal/handlers/admin"
@@ -12,12 +10,11 @@ import (
 
 // RegisterRoutes registers all application routes
 func RegisterRoutes(e *echo.Echo, baseURL string) {
-	e.GET("/health", func(c *echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{
-			"status":  "ok",
-			"service": "id-100",
-		})
-	})
+	// Liveness probe: process is up. Used by container/orchestrator healthchecks.
+	e.GET("/health", LivenessHandler)
+	// Readiness probe: dependencies (DB + object storage) are reachable.
+	// Point uptime monitoring at this endpoint instead of "/".
+	e.GET("/readyz", ReadinessHandler)
 
 	e.GET("/api/stats", StatsHandler)
 

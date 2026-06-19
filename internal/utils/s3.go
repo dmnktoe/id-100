@@ -13,16 +13,62 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+// s3Bucket returns the configured bucket name, falling back to the default.
+func s3Bucket() string {
+	bucket := os.Getenv("S3_BUCKET")
+	if bucket == "" {
+		bucket = "id100-images"
+	}
+	return bucket
+}
+
+// NewS3Client builds an S3/MinIO client from the environment configuration.
+// It centralises the client setup so handlers and health checks stay in sync.
+func NewS3Client(ctx context.Context) (*s3.Client, error) {
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion(os.Getenv("S3_REGION")),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+			os.Getenv("S3_ACCESS_KEY"),
+			os.Getenv("S3_SECRET_KEY"),
+			""),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load S3 config: %w", err)
+	}
+
+	return s3.NewFromConfig(cfg, func(o *s3.Options) {
+		if endpoint := os.Getenv("S3_ENDPOINT"); endpoint != "" {
+			o.BaseEndpoint = aws.String(endpoint)
+		}
+		o.UsePathStyle = true
+	}), nil
+}
+
+// CheckS3 verifies that the object storage backend is reachable and the
+// configured bucket exists. It is used by the readiness probe.
+func CheckS3(ctx context.Context) error {
+	client, err := NewS3Client(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err := client.HeadBucket(ctx, &s3.HeadBucketInput{
+		Bucket: aws.String(s3Bucket()),
+	}); err != nil {
+		return fmt.Errorf("s3 head bucket: %w", err)
+	}
+
+	return nil
+}
+
 // extractFileNameFromURL extracts the filename from a MinIO/S3 storage URL
 func extractFileNameFromURL(imageURL string) (string, error) {
 	if imageURL == "" {
 		return "", fmt.Errorf("empty URL")
 	}
 
-	bucket := os.Getenv("S3_BUCKET")
-	if bucket == "" {
-		bucket = "id100-images"
-	}
+	bucket := s3Bucket()
 
 	// Handle MinIO URL format: http://minio:9000/bucket-name/filename.ext
 	// or: http://localhost:9000/bucket-name/filename.ext
@@ -55,28 +101,14 @@ func DeleteFromS3(ctx context.Context, imageURL string) error {
 	}
 
 	// Create S3 client
-	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithRegion(os.Getenv("S3_REGION")),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			os.Getenv("S3_ACCESS_KEY"),
-			os.Getenv("S3_SECRET_KEY"),
-			""),
-		),
-	)
+	s3Client, err := NewS3Client(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to load S3 config: %w", err)
+		return err
 	}
-
-	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		if endpoint := os.Getenv("S3_ENDPOINT"); endpoint != "" {
-			o.BaseEndpoint = aws.String(endpoint)
-		}
-		o.UsePathStyle = true
-	})
 
 	// Delete the object from S3
 	_, err = s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(os.Getenv("S3_BUCKET")),
+		Bucket: aws.String(s3Bucket()),
 		Key:    aws.String(fileName),
 	})
 
