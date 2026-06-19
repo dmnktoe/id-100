@@ -12,9 +12,8 @@ import (
 	"id-100/internal/utils"
 )
 
-// LivenessHandler is a lightweight probe that only reports whether the process
-// is up. It never touches external dependencies so orchestrators and container
-// healthchecks do not restart the app over a transient database/storage blip.
+// LivenessHandler reports whether the process is up. It does not touch external
+// dependencies, so it is safe for container healthchecks.
 func LivenessHandler(c *echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{
 		"status":  "ok",
@@ -22,10 +21,8 @@ func LivenessHandler(c *echo.Context) error {
 	})
 }
 
-// ReadinessHandler verifies that the critical dependencies (database and object
-// storage) are reachable. It returns 503 when any dependency is unavailable so
-// that uptime monitoring reflects real readiness instead of flapping on every
-// page that happens to hit a degraded backend.
+// ReadinessHandler checks the database and object storage and returns 503 when
+// either is unreachable. Point uptime monitoring at this endpoint.
 func ReadinessHandler(c *echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 3*time.Second)
 	defer cancel()

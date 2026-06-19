@@ -23,7 +23,6 @@ func s3Bucket() string {
 }
 
 // NewS3Client builds an S3/MinIO client from the environment configuration.
-// It centralises the client setup so handlers and health checks stay in sync.
 func NewS3Client(ctx context.Context) (*s3.Client, error) {
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(os.Getenv("S3_REGION")),
@@ -45,8 +44,7 @@ func NewS3Client(ctx context.Context) (*s3.Client, error) {
 	}), nil
 }
 
-// CheckS3 verifies that the object storage backend is reachable and the
-// configured bucket exists. It is used by the readiness probe.
+// CheckS3 verifies that the object storage backend is reachable and the bucket exists.
 func CheckS3(ctx context.Context) error {
 	client, err := NewS3Client(ctx)
 	if err != nil {

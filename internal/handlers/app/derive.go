@@ -43,9 +43,7 @@ func DerivenHandler(c *echo.Context) error {
 	}
 	totalPages := (totalCount + limit - 1) / limit
 
-	// Get deriven list. On a transient backend error, degrade gracefully to an
-	// empty list (HTTP 200) instead of a hard 500 so a brief DB blip does not
-	// take the public page "down". Real outages surface via /readyz.
+	// Get deriven list. On error, render an empty list rather than a 500.
 	deriven, err := repository.GetDerivenList(context.Background(), cityFilter, limit, offset)
 	if err != nil {
 		log.Printf("Query Error: %v", err)
@@ -150,9 +148,7 @@ func DeriveHandler(c *echo.Context) error {
 		d.PointsTier = 3
 	}
 
-	// Query contributions. Degrade gracefully on a transient error rather than
-	// returning a hard 500 (which would trip uptime alerts); render the derive
-	// with no contributions instead. Real outages surface via /readyz.
+	// Query contributions. On error, render the derive without them rather than a 500.
 	contribs, err := repository.GetDeriveContributions(context.Background(), d.ID, cityFilter)
 	if err != nil {
 		log.Printf("Contributions Query Error: %v", err)

@@ -10,10 +10,8 @@ import (
 
 // RegisterRoutes registers all application routes
 func RegisterRoutes(e *echo.Echo, baseURL string) {
-	// Liveness probe: process is up. Used by container/orchestrator healthchecks.
+	// Liveness for container healthchecks; readiness for uptime monitoring.
 	e.GET("/health", LivenessHandler)
-	// Readiness probe: dependencies (DB + object storage) are reachable.
-	// Point uptime monitoring at this endpoint instead of "/".
 	e.GET("/readyz", ReadinessHandler)
 
 	e.GET("/api/stats", StatsHandler)
