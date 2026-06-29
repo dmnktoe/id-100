@@ -22,7 +22,7 @@
   "dependencies": {
     "@sentry/browser": "^10.39.0",
     "meilisearch": "^0.56.0",
-    "swiper": "^12.1.1",
+    "swiper": "^14.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
