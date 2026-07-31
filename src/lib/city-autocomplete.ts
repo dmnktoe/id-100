@@ -4,7 +4,7 @@
  * Includes Zod schema validation for form data
  */
 
-import { MeiliSearch } from "meilisearch";
+import { Meilisearch } from "meilisearch";
 import { z } from "zod";
 
 interface CityHit {
@@ -58,7 +58,7 @@ export function validateForm(data: unknown): ValidationResult {
 let debounceTimer: number | undefined;
 let validCities: Set<string> = new Set();
 let citySelected = false;
-let client: MeiliSearch | null = null;
+let client: Meilisearch | null = null;
 let selectedIndex = -1;
 let currentResults: string[] = [];
 
@@ -76,11 +76,11 @@ export function resetState(): void {
 /**
  * Initialize Meilisearch client
  */
-function initMeilisearchClient(): MeiliSearch {
+function initMeilisearchClient(): Meilisearch {
   if (!client) {
     const meilisearchUrl = window.GEOCODING_API_URL || "http://localhost:8081";
     const apiKey = window.MEILI_SEARCH_KEY || "";
-    client = new MeiliSearch({
+    client = new Meilisearch({
       host: meilisearchUrl,
       apiKey: apiKey,
     });
@@ -316,7 +316,7 @@ async function searchCities(
   query: string,
   input: HTMLInputElement,
   dropdown: HTMLDivElement,
-  meiliClient: MeiliSearch
+  meiliClient: Meilisearch
 ): Promise<void> {
   try {
     // Search using Meilisearch SDK

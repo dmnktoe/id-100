@@ -13,7 +13,9 @@ type InitOptions struct {
 	Environment      string
 	Release          string
 	TracesSampleRate float64
-	// EnableLogs activates Sentry Structured Logs (sentry-go >= 0.33.0)
+	// EnableLogs activates Sentry Structured Logs (sentry-go >= 0.33.0).
+	// Since sentry-go 0.47.0 the SDK flag is inverted (DisableLogs), so this
+	// option is mapped accordingly in InitWithOptions.
 	EnableLogs bool
 }
 
@@ -40,7 +42,7 @@ func InitWithOptions(opts InitOptions) error {
 		Release:          opts.Release,
 		TracesSampleRate: opts.TracesSampleRate,
 		// Enable structured logs when requested
-		EnableLogs: opts.EnableLogs,
+		DisableLogs: !opts.EnableLogs,
 		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
 			// Add tags to distinguish backend from frontend
 			if event.Tags == nil {
