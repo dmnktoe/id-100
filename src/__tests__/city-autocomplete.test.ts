@@ -13,7 +13,7 @@ const mockCities = [
 // Mock Meilisearch
 vi.mock("meilisearch", () => {
   return {
-    MeiliSearch: vi.fn().mockImplementation(function () {
+    Meilisearch: vi.fn().mockImplementation(function () {
       return {
         index: vi.fn(() => ({
           search: vi.fn(async (query: string) => {
