@@ -22,7 +22,7 @@ COPY web/static/admin.styles.css ./web/static/admin.styles.css
 RUN npm run build
 
 # Build stage for Go backend
-FROM golang:1.26-alpine AS backend-builder
+FROM golang:1.27-alpine AS backend-builder
 
 # APP_VERSION optionally pins the version at build time; when left at "dev" the
 # container resolves it from the latest GitHub release at startup (startup.sh).
