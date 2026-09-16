@@ -22,7 +22,7 @@ services:
 
   # MinIO S3-compatible storage
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: id100-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -46,7 +46,7 @@ services:
 
   # MinIO client for bucket creation (run once only)
   minio-init:
-    image: minio/mc:latest
+    image: quay.io/minio/mc:latest
     container_name: id100-minio-init
     restart: "no"
     depends_on:
