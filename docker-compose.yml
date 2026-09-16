@@ -15,7 +15,7 @@ services:
       retries: 5
 
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -45,7 +45,7 @@ services:
       - traefik.http.services.minio-console.loadbalancer.server.port=9001
 
   minio-init:
-    image: minio/mc:latest
+    image: quay.io/minio/mc:latest
     restart: "no"
     depends_on:
       minio:
