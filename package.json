@@ -20,7 +20,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@sentry/browser": "^10.39.0",
+    "@sentry/browser": "^11.0.0",
     "meilisearch": "^0.62.0",
     "swiper": "^14.0.0",
     "zod": "^4.3.6"
