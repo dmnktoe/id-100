@@ -15,10 +15,6 @@ services:
       retries: 5
 
   minio:
-    # MinIO no longer publishes public images (quay.io/minio and minio/* on Docker
-    # Hub now require auth). Chainguard builds MinIO from source; the -dev tag ships
-    # sh, wget and mc. Run as root so existing volumes (created by the old root
-    # image) stay writable.
     image: cgr.dev/chainguard/minio:latest-dev
     user: "0:0"
     restart: unless-stopped
