@@ -22,7 +22,12 @@ services:
 
   # MinIO S3-compatible storage
   minio:
-    image: quay.io/minio/minio:latest
+    # MinIO no longer publishes public images (quay.io/minio and minio/* on Docker
+    # Hub now require auth). Chainguard builds MinIO from source; the -dev tag ships
+    # sh, wget and mc. Run as root so existing volumes (created by the old root
+    # image) stay writable.
+    image: cgr.dev/chainguard/minio:latest-dev
+    user: "0:0"
     container_name: id100-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -37,7 +42,7 @@ services:
       - "9000:9000"
       - "9001:9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,7 +51,7 @@ services:
 
   # MinIO client for bucket creation (run once only)
   minio-init:
-    image: quay.io/minio/mc:latest
+    image: cgr.dev/chainguard/minio-client:latest-dev
     container_name: id100-minio-init
     restart: "no"
     depends_on:
