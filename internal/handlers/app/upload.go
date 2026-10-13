@@ -217,7 +217,7 @@ func UploadPostHandler(c *echo.Context) error {
 		sentryhelper.CaptureError(c, err, sentry.LevelWarning)
 	}
 
-	// Emit a structured informational log to Sentry (requires EnableLogs=true)
+	// Emit a structured informational log to Sentry
 	// This will be correlated with the current request's trace/context.
 	sentryhelper.Logger(c).Info().Emitf("upload success: contribution=%d derive=%d token=%d player=%s", contributionID, deriveNumber, tokenID, currentPlayer)
 

@@ -28,7 +28,6 @@ func main() {
 		Environment:      cfg.Environment,
 		Release:          version.Version,
 		TracesSampleRate: 0.1,
-		EnableLogs:       true, // enable structured logs for backend
 	}); err != nil {
 		log.Printf("Failed to initialize Sentry error tracking, continuing without it. Please verify SENTRY_DSN configuration: %v", err)
 	}
