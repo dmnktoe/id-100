@@ -13,19 +13,13 @@ type InitOptions struct {
 	Environment      string
 	Release          string
 	TracesSampleRate float64
-	// EnableLogs activates Sentry Structured Logs (sentry-go >= 0.33.0).
-	// Since sentry-go 0.47.0 the SDK flag is inverted (DisableLogs), so this
-	// option is mapped accordingly in InitWithOptions.
-	EnableLogs bool
 }
 
 // Init initializes the Sentry SDK with the provided DSN.
-// Enables structured logs by default for convenience.
 func Init(dsn string) error {
 	return InitWithOptions(InitOptions{
 		DSN:              dsn,
 		TracesSampleRate: 0.1, // Sample 10% of transactions
-		EnableLogs:       true,
 	})
 }
 
@@ -41,8 +35,6 @@ func InitWithOptions(opts InitOptions) error {
 		Environment:      opts.Environment,
 		Release:          opts.Release,
 		TracesSampleRate: opts.TracesSampleRate,
-		// Enable structured logs when requested
-		DisableLogs: !opts.EnableLogs,
 		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
 			// Add tags to distinguish backend from frontend
 			if event.Tags == nil {
