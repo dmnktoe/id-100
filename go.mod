@@ -11,7 +11,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/getsentry/sentry-go v0.50.0
 	github.com/gorilla/sessions v1.4.0
-	github.com/jackc/pgx/v5 v5.12.0
+	github.com/jackc/pgx/v5 v5.13.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.4.5
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
